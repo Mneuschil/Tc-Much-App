@@ -12,6 +12,28 @@ import { formatTimeAgo } from '../../src/utils/formatDate';
 import { MOCK_MESSAGES, MOCK_CHANNELS } from '../../src/lib/mockData';
 import type { ReactionType } from '@tennis-club/shared';
 
+interface MessageAuthor {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+}
+
+interface ChatMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  author?: MessageAuthor;
+  replyTo?: { id: string; content: string } | null;
+  reactions?: { type: string; userId: string }[];
+}
+
+interface MessagesPage {
+  messages: ChatMessage[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
 const REACTION_EMOJIS: Record<string, string> = { THUMBS_UP: '\uD83D\uDC4D', HEART: '\u2764\uFE0F', CELEBRATE: '\uD83C\uDF89', THINKING: '\uD83E\uDD14' };
 
 export default function ChannelDetailScreen() {
@@ -27,7 +49,7 @@ export default function ChannelDetailScreen() {
   const addReaction = useAddReaction(id!);
 
   const channel = channelData ?? MOCK_CHANNELS.find(c => c.id === id);
-  const apiMessages = (messagesData as any)?.pages?.flatMap((p: any) => p?.data ?? []) ?? [];
+  const apiMessages = messagesData?.pages?.flatMap((p) => (p as MessagesPage).messages ?? []) ?? [];
   const messages = apiMessages.length > 0 ? apiMessages : MOCK_MESSAGES;
 
   const handleSend = () => {
@@ -36,7 +58,7 @@ export default function ChannelDetailScreen() {
     sendMessage.mutate({ content, replyToId: replyTo?.id }, { onSuccess: () => { setNewMessage(''); setReplyTo(null); } });
   };
 
-  const renderMessage = ({ item }: { item: any }) => (
+  const renderMessage = ({ item }: { item: ChatMessage }) => (
     <View style={[styles.msgCard, { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm }]}>
       {item.replyTo && (
         <View style={[styles.replyPreview, { borderLeftColor: colors.primary, backgroundColor: colors.surface, borderRadius: borderRadius.sm, padding: spacing.sm, marginBottom: spacing.sm }]}>
@@ -44,9 +66,9 @@ export default function ChannelDetailScreen() {
         </View>
       )}
       <View style={styles.msgHeader}>
-        <Avatar firstName={item.author.firstName} lastName={item.author.lastName} imageUrl={item.author.avatarUrl} size="sm" />
+        <Avatar firstName={item.author?.firstName ?? '?'} lastName={item.author?.lastName ?? ''} imageUrl={item.author?.avatarUrl} size="sm" />
         <View style={{ marginLeft: spacing.sm, flex: 1 }}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary, fontSize: 14 }]}>{item.author.firstName} {item.author.lastName}</Text>
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary, fontSize: 14 }]}>{item.author?.firstName ?? 'Unbekannt'} {item.author?.lastName ?? ''}</Text>
           <Text style={[typography.caption, { color: colors.textTertiary }]}>{formatTimeAgo(item.createdAt)}</Text>
         </View>
         <Pressable onPress={() => setReplyTo({ id: item.id, content: item.content })} hitSlop={8}>
@@ -54,10 +76,10 @@ export default function ChannelDetailScreen() {
         </Pressable>
       </View>
       <Text style={[typography.body, { color: colors.textPrimary, marginTop: spacing.sm }]}>{item.content}</Text>
-      {item.reactions?.length > 0 && (
+      {(item.reactions?.length ?? 0) > 0 && (
         <View style={styles.reactionsRow}>
           {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => {
-            const count = item.reactions?.filter((r: any) => r.type === type).length ?? 0;
+            const count = item.reactions?.filter((r) => r.type === type).length ?? 0;
             if (count === 0) return null;
             return (
               <Pressable key={type} onPress={() => addReaction.mutate({ messageId: item.id, type: type as ReactionType })}
@@ -77,7 +99,7 @@ export default function ChannelDetailScreen() {
       <Stack.Screen options={{ headerShown: true, title: channel?.name ?? 'Channel', headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.textPrimary, headerShadowVisible: false }} />
       <SafeAreaView edges={['bottom']} style={[styles.container, { backgroundColor: colors.background }]}>
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }} keyboardVerticalOffset={100}>
-          <FlatList data={messages} keyExtractor={(item) => item.id} renderItem={renderMessage}
+          <FlatList<ChatMessage> data={messages} keyExtractor={(item) => item.id} renderItem={renderMessage}
             contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.md }}
             refreshControl={<RefreshControl refreshing={isLoading} onRefresh={() => refetch()} tintColor={colors.accent} />}
             onEndReached={() => fetchNextPage()} onEndReachedThreshold={0.3}

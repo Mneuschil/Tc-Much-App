@@ -5,9 +5,10 @@ import { chatService } from '../services/chatService';
 export function useMessages(channelId: string) {
   return useInfiniteQuery({
     queryKey: ['messages', channelId],
-    queryFn: ({ pageParam = 1 }) => chatService.getMessages(channelId, pageParam, 20),
-    initialPageParam: 1,
-    getNextPageParam: (_lastPage, allPages) => allPages.length + 1,
+    queryFn: ({ pageParam }) => chatService.getMessages(channelId, pageParam, 20),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage: { nextCursor: string | null; hasMore: boolean }) =>
+      lastPage.hasMore ? lastPage.nextCursor ?? undefined : undefined,
     enabled: !!channelId,
   });
 }

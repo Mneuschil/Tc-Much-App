@@ -13,8 +13,8 @@ export const chatService = {
   createSubchannel: (parentId: string, input: any) =>
     api.post(`/channels/${parentId}/subchannels`, input).then(r => r.data.data),
 
-  getMessages: (channelId: string, page = 1, limit = 20) =>
-    api.get(`/channels/${channelId}/messages?page=${page}&limit=${limit}`).then(r => r.data),
+  getMessages: (channelId: string, cursor?: string, limit = 20) =>
+    api.get(`/channels/${channelId}/messages`, { params: { cursor, limit } }).then(r => r.data.data),
 
   sendMessage: (channelId: string, input: { content: string; replyToId?: string; mediaUrls?: string[] }) =>
     api.post(`/channels/${channelId}/messages`, { ...input, channelId }).then(r => r.data.data),
