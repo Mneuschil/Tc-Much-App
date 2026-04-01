@@ -1,9 +1,10 @@
+import { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { EmptyState } from '../../src/components/ui';
+import { EmptyState, SearchInput, Badge } from '../../src/components/ui';
 import { useChannels } from '../../src/features/chat/hooks/useChannels';
 import { formatTimeAgo } from '../../src/utils/formatDate';
 import { MOCK_CHANNELS } from '../../src/lib/mockData';
@@ -29,10 +30,19 @@ interface ChannelItem {
 export default function ChannelsScreen() {
   const { colors, typography, spacing, borderRadius, shadows } = useTheme();
   const router = useRouter();
+  const [search, setSearch] = useState('');
 
   const { data, isLoading, refetch } = useChannels();
   const apiChannels = ((data ?? []) as ChannelItem[]);
-  const channels = apiChannels.length > 0 ? apiChannels : (MOCK_CHANNELS as unknown as ChannelItem[]);
+  const allChannels = apiChannels.length > 0 ? apiChannels : (MOCK_CHANNELS as unknown as ChannelItem[]);
+
+  const channels = useMemo(() => {
+    if (!search.trim()) return allChannels;
+    const q = search.toLowerCase();
+    return allChannels.filter(ch => ch.name.toLowerCase().includes(q));
+  }, [allChannels, search]);
+
+  const isOfficial = (item: ChannelItem) => item.isDefault && item.visibility === 'PUBLIC';
 
   const renderChannel = ({ item }: { item: ChannelItem }) => (
     <Pressable
@@ -42,11 +52,23 @@ export default function ChannelsScreen() {
       ]}
     >
       <View style={styles.channelRow}>
-        <View style={[styles.channelIcon, { backgroundColor: item.visibility === 'RESTRICTED' ? colors.accent + '12' : colors.surface, borderRadius: borderRadius.lg }]}>
-          <Ionicons name={item.visibility === 'RESTRICTED' ? 'lock-closed' : 'chatbubble'} size={18} color={item.visibility === 'RESTRICTED' ? colors.accent : colors.textSecondary} />
+        <View style={[styles.channelIcon, {
+          backgroundColor: isOfficial(item) ? colors.accentSurface : item.visibility === 'RESTRICTED' ? colors.accent + '12' : colors.surface,
+          borderRadius: borderRadius.lg,
+        }]}>
+          {isOfficial(item) ? (
+            <Ionicons name="lock-closed" size={18} color={colors.accent} />
+          ) : item.visibility === 'RESTRICTED' ? (
+            <Ionicons name="lock-closed" size={18} color={colors.textSecondary} />
+          ) : (
+            <Ionicons name="chatbubble" size={18} color={colors.textSecondary} />
+          )}
         </View>
         <View style={styles.channelInfo}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
+            {isOfficial(item) && <Badge label="Offiziell" variant="accent" size="sm" />}
+          </View>
           {item.lastMessage ? (
             <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
               {item.lastMessage.author.firstName}: {item.lastMessage.content}
@@ -66,8 +88,11 @@ export default function ChannelsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Chats</Text>
+      </View>
+      <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.md }}>
+        <SearchInput placeholder="Channel suchen..." value={search} onChangeText={setSearch} />
       </View>
       <FlatList
         data={channels}
@@ -75,7 +100,7 @@ export default function ChannelsScreen() {
         renderItem={renderChannel}
         contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />}
-        ListEmptyComponent={!isLoading ? <EmptyState title="Keine Channels" description="Es gibt noch keine Channels" /> : null}
+        ListEmptyComponent={!isLoading ? <EmptyState title="Keine Channels" description={search ? 'Kein Channel gefunden' : 'Es gibt noch keine Channels'} /> : null}
       />
     </SafeAreaView>
   );

@@ -7,10 +7,11 @@ export enum TeamType {
   BOARD_GROUP = 'BOARD_GROUP',
 }
 
-// Spec section 10: "available / not available"
+// Spec section 10: "available / not available / maybe"
 export enum AvailabilityStatus {
   AVAILABLE = 'AVAILABLE',
   NOT_AVAILABLE = 'NOT_AVAILABLE',
+  MAYBE = 'MAYBE',
 }
 
 export interface Team {

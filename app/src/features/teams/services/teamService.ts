@@ -19,7 +19,7 @@ export const teamService = {
   getAvailability: (eventId: string) =>
     api.get(`/events/${eventId}/availability`).then(r => r.data.data),
 
-  setAvailability: (eventId: string, status: 'AVAILABLE' | 'NOT_AVAILABLE', comment?: string) =>
+  setAvailability: (eventId: string, status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE', comment?: string) =>
     api.put(`/events/${eventId}/availability`, { eventId, status, comment }).then(r => r.data.data),
 
   getLineup: (eventId: string) =>

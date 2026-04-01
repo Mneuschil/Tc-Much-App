@@ -13,7 +13,7 @@ export function useAvailability(eventId: string) {
 export function useSetAvailability(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ status, comment }: { status: 'AVAILABLE' | 'NOT_AVAILABLE'; comment?: string }) =>
+    mutationFn: ({ status, comment }: { status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE'; comment?: string }) =>
       teamService.setAvailability(eventId, status, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', eventId] });

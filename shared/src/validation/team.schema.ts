@@ -9,7 +9,7 @@ export const createTeamSchema = z.object({
 
 export const availabilitySchema = z.object({
   eventId: z.string().uuid(),
-  status: z.enum(['AVAILABLE', 'NOT_AVAILABLE']),
+  status: z.enum(['AVAILABLE', 'NOT_AVAILABLE', 'MAYBE']),
   comment: z.string().max(500).optional(),
 });
 

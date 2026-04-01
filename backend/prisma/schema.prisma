@@ -57,6 +57,7 @@ enum MatchResultStatus {
 enum AvailabilityStatus {
   AVAILABLE
   NOT_AVAILABLE
+  MAYBE
 }
 
 enum TodoStatus {

@@ -37,7 +37,7 @@ export async function getAvailabilityForEvent(eventId: string) {
   });
 }
 
-export async function setAvailability(eventId: string, userId: string, status: 'AVAILABLE' | 'NOT_AVAILABLE', comment?: string) {
+export async function setAvailability(eventId: string, userId: string, status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE', comment?: string) {
   return prisma.availability.upsert({
     where: { eventId_userId: { eventId, userId } },
     create: { eventId, userId, status, comment },

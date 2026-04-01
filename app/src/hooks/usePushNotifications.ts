@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import api from '../lib/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -20,6 +21,7 @@ export function usePushNotifications() {
   const notificationListener = useRef<Notifications.EventSubscription>(null);
   const responseListener = useRef<Notifications.EventSubscription>(null);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const router = useRouter();
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -30,8 +32,24 @@ export function usePushNotifications() {
       // Notification empfangen waehrend App offen
     });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((_response) => {
-      // User hat auf Notification getippt
+    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as Record<string, string> | undefined;
+      if (!data) {
+        router.push('/(tabs)/home' as never);
+        return;
+      }
+
+      if (data.matchId) {
+        router.push(`/match/${data.matchId}` as never);
+      } else if (data.channelId) {
+        router.push(`/channel/${data.channelId}` as never);
+      } else if (data.tournamentId) {
+        router.push(`/tournament/${data.tournamentId}` as never);
+      } else if (data.todoId) {
+        router.push('/todos' as never);
+      } else {
+        router.push('/(tabs)/home' as never);
+      }
     });
 
     return () => {
@@ -42,7 +60,7 @@ export function usePushNotifications() {
         responseListener.current.remove();
       }
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, router]);
 }
 
 async function registerForPushNotifications() {

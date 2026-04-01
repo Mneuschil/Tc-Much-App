@@ -30,6 +30,24 @@ interface LineupData {
   entries: LineupEntry[];
 }
 
+/* ─── MatchStatusBadge ────────────────────────────────────────────── */
+
+const STATUS_CONFIG: Record<string, { label: string; variant: 'neutral' | 'warning' | 'success' | 'danger' | 'info' | 'accent' }> = {
+  SCHEDULED: { label: 'Geplant', variant: 'neutral' },
+  RESULT_PENDING: { label: 'Ergebnis offen', variant: 'warning' },
+  COMPLETED: { label: 'Beendet', variant: 'success' },
+  DISPUTED: { label: 'Angefochten', variant: 'danger' },
+  CANCELLED: { label: 'Abgesagt', variant: 'danger' },
+  SUBMITTED: { label: 'Eingereicht', variant: 'warning' },
+  CONFIRMED: { label: 'Bestätigt', variant: 'success' },
+  REJECTED: { label: 'Abgelehnt', variant: 'danger' },
+};
+
+function MatchStatusBadge({ status }: { status: string }) {
+  const config = STATUS_CONFIG[status] ?? { label: status, variant: 'neutral' as const };
+  return <Badge label={config.label} variant={config.variant} />;
+}
+
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, typography, spacing, borderRadius, shadows } = useTheme();
@@ -56,6 +74,7 @@ export default function MatchDetailScreen() {
   const myAvailability = availabilities.find(a => a.user?.id === user?.id);
   const available = availabilities.filter(a => a.status === 'AVAILABLE');
   const unavailable = availabilities.filter(a => a.status === 'NOT_AVAILABLE');
+  const maybe = availabilities.filter(a => a.status === 'MAYBE');
 
   // Lineup state
   const [localStarters, setLocalStarters] = useState<LineupEntry[]>([]);
@@ -123,6 +142,12 @@ export default function MatchDetailScreen() {
   const canConfirm = matchStatus === 'RESULT_PENDING' && results[0]?.submittedById !== user?.id;
   const isCompleted = matchStatus === 'COMPLETED';
 
+  const AVAIL_OPTIONS = [
+    { status: 'AVAILABLE' as const, label: 'Kann spielen', icon: 'checkmark-circle' as const, activeColor: colors.chipActive, iconColor: colors.success },
+    { status: 'MAYBE' as const, label: 'Unsicher', icon: 'help-circle' as const, activeColor: colors.warning, iconColor: colors.warning },
+    { status: 'NOT_AVAILABLE' as const, label: 'Kann nicht', icon: 'close-circle' as const, activeColor: colors.chipActive, iconColor: colors.danger },
+  ];
+
   return (
     <>
       <Stack.Screen options={{ headerShown: true, title: event.title, headerStyle: { backgroundColor: colors.background }, headerTintColor: colors.textPrimary, headerShadowVisible: false }} />
@@ -137,6 +162,7 @@ export default function MatchDetailScreen() {
                 {event.isHomeGame !== null && event.isHomeGame !== undefined && (
                   <Badge label={event.isHomeGame ? 'Heim' : 'Auswaerts'} variant={event.isHomeGame ? 'dark' : 'neutral'} />
                 )}
+                {matchStatus && <MatchStatusBadge status={matchStatus} />}
               </View>
               <View style={[styles.infoRow, { marginTop: spacing.xl }]}>
                 <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
@@ -164,7 +190,7 @@ export default function MatchDetailScreen() {
                   <View key={r.id} style={{ backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={[typography.h3, { color: colors.textPrimary }]}>{formatMatchScore(r.sets)}</Text>
-                      <Badge label={r.status === 'CONFIRMED' ? 'Bestaetigt' : r.status === 'SUBMITTED' ? 'Offen' : r.status} variant={r.status === 'CONFIRMED' ? 'success' : 'warning'} />
+                      <MatchStatusBadge status={r.status} />
                     </View>
                     {r.winner && <Text style={[typography.caption, { color: colors.success, marginTop: spacing.sm }]}>Gewinner: {r.winner.firstName} {r.winner.lastName}</Text>}
                     <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>Eingereicht von: {r.submittedBy.firstName} {r.submittedBy.lastName}</Text>
@@ -214,15 +240,27 @@ export default function MatchDetailScreen() {
             <View style={{ marginTop: spacing.xxl }}>
               <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Verfuegbarkeit</Text>
               <View style={styles.availButtons}>
-                {(['AVAILABLE', 'NOT_AVAILABLE'] as const).map((status) => {
-                  const isSelected = myAvailability?.status === status;
-                  const isAvail = status === 'AVAILABLE';
+                {AVAIL_OPTIONS.map((opt) => {
+                  const isSelected = myAvailability?.status === opt.status;
+                  const isMaybe = opt.status === 'MAYBE';
                   return (
-                    <Pressable key={status} onPress={() => setAvailability.mutate({ status })}
-                      style={[styles.availButton, { backgroundColor: isSelected ? colors.chipActive : colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, ...(isSelected ? {} : shadows.sm) }]}>
-                      <Ionicons name={isAvail ? 'checkmark-circle' : 'close-circle'} size={28} color={isSelected ? colors.textInverse : isAvail ? colors.success : colors.danger} />
-                      <Text style={[typography.captionMedium, { color: isSelected ? colors.textInverse : colors.textPrimary, marginTop: spacing.xs }]}>
-                        {isAvail ? 'Kann spielen' : 'Kann nicht'}
+                    <Pressable key={opt.status} onPress={() => setAvailability.mutate({ status: opt.status })}
+                      style={[styles.availButton, {
+                        backgroundColor: isSelected
+                          ? (isMaybe ? colors.warningSurface : colors.chipActive)
+                          : colors.cardBackground,
+                        borderRadius: borderRadius.xl,
+                        padding: spacing.lg,
+                        borderWidth: isSelected && isMaybe ? 1 : 0,
+                        borderColor: isSelected && isMaybe ? colors.warning : 'transparent',
+                        ...(isSelected ? {} : shadows.sm),
+                      }]}>
+                      <Ionicons name={opt.icon} size={28} color={isSelected && !isMaybe ? colors.textInverse : opt.iconColor} />
+                      <Text style={[typography.captionMedium, {
+                        color: isSelected && !isMaybe ? colors.textInverse : colors.textPrimary,
+                        marginTop: spacing.xs,
+                      }]}>
+                        {opt.label}
                       </Text>
                     </Pressable>
                   );
@@ -233,6 +271,18 @@ export default function MatchDetailScreen() {
                 <View style={{ marginTop: spacing.lg }}>
                   <Text style={[typography.captionMedium, { color: colors.success, marginBottom: spacing.sm }]}>Verfuegbar ({available.length})</Text>
                   {available.map(a => (
+                    <View key={a.id} style={[styles.personRow, { paddingVertical: spacing.sm }]}>
+                      <Avatar firstName={a.user.firstName} lastName={a.user.lastName} size="xs" />
+                      <Text style={[typography.bodySmall, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{a.user.firstName} {a.user.lastName}</Text>
+                      {a.comment && <Text style={[typography.caption, { color: colors.textTertiary, marginLeft: 'auto' }]}>{a.comment}</Text>}
+                    </View>
+                  ))}
+                </View>
+              )}
+              {maybe.length > 0 && (
+                <View style={{ marginTop: spacing.md }}>
+                  <Text style={[typography.captionMedium, { color: colors.warning, marginBottom: spacing.sm }]}>Unsicher ({maybe.length})</Text>
+                  {maybe.map(a => (
                     <View key={a.id} style={[styles.personRow, { paddingVertical: spacing.sm }]}>
                       <Avatar firstName={a.user.firstName} lastName={a.user.lastName} size="xs" />
                       <Text style={[typography.bodySmall, { color: colors.textPrimary, marginLeft: spacing.sm }]}>{a.user.firstName} {a.user.lastName}</Text>
