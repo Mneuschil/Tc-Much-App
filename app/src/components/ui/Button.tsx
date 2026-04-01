@@ -31,19 +31,19 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
       text: { color: colors.buttonPrimaryText },
     },
     secondary: {
-      container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#D1D1D6' },
+      container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
       text: { color: colors.textPrimary },
     },
     accent: {
       container: { backgroundColor: colors.accent },
-      text: { color: '#FFFFFF' },
+      text: { color: colors.textInverse },
     },
     destructive: {
       container: { backgroundColor: colors.danger },
-      text: { color: '#FFFFFF' },
+      text: { color: colors.textInverse },
     },
     outline: {
-      container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: '#D1D1D6' },
+      container: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
       text: { color: colors.textPrimary },
     },
     ghost: {
@@ -52,7 +52,7 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
     },
     dark: {
       container: { backgroundColor: colors.accent },
-      text: { color: '#FFFFFF' },
+      text: { color: colors.textInverse },
     },
   };
 

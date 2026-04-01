@@ -50,7 +50,7 @@ function MatchStatusBadge({ status }: { status: string }) {
 
 export default function MatchDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { user } = useAuth();
   const { isBoard, isTeamCaptain } = usePermissions();
   const canManageLineup = isBoard || isTeamCaptain;
@@ -187,7 +187,7 @@ export default function MatchDetailScreen() {
               <View style={{ marginTop: spacing.xxl }}>
                 <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Ergebnisse</Text>
                 {results.map(r => (
-                  <View key={r.id} style={{ backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm }}>
+                  <View key={r.id} style={{ backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Text style={[typography.h3, { color: colors.textPrimary }]}>{formatMatchScore(r.sets)}</Text>
                       <MatchStatusBadge status={r.status} />
@@ -205,7 +205,7 @@ export default function MatchDetailScreen() {
                 <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Ergebnis melden</Text>
                 <ScoreInput sets={sets} onUpdateSet={updateSet} onAddSet={addSet} readOnly={false} />
                 <Pressable onPress={handleSubmitResult} style={[styles.primaryBtn, { backgroundColor: colors.chipActive, borderRadius: borderRadius.lg, marginTop: spacing.lg }]}>
-                  <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Ergebnis absenden</Text>
+                  <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Ergebnis absenden</Text>
                 </Pressable>
               </View>
             )}
@@ -216,13 +216,13 @@ export default function MatchDetailScreen() {
                 <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Ergebnis bestaetigen</Text>
                 <View style={{ flexDirection: 'row', gap: spacing.md }}>
                   <Pressable onPress={() => confirmResult.mutate()} style={[styles.primaryBtn, { backgroundColor: colors.success, borderRadius: borderRadius.lg, flex: 1 }]}>
-                    <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Stimmt</Text>
+                    <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Stimmt</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => rejectResult.mutate({ reason: 'Ergebnis stimmt nicht' })}
                     style={[styles.primaryBtn, { backgroundColor: colors.danger, borderRadius: borderRadius.lg, flex: 1 }]}
                   >
-                    <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Stimmt nicht</Text>
+                    <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Stimmt nicht</Text>
                   </Pressable>
                 </View>
               </View>
@@ -248,13 +248,12 @@ export default function MatchDetailScreen() {
                       style={[styles.availButton, {
                         backgroundColor: isSelected
                           ? (isMaybe ? colors.warningSurface : colors.chipActive)
-                          : colors.cardBackground,
+                          : colors.backgroundSecondary,
                         borderRadius: borderRadius.xl,
                         padding: spacing.lg,
                         borderWidth: isSelected && isMaybe ? 1 : 0,
                         borderColor: isSelected && isMaybe ? colors.warning : 'transparent',
-                        ...(isSelected ? {} : shadows.sm),
-                      }]}>
+                                              }]}>
                       <Ionicons name={opt.icon} size={28} color={isSelected && !isMaybe ? colors.textInverse : opt.iconColor} />
                       <Text style={[typography.captionMedium, {
                         color: isSelected && !isMaybe ? colors.textInverse : colors.textPrimary,
@@ -406,12 +405,12 @@ interface LineupEditorProps {
 }
 
 function LineupEditor({ starters, substitutes, onStartersChange, onSubsChange, onAutoGenerate, onConfirm, isLoading }: LineupEditorProps) {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
 
   const renderItem = ({ item, drag, isActive }: RenderItemParams<LineupEntry>) => (
     <ScaleDecorator>
       <Pressable onLongPress={drag} disabled={isActive}
-        style={[styles.lineupRow, { backgroundColor: isActive ? colors.surface : colors.cardBackground, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.xs, ...shadows.sm }]}>
+        style={[styles.lineupRow, { backgroundColor: isActive ? colors.surface : colors.backgroundSecondary, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.xs }]}>
         <Text style={[typography.bodyMedium, { color: colors.textSecondary, width: 24, textAlign: 'center' }]}>{item.position}</Text>
         <Avatar firstName={item.user.firstName} lastName={item.user.lastName} imageUrl={item.user.avatarUrl} size="xs" />
         <Text style={[typography.bodySmall, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]}>
@@ -447,7 +446,7 @@ function LineupEditor({ starters, substitutes, onStartersChange, onSubsChange, o
         </Pressable>
         <Pressable onPress={onConfirm} disabled={isLoading}
           style={[styles.primaryBtn, { backgroundColor: colors.chipActive, borderRadius: borderRadius.lg, flex: 1 }]}>
-          <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Bestaetigen</Text>
+          <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Bestaetigen</Text>
         </Pressable>
       </View>
     </View>
@@ -462,10 +461,10 @@ interface LineupReadonlyProps {
 }
 
 function LineupReadonly({ starters, substitutes }: LineupReadonlyProps) {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
 
   const renderRow = (item: LineupEntry) => (
-    <View key={item.userId} style={[styles.lineupRow, { backgroundColor: colors.cardBackground, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.xs, ...shadows.sm }]}>
+    <View key={item.userId} style={[styles.lineupRow, { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.lg, padding: spacing.md, marginBottom: spacing.xs }]}>
       <Text style={[typography.bodyMedium, { color: colors.textSecondary, width: 24, textAlign: 'center' }]}>{item.position}</Text>
       <Avatar firstName={item.user.firstName} lastName={item.user.lastName} imageUrl={item.user.avatarUrl} size="xs" />
       <Text style={[typography.bodySmall, { color: colors.textPrimary, flex: 1, marginLeft: spacing.sm }]}>

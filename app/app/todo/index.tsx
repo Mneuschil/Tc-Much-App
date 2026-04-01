@@ -31,7 +31,7 @@ interface MemberItem {
 }
 
 export default function TodoScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { canCreateTodo } = usePermissions();
   const { data, isLoading, refetch } = useTodos();
   const updateTodo = useUpdateTodo();
@@ -45,8 +45,8 @@ export default function TodoScreen() {
     return (
       <Pressable onPress={() => updateTodo.mutate({ todoId: item.id, input: { status: isDone ? 'OPEN' : 'DONE' } })}
         style={[styles.todoCard, {
-          backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl,
-          padding: spacing.lg, marginBottom: spacing.sm, opacity: isDone ? 0.5 : 1, ...shadows.sm,
+          backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl,
+          padding: spacing.lg, marginBottom: spacing.sm, opacity: isDone ? 0.5 : 1,
         }]}>
         <Ionicons name={isDone ? 'checkbox' : 'square-outline'} size={22} color={isDone ? colors.success : colors.textTertiary} />
         <View style={{ flex: 1, marginLeft: spacing.md }}>
@@ -162,7 +162,7 @@ function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
             {(['BOARD', 'TRAINERS', 'TEAM'] as const).map(s => (
               <Pressable key={s} onPress={() => setScope(s)}
                 style={[styles.scopePill, { backgroundColor: scope === s ? colors.chipActive : colors.backgroundSecondary, borderRadius: borderRadius.full }]}>
-                <Text style={[typography.caption, { color: scope === s ? '#FFFFFF' : colors.textPrimary, fontWeight: '600' }]}>{s}</Text>
+                <Text style={[typography.caption, { color: scope === s ? colors.textInverse : colors.textPrimary, fontWeight: '600' }]}>{s}</Text>
               </Pressable>
             ))}
           </View>
@@ -212,7 +212,7 @@ function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
               marginTop: spacing.xxl,
             }]}
           >
-            <Text style={[typography.buttonSmall, { color: title.trim() && assigneeId ? '#FFFFFF' : colors.textTertiary }]}>
+            <Text style={[typography.buttonSmall, { color: title.trim() && assigneeId ? colors.textInverse : colors.textTertiary }]}>
               Erstellen
             </Text>
           </Pressable>

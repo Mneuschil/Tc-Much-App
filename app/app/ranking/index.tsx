@@ -45,7 +45,7 @@ interface HistoryEntry {
 }
 
 export default function RankingScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { user } = useAuth();
   const { data: rankingsData, isLoading, refetch } = useRankings();
   const { data: challengesData } = useMyChallenges();
@@ -121,13 +121,13 @@ export default function RankingScreen() {
                 onPress={() => respondChallenge.mutate({ challengeId: c.id, action: 'ACCEPT' })}
                 style={[styles.bannerBtn, { backgroundColor: colors.success, borderRadius: borderRadius.md }]}
               >
-                <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Annehmen</Text>
+                <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Annehmen</Text>
               </Pressable>
               <Pressable
                 onPress={() => respondChallenge.mutate({ challengeId: c.id, action: 'DECLINE' })}
                 style={[styles.bannerBtn, { backgroundColor: colors.danger, borderRadius: borderRadius.md }]}
               >
-                <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Ablehnen</Text>
+                <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Ablehnen</Text>
               </Pressable>
             </View>
           </View>
@@ -156,15 +156,14 @@ export default function RankingScreen() {
       <Pressable
         onPress={() => setSelectedPlayer(item)}
         style={[styles.rankRow, {
-          backgroundColor: isMe ? colors.accentSubtle : colors.cardBackground,
+          backgroundColor: isMe ? colors.accentSubtle : colors.backgroundSecondary,
           borderRadius: borderRadius.xl,
           padding: spacing.lg,
           marginBottom: spacing.sm,
-          ...shadows.sm,
         }]}
       >
         <View style={[styles.rankBadge, { backgroundColor: isTop3 ? colors.chipActive : colors.surface, borderRadius: borderRadius.md }]}>
-          <Text style={[typography.bodyMedium, { color: isTop3 ? '#FFFFFF' : colors.textPrimary }]}>{item.rank}</Text>
+          <Text style={[typography.bodyMedium, { color: isTop3 ? colors.textInverse : colors.textPrimary }]}>{item.rank}</Text>
         </View>
         <Avatar firstName={item.user.firstName} lastName={item.user.lastName} imageUrl={item.user.avatarUrl} size="sm" />
         <View style={{ flex: 1, marginLeft: spacing.md }}>
@@ -190,7 +189,7 @@ export default function RankingScreen() {
             onPress={() => setChallengeTarget(item)}
             style={[styles.challengeBtn, { backgroundColor: colors.accent, borderRadius: borderRadius.full }]}
           >
-            <Text style={[typography.caption, { color: '#FFFFFF', fontWeight: '600' }]}>Fordern</Text>
+            <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '600' }]}>Fordern</Text>
           </Pressable>
         )}
       </Pressable>
@@ -222,8 +221,8 @@ export default function RankingScreen() {
 
       {/* Challenge Confirm Modal */}
       <Modal visible={challengeTarget !== null} transparent animationType="fade" onRequestClose={() => setChallengeTarget(null)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setChallengeTarget(null)}>
-          <View style={[styles.confirmCard, { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xxl, padding: spacing.xxl }]}>
+        <Pressable style={[styles.modalOverlay, { backgroundColor: colors.overlay }]} onPress={() => setChallengeTarget(null)}>
+          <View style={[styles.confirmCard, { backgroundColor: colors.background, borderRadius: borderRadius.xxl, padding: spacing.xxl }]}>
             <Text style={[typography.h3, { color: colors.textPrimary, textAlign: 'center' }]}>
               Willst du {challengeTarget?.user.firstName} {challengeTarget?.user.lastName} (Rang {challengeTarget?.rank}) herausfordern?
             </Text>
@@ -241,7 +240,7 @@ export default function RankingScreen() {
                 onPress={confirmChallenge}
                 style={[styles.confirmBtn, { backgroundColor: colors.accent, borderRadius: borderRadius.md, flex: 1 }]}
               >
-                <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Herausfordern</Text>
+                <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Herausfordern</Text>
               </Pressable>
             </View>
           </View>
@@ -323,7 +322,7 @@ function PlayerDetailModal({ player, onClose, onChallenge, canChallenge: challen
                   onPress={() => onChallenge(player)}
                   style={[styles.confirmBtn, { backgroundColor: colors.accent, borderRadius: borderRadius.md, marginTop: spacing.xxl, width: '100%' }]}
                 >
-                  <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Herausfordern</Text>
+                  <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Herausfordern</Text>
                 </Pressable>
               )}
             </>
@@ -340,7 +339,7 @@ const styles = StyleSheet.create({
   rankBadge: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   challengeBtn: { paddingHorizontal: 14, paddingVertical: 6 },
   bannerBtn: { paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 32 },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   confirmCard: { width: '100%', maxWidth: 360 },
   confirmBtn: { paddingVertical: 14, alignItems: 'center' },
   h2hCard: { width: '100%' },

@@ -28,7 +28,7 @@ interface ChannelItem {
 }
 
 export default function ChannelsScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
   const [search, setSearch] = useState('');
 
@@ -48,7 +48,7 @@ export default function ChannelsScreen() {
     <Pressable
       onPress={() => router.push(`/channel/${item.id}`)}
       style={({ pressed }) => [
-        { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1, ...shadows.sm },
+        { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1 },
       ]}
     >
       <View style={styles.channelRow}>

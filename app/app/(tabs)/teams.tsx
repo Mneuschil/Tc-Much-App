@@ -37,7 +37,7 @@ interface EventItem {
 }
 
 export default function TeamsScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
   const [filter, setFilter] = useState('');
 
@@ -82,7 +82,7 @@ export default function TeamsScreen() {
     return (
       <Pressable onPress={() => router.push(`/team/${item.id}`)}
         style={({ pressed }) => [
-          { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1, ...shadows.sm },
+          { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1 },
         ]}>
         <View style={styles.teamRow}>
           <View style={[styles.teamIcon, { backgroundColor: colors.surface, borderRadius: borderRadius.lg }]}>

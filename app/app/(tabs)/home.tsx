@@ -31,7 +31,7 @@ interface TodoItem {
 }
 
 export default function HomeScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { user, logout } = useAuth();
   const { hasAnyRole } = usePermissions();
   const router = useRouter();
@@ -128,7 +128,7 @@ export default function HomeScreen() {
             <Pressable key={event.id}
               onPress={() => router.push(`/match/${event.id}` as never)}
               style={({ pressed }) => [
-                { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.92 : 1, ...shadows.sm },
+                { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.92 : 1 },
               ]}
             >
               <View style={styles.eventRow}>
@@ -163,7 +163,7 @@ export default function HomeScreen() {
               </Pressable>
             </View>
             {todos.slice(0, 3).map((todo) => (
-              <View key={todo.id} style={[styles.todoItem, { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm }]}>
+              <View key={todo.id} style={[styles.todoItem, { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm }]}>
                 <View style={[styles.todoCheck, { borderColor: colors.primary, borderRadius: borderRadius.xs }]} />
                 <View style={{ marginLeft: spacing.md, flex: 1 }}>
                   <Text style={[typography.bodySmall, { color: colors.textPrimary }]}>{todo.title}</Text>

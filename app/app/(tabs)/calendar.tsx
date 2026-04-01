@@ -32,12 +32,12 @@ interface CalendarEvent {
   teamId: string | null;
 }
 
-function getDotColor(type: string): string {
-  if (type === 'LEAGUE_MATCH' || type === 'CUP_MATCH') return '#FF3B30';
-  if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP' || type === 'RANKING_MATCH') return '#023320';
-  if (type === 'CLUB_EVENT') return '#0EA65A';
-  if (type === 'TRAINING') return '#8E8E93';
-  return '#8E8E93';
+function getDotColor(type: string, colors: { danger: string; accent: string; accentLight: string; textSecondary: string }): string {
+  if (type === 'LEAGUE_MATCH' || type === 'CUP_MATCH') return colors.danger;
+  if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP' || type === 'RANKING_MATCH') return colors.accent;
+  if (type === 'CLUB_EVENT') return colors.accentLight;
+  if (type === 'TRAINING') return colors.textSecondary;
+  return colors.textSecondary;
 }
 
 function toDateKey(dateStr: string): string {
@@ -45,7 +45,7 @@ function toDateKey(dateStr: string): string {
 }
 
 export default function CalendarScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
   const { isTrainer } = usePermissions();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -59,7 +59,7 @@ export default function CalendarScreen() {
     const marks: MarkedDates = {};
     for (const event of allEvents) {
       const key = toDateKey(event.startDate);
-      const dot = { key: event.id, color: getDotColor(event.type) };
+      const dot = { key: event.id, color: getDotColor(event.type, colors) };
       if (marks[key]) {
         const existing = marks[key];
         const dots = existing.dots ? [...existing.dots, dot] : [dot];
@@ -74,7 +74,7 @@ export default function CalendarScreen() {
       marks[selectedDate] = { selected: true, dots: [] };
     }
     return marks;
-  }, [allEvents, selectedDate]);
+  }, [allEvents, selectedDate, colors]);
 
   const filteredEvents = useMemo(() => {
     if (!selectedDate) {
@@ -116,7 +116,7 @@ export default function CalendarScreen() {
                 calendarBackground: colors.background,
                 todayTextColor: colors.accentLight,
                 selectedDayBackgroundColor: colors.accent,
-                selectedDayTextColor: '#FFFFFF',
+                selectedDayTextColor: colors.textInverse,
                 arrowColor: colors.accent,
                 dayTextColor: colors.textPrimary,
                 textDisabledColor: colors.textTertiary,
@@ -159,7 +159,7 @@ interface AgendaItemProps {
 }
 
 function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps) {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
   const setTrainingAttendance = useSetTrainingAttendance(event.id);
   const [myAttendance, setMyAttendance] = useState<'AVAILABLE' | 'NOT_AVAILABLE' | null>(null);
@@ -181,7 +181,7 @@ function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps
     <Pressable
       onPress={() => router.push(`/match/${event.id}` as never)}
       style={({ pressed }) => [
-        { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, marginHorizontal: spacing.xl, opacity: pressed ? 0.9 : 1, ...shadows.sm },
+        { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, marginHorizontal: spacing.xl, opacity: pressed ? 0.9 : 1 },
       ]}
     >
       <View style={styles.eventRow}>
@@ -215,7 +215,7 @@ function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps
                 opacity: deadlineExpired ? 0.5 : 1,
               }]}
             >
-              <Text style={[typography.buttonSmall, { color: myAttendance === 'AVAILABLE' ? '#FFFFFF' : colors.success }]}>Ja</Text>
+              <Text style={[typography.buttonSmall, { color: myAttendance === 'AVAILABLE' ? colors.textInverse : colors.success }]}>Ja</Text>
             </Pressable>
             <Pressable
               onPress={() => handleAttendance('NOT_AVAILABLE')}
@@ -226,7 +226,7 @@ function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps
                 opacity: deadlineExpired ? 0.5 : 1,
               }]}
             >
-              <Text style={[typography.buttonSmall, { color: myAttendance === 'NOT_AVAILABLE' ? '#FFFFFF' : colors.danger }]}>Nein</Text>
+              <Text style={[typography.buttonSmall, { color: myAttendance === 'NOT_AVAILABLE' ? colors.textInverse : colors.danger }]}>Nein</Text>
             </Pressable>
           </View>
           {deadlineExpired && (

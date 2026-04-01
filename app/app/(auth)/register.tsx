@@ -50,8 +50,7 @@ export default function RegisterScreen() {
   const inputStyle = [
     styles.input,
     {
-      backgroundColor: colors.surface,
-      borderColor: colors.border,
+      backgroundColor: colors.backgroundSecondary,
       borderRadius: borderRadius.md,
       color: colors.textPrimary,
       padding: spacing.md,
@@ -162,7 +161,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  input: { borderWidth: 1 },
+  input: { height: 48 },
   row: { flexDirection: 'row' },
   halfField: { flex: 1 },
   footer: { flexDirection: 'row', justifyContent: 'center' },

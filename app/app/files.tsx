@@ -130,7 +130,7 @@ export default function FilesScreen() {
         {files.length > 0 && (
           <View style={[styles.fab, { backgroundColor: colors.accent, borderRadius: radii.pill }]}>
             <Pressable onPress={handleUpload} style={styles.fabInner}>
-              <Ionicons name="add" size={28} color="#FFFFFF" />
+              <Ionicons name="add" size={28} color={colors.textInverse} />
             </Pressable>
           </View>
         )}
@@ -140,7 +140,7 @@ export default function FilesScreen() {
           <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center' }]} onPress={() => setViewerImage(null)}>
             <Image source={{ uri: viewerImage }} style={{ width: '90%', height: '70%' }} resizeMode="contain" />
             <Pressable onPress={() => setViewerImage(null)} style={{ position: 'absolute', top: 60, right: 20 }}>
-              <Ionicons name="close-circle" size={36} color="#FFFFFF" />
+              <Ionicons name="close-circle" size={36} color={colors.textInverse} />
             </Pressable>
           </Pressable>
         )}

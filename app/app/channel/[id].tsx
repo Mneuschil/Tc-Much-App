@@ -47,7 +47,7 @@ const REACTION_EMOJIS: Record<string, string> = { THUMBS_UP: '\uD83D\uDC4D', HEA
 
 export default function ChannelDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { user } = useAuth();
   const { isBoard, isAdmin } = usePermissions();
   const [newMessage, setNewMessage] = useState('');
@@ -92,7 +92,7 @@ export default function ChannelDetailScreen() {
   };
 
   const renderMessage = ({ item }: { item: ChatMessage }) => (
-    <View style={[styles.msgCard, { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm, ...shadows.sm }]}>
+    <View style={[styles.msgCard, { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm }]}>
       {item.replyTo && (
         <View style={[styles.replyPreview, { borderLeftColor: colors.accent, backgroundColor: colors.surface, borderRadius: borderRadius.sm, padding: spacing.sm, marginBottom: spacing.sm }]}>
           <Text style={[typography.caption, { color: colors.textSecondary }]} numberOfLines={1}>{item.replyTo.content}</Text>
@@ -151,14 +151,14 @@ export default function ChannelDetailScreen() {
                   <Pressable onPress={() => setReplyTo(null)}><Ionicons name="close" size={18} color={colors.textSecondary} /></Pressable>
                 </View>
               )}
-              <View style={[styles.inputBar, { backgroundColor: colors.cardBackground, borderTopColor: colors.separator, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm }]}>
+              <View style={[styles.inputBar, { backgroundColor: colors.background, borderTopColor: colors.separator, paddingHorizontal: spacing.xl, paddingVertical: spacing.sm }]}>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.inputBackground, borderRadius: borderRadius.full, color: colors.textPrimary, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, fontSize: 15, flex: 1 }]}
                   value={newMessage} onChangeText={setNewMessage} placeholder="Nachricht schreiben..." placeholderTextColor={colors.textTertiary} multiline maxLength={5000}
                 />
                 <Pressable onPress={handleSend} disabled={!newMessage.trim()}
                   style={[styles.sendButton, { backgroundColor: newMessage.trim() ? colors.chipActive : colors.surface, borderRadius: borderRadius.full, marginLeft: spacing.sm }]}>
-                  <Ionicons name="arrow-up" size={20} color={newMessage.trim() ? '#FFFFFF' : colors.textTertiary} />
+                  <Ionicons name="arrow-up" size={20} color={newMessage.trim() ? colors.textInverse : colors.textTertiary} />
                 </Pressable>
               </View>
             </>
@@ -170,7 +170,7 @@ export default function ChannelDetailScreen() {
       <Modal visible={viewerImage !== null} transparent animationType="fade" onRequestClose={() => setViewerImage(null)}>
         <Pressable style={styles.imageViewerOverlay} onPress={() => setViewerImage(null)}>
           <Pressable onPress={() => setViewerImage(null)} style={{ position: 'absolute', top: 60, right: 20, zIndex: 1 }}>
-            <Ionicons name="close-circle" size={32} color="#FFFFFF" />
+            <Ionicons name="close-circle" size={32} color={colors.textInverse} />
           </Pressable>
           {viewerImage && (
             <Image source={{ uri: viewerImage }} style={{ width: '90%', height: '70%' }} resizeMode="contain" />
@@ -192,5 +192,5 @@ const styles = StyleSheet.create({
   inputBar: { borderTopWidth: StyleSheet.hairlineWidth, flexDirection: 'row', alignItems: 'flex-end' },
   input: { maxHeight: 100 },
   sendButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  imageViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  imageViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.92)', justifyContent: 'center', alignItems: 'center' },
 });

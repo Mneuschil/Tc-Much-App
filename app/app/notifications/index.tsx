@@ -14,7 +14,7 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 export default function NotificationsScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing, borderRadius } = useTheme();
   const { data, isLoading, refetch } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
@@ -25,9 +25,8 @@ export default function NotificationsScreen() {
   const renderNotification = ({ item }: { item: any }) => (
     <Pressable onPress={() => { if (!item.isRead) markAsRead.mutate(item.id); }}
       style={[styles.notifCard, {
-        backgroundColor: item.isRead ? colors.cardBackground : colors.primary + '08',
+        backgroundColor: item.isRead ? colors.backgroundSecondary : colors.primary + '08',
         borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm,
-        ...(item.isRead ? shadows.sm : {}),
       }]}>
       <View style={[styles.notifIcon, { backgroundColor: item.isRead ? colors.surface : colors.highlight, borderRadius: borderRadius.lg }]}>
         <Ionicons name={TYPE_ICONS[item.type] ?? 'notifications'} size={18} color={item.isRead ? colors.textSecondary : colors.accent} />

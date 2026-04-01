@@ -34,7 +34,7 @@ export function Avatar({ imageUrl, name, firstName, lastName, size = 'md' }: Ava
         <Image source={{ uri: imageUrl }} style={{ width: dimension, height: dimension, borderRadius: radii.pill }} />
       ) : (
         <View style={[styles.fallback, { width: dimension, height: dimension, borderRadius: radii.pill, backgroundColor: colors.accent }]}>
-          <Text style={{ fontSize: FONT_SIZES[size], fontWeight: '600', color: '#FFFFFF' }}>{initials}</Text>
+          <Text style={{ fontSize: FONT_SIZES[size], fontWeight: '600', color: colors.textInverse }}>{initials}</Text>
         </View>
       )}
     </View>
