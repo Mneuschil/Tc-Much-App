@@ -1,0 +1,81 @@
+// ─── Fiktive Platzhalter-Daten zum UI-Testen ────────────────────────
+
+export const MOCK_CHANNELS = [
+  { id: 'ch1', name: 'Allgemein', description: 'Allgemeine Vereinsnachrichten', visibility: 'PUBLIC', isDefault: true, parentChannelId: null, subchannels: [], _count: { messages: 47, members: 0 } },
+  { id: 'ch2', name: 'Turniere', description: 'Infos zu Turnieren und Meisterschaften', visibility: 'PUBLIC', isDefault: true, parentChannelId: null, subchannels: [], _count: { messages: 12, members: 0 } },
+  { id: 'ch3', name: 'Mannschaft', description: 'Mannschaftsinterne Kommunikation', visibility: 'RESTRICTED', isDefault: true, parentChannelId: null, subchannels: [{ id: 'sub1', name: 'Herren 1 Chat' }, { id: 'sub2', name: 'Herren 2 Chat' }], _count: { messages: 83, members: 14 } },
+  { id: 'ch4', name: 'Training', description: 'Trainingsplaene und Infos', visibility: 'RESTRICTED', isDefault: true, parentChannelId: null, subchannels: [], _count: { messages: 29, members: 8 } },
+  { id: 'ch5', name: 'Vorstand', description: 'Vorstandsinterne Themen', visibility: 'RESTRICTED', isDefault: true, parentChannelId: null, subchannels: [], _count: { messages: 15, members: 3 } },
+  { id: 'ch6', name: 'Jugend', description: 'Jugendarbeit und Nachwuchs', visibility: 'RESTRICTED', isDefault: true, parentChannelId: null, subchannels: [{ id: 'sub3', name: 'U12 Gruppe' }], _count: { messages: 21, members: 11 } },
+];
+
+export const MOCK_MESSAGES = [
+  { id: 'm1', content: 'Reminder: Saisoneroeffnung am Samstag! Bitte alle um 10 Uhr am Clubhaus sein.', mediaUrls: [], channelId: 'ch1', authorId: 'u1', replyToId: null, replyTo: null, createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), author: { id: 'u1', firstName: 'Max', lastName: 'Mustermann', avatarUrl: null }, reactions: [{ id: 'r1', type: 'THUMBS_UP', userId: 'u2' }, { id: 'r2', type: 'THUMBS_UP', userId: 'u3' }, { id: 'r3', type: 'HEART', userId: 'u4' }, { id: 'r4', type: 'CELEBRATE', userId: 'u5' }] },
+  { id: 'm2', content: 'Super, bin dabei! Soll ich Kuchen mitbringen?', mediaUrls: [], channelId: 'ch1', authorId: 'u2', replyToId: 'm1', replyTo: { id: 'm1', content: 'Reminder: Saisoneroeffnung am Samstag!', authorId: 'u1' }, createdAt: new Date(Date.now() - 1000 * 60 * 10).toISOString(), author: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt', avatarUrl: null }, reactions: [{ id: 'r5', type: 'THUMBS_UP', userId: 'u1' }] },
+  { id: 'm3', content: 'Gerne! Wer kann noch was zum Buffet beisteuern?', mediaUrls: [], channelId: 'ch1', authorId: 'u1', replyToId: null, replyTo: null, createdAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(), author: { id: 'u1', firstName: 'Max', lastName: 'Mustermann', avatarUrl: null }, reactions: [] },
+  { id: 'm4', content: 'Ich bringe Getraenke mit!', mediaUrls: [], channelId: 'ch1', authorId: 'u3', replyToId: 'm3', replyTo: { id: 'm3', content: 'Gerne! Wer kann noch was zum Buffet beisteuern?', authorId: 'u1' }, createdAt: new Date(Date.now() - 1000 * 60 * 2).toISOString(), author: { id: 'u3', firstName: 'Jan', lastName: 'Mueller', avatarUrl: null }, reactions: [{ id: 'r6', type: 'CELEBRATE', userId: 'u1' }, { id: 'r7', type: 'HEART', userId: 'u2' }] },
+  { id: 'm5', content: 'Neue Baelle sind bestellt und sollten bis Freitag da sein. Trainingszeiten bleiben wie gehabt.', mediaUrls: [], channelId: 'ch1', authorId: 'u4', replyToId: null, replyTo: null, createdAt: new Date(Date.now() - 1000 * 60 * 60).toISOString(), author: { id: 'u4', firstName: 'Klaus', lastName: 'Trainer', avatarUrl: null }, reactions: [{ id: 'r8', type: 'THUMBS_UP', userId: 'u1' }, { id: 'r9', type: 'THUMBS_UP', userId: 'u2' }, { id: 'r10', type: 'THUMBS_UP', userId: 'u3' }] },
+];
+
+export const MOCK_EVENTS = [
+  { id: 'e1', title: 'Herren 1 vs TC Eitorf', description: 'Bezirksliga Spieltag 3', type: 'LEAGUE_MATCH', location: 'Tennisanlage Much', court: 'Plaetze 1-4', isHomeGame: true, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 2).toISOString(), endDate: null, teamId: 't1', team: { id: 't1', name: 'Herren 1' }, _count: { availabilities: 5 } },
+  { id: 'e2', title: 'Erwachsenen-Training', description: null, type: 'TRAINING', location: 'Tennisanlage Much', court: 'Platz 1-2', isHomeGame: null, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1).toISOString(), endDate: null, teamId: 't3', team: { id: 't3', name: 'Erwachsenen-Training' }, _count: { availabilities: 3 } },
+  { id: 'e3', title: 'Herren 2 vs TV Lohmar', description: null, type: 'LEAGUE_MATCH', location: 'Tennisanlage Lohmar', court: null, isHomeGame: false, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(), endDate: null, teamId: 't2', team: { id: 't2', name: 'Herren 2' }, _count: { availabilities: 2 } },
+  { id: 'e4', title: 'Ranglistenspiel: Mueller vs Weber', description: null, type: 'RANKING_MATCH', location: 'Tennisanlage Much', court: 'Platz 3', isHomeGame: null, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 4).toISOString(), endDate: null, teamId: null, team: null, _count: { availabilities: 0 } },
+  { id: 'e5', title: 'Saisoneroeffnung & Grillabend', description: 'Gemeinsamer Start in die Sommersaison', type: 'CLUB_EVENT', location: 'Clubhaus TC Much', court: null, isHomeGame: null, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(), endDate: null, teamId: null, team: null, _count: { availabilities: 0 } },
+  { id: 'e6', title: 'Jugend-Training U12', description: null, type: 'TRAINING', location: 'Tennisanlage Much', court: 'Platz 5', isHomeGame: null, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 1).toISOString(), endDate: null, teamId: null, team: null, _count: { availabilities: 0 } },
+  { id: 'e7', title: 'Vereinsmeisterschaft Herren', description: 'Anmeldung offen', type: 'CLUB_CHAMPIONSHIP', location: 'Tennisanlage Much', court: 'Alle Plaetze', isHomeGame: null, startDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(), endDate: null, teamId: null, team: null, _count: { availabilities: 0 } },
+];
+
+export const MOCK_TEAMS = [
+  { id: 't1', name: 'Herren 1', type: 'MATCH_TEAM', league: 'Bezirksliga', season: '2026', _count: { members: 6 }, members: [
+    { id: 'tm1', position: 1, user: { id: 'u3', firstName: 'Jan', lastName: 'Mueller', avatarUrl: null } },
+    { id: 'tm2', position: 2, user: { id: 'u5', firstName: 'Peter', lastName: 'Weber', avatarUrl: null } },
+    { id: 'tm3', position: 3, user: { id: 'u6', firstName: 'Lukas', lastName: 'Fischer', avatarUrl: null } },
+    { id: 'tm4', position: 4, user: { id: 'u7', firstName: 'Marco', lastName: 'Becker', avatarUrl: null } },
+    { id: 'tm5', position: 5, user: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt', avatarUrl: null } },
+    { id: 'tm6', position: 6, user: { id: 'u8', firstName: 'Stefan', lastName: 'Braun', avatarUrl: null } },
+  ], channels: [] },
+  { id: 't2', name: 'Herren 2', type: 'MATCH_TEAM', league: 'Kreisliga', season: '2026', _count: { members: 5 }, members: [], channels: [] },
+  { id: 't3', name: 'Erwachsenen-Training', type: 'TRAINING_GROUP', league: null, season: null, _count: { members: 9 }, members: [], channels: [] },
+  { id: 't4', name: 'Jugend U12', type: 'TRAINING_GROUP', league: null, season: null, _count: { members: 7 }, members: [], channels: [] },
+  { id: 't5', name: 'Vorstand', type: 'BOARD_GROUP', league: null, season: null, _count: { members: 3 }, members: [], channels: [] },
+];
+
+export const MOCK_RANKINGS = [
+  { id: 'rk1', rank: 1, previousRank: 2, points: 53, wins: 4, losses: 1, user: { id: 'u3', firstName: 'Jan', lastName: 'Mueller', avatarUrl: null } },
+  { id: 'rk2', rank: 2, previousRank: 1, points: 48, wins: 3, losses: 2, user: { id: 'u5', firstName: 'Peter', lastName: 'Weber', avatarUrl: null } },
+  { id: 'rk3', rank: 3, previousRank: 3, points: 40, wins: 3, losses: 1, user: { id: 'u6', firstName: 'Lukas', lastName: 'Fischer', avatarUrl: null } },
+  { id: 'rk4', rank: 4, previousRank: 6, points: 35, wins: 2, losses: 2, user: { id: 'u7', firstName: 'Marco', lastName: 'Becker', avatarUrl: null } },
+  { id: 'rk5', rank: 5, previousRank: 4, points: 30, wins: 1, losses: 3, user: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt', avatarUrl: null } },
+  { id: 'rk6', rank: 6, previousRank: 5, points: 22, wins: 1, losses: 2, user: { id: 'u8', firstName: 'Stefan', lastName: 'Braun', avatarUrl: null } },
+  { id: 'rk7', rank: 7, previousRank: 7, points: 10, wins: 0, losses: 3, user: { id: 'u9', firstName: 'Daniel', lastName: 'Koch', avatarUrl: null } },
+];
+
+export const MOCK_TODOS = [
+  { id: 'td1', title: 'Mannschaftsmeldung Bezirksliga abgeben', description: 'Deadline: 15. April beim TVN', status: 'OPEN', scope: 'BOARD', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 14).toISOString(), assignee: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt', avatarUrl: null }, createdBy: { id: 'u1', firstName: 'Max', lastName: 'Mustermann' }, team: null },
+  { id: 'td2', title: 'Baelle fuer Training bestellen', description: '3 Dosen Head Tour XT', status: 'OPEN', scope: 'TRAINERS', dueDate: null, assignee: { id: 'u4', firstName: 'Klaus', lastName: 'Trainer', avatarUrl: null }, createdBy: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt' }, team: null },
+  { id: 'td3', title: 'Trikots einsammeln', description: 'Von allen Spielern die alten Trikots zurueck', status: 'OPEN', scope: 'TEAM', dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(), assignee: { id: 'u3', firstName: 'Jan', lastName: 'Mueller', avatarUrl: null }, createdBy: { id: 'u2', firstName: 'Thomas', lastName: 'Schmidt' }, team: { id: 't1', name: 'Herren 1' } },
+  { id: 'td4', title: 'Schluesselliste aktualisieren', description: null, status: 'DONE', scope: 'BOARD', dueDate: null, assignee: { id: 'u1', firstName: 'Max', lastName: 'Mustermann', avatarUrl: null }, createdBy: { id: 'u1', firstName: 'Max', lastName: 'Mustermann' }, team: null },
+];
+
+export const MOCK_NOTIFICATIONS = [
+  { id: 'n1', type: 'AVAILABILITY_REQUEST', title: 'Verfuegbarkeit melden', body: 'Bitte melde deine Verfuegbarkeit fuer Herren 1 vs TC Eitorf', isRead: false, createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString() },
+  { id: 'n2', type: 'RESULT_CONFIRMATION', title: 'Ergebnis bestaetigen', body: 'Jan Mueller hat ein Ranglistenergebnis eingereicht (6:3, 7:6). Bitte bestaetigen.', isRead: false, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() },
+  { id: 'n3', type: 'TODO', title: 'Neues Todo zugewiesen', body: 'Thomas Schmidt hat dir ein Todo zugewiesen: Mannschaftsmeldung abgeben', isRead: false, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() },
+  { id: 'n4', type: 'CHAT_MESSAGE', title: 'Neue Nachricht in Allgemein', body: 'Max Mustermann: Reminder Saisoneroeffnung am Samstag!', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() },
+  { id: 'n5', type: 'EVENT_CHANGE', title: 'Termin geaendert', body: 'Training am Donnerstag wurde auf 18:00 Uhr verschoben', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() },
+  { id: 'n6', type: 'SYSTEM', title: 'Willkommen!', body: 'Willkommen bei TC Much e.V. Dein Account ist aktiviert.', isRead: true, createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() },
+];
+
+export const MOCK_AVAILABILITIES = [
+  { id: 'av1', status: 'AVAILABLE', comment: 'Bin dabei!', user: { id: 'u3', firstName: 'Jan', lastName: 'Mueller', avatarUrl: null } },
+  { id: 'av2', status: 'AVAILABLE', comment: null, user: { id: 'u5', firstName: 'Peter', lastName: 'Weber', avatarUrl: null } },
+  { id: 'av3', status: 'NOT_AVAILABLE', comment: 'Im Urlaub', user: { id: 'u6', firstName: 'Lukas', lastName: 'Fischer', avatarUrl: null } },
+  { id: 'av4', status: 'AVAILABLE', comment: null, user: { id: 'u7', firstName: 'Marco', lastName: 'Becker', avatarUrl: null } },
+  { id: 'av5', status: 'AVAILABLE', comment: 'Kann ab 13 Uhr', user: { id: 'u8', firstName: 'Stefan', lastName: 'Braun', avatarUrl: null } },
+];
+
+export const MOCK_MATCH_RESULTS = [
+  { id: 'mr1', eventId: 'e4', status: 'SUBMITTED', sets: [{ games1: 6, games2: 3, tiebreak1: null, tiebreak2: null }, { games1: 7, games2: 6, tiebreak1: 7, tiebreak2: 4 }], winnerId: 'u3', submittedById: 'u3', submittedBy: { id: 'u3', firstName: 'Jan', lastName: 'Mueller' }, confirmedBy: null, winner: { id: 'u3', firstName: 'Jan', lastName: 'Mueller' }, resolvedBy: null },
+];

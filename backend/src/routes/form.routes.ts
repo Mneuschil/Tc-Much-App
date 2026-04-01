@@ -1,0 +1,79 @@
+import { Router, Request, Response, NextFunction } from 'express';
+import { requireAuth } from '../middleware/auth';
+import { requireBoard } from '../middleware/roles';
+import { validate } from '../middleware/validate';
+import { courtDamageSchema, mediaUploadSchema } from '@tennis-club/shared';
+import * as formService from '../services/form.service';
+import { success, error } from '../utils/apiResponse';
+
+const router = Router();
+
+router.use(requireAuth);
+
+// POST /court-damage – Platzschaden melden (AC-01: erstellt Meldung + Auto-Todo)
+router.post('/court-damage', validate(courtDamageSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const submission = await formService.submitCourtDamage(
+      req.body,
+      req.user!.clubId,
+      req.user!.userId,
+    );
+    success(res, submission, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /court-damage – Alle Meldungen (AC-03: BOARD/ADMIN only)
+router.get('/court-damage', requireBoard, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const reports = await formService.getCourtDamageReports(req.user!.clubId);
+    success(res, reports);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /court-damage/:formId/status – Status-Tracking fuer User
+router.get('/court-damage/:formId/status', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const form = await formService.getFormStatus(req.params.formId as string, req.user!.clubId);
+    if (!form) {
+      error(res, 'Formular nicht gefunden', 404, 'NOT_FOUND');
+      return;
+    }
+    success(res, form);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /court-damage/:formId/status – Status aktualisieren (AC-04: Push an Melder, AC-06: Flow)
+router.patch('/court-damage/:formId/status', requireBoard, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await formService.updateFormStatus(
+      req.params.formId as string,
+      req.user!.clubId,
+      req.body.status,
+    );
+    success(res, result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /media-upload – Media-Upload mit Kategorie/Tag (AC-05)
+router.post('/media-upload', validate(mediaUploadSchema), async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const submission = await formService.submitMediaUpload(
+      req.body,
+      req.user!.clubId,
+      req.user!.userId,
+    );
+    success(res, submission, 201);
+  } catch (err) {
+    next(err);
+  }
+});
+
+export default router;

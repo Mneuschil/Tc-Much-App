@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Verify the current task is complete:\n1. Run 'cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit' - check for TypeScript errors\n2. Run 'cd /Users/marius/Tc\\ Much\\ App/tennis-club && npm run build -w shared' - check shared package builds\n3. Check that no TODO or FIXME comments were left in recently changed files (use git diff --name-only HEAD~1 to find them, then grep)\n4. Verify the changes match the specification in the root file '# Tennis Club App – System Specification.md'\n\nIf ANY check fails, respond with the reason explaining what needs fixing.",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "write:backend/src/**/*.ts",
+        "command": "cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit 2>&1 | head -20 || true"
+      },
+      {
+        "matcher": "edit:backend/src/**/*.ts",
+        "command": "cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit 2>&1 | head -20 || true"
+      }
+    ]
+  }
+}

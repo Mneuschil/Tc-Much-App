@@ -1,0 +1,781 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────
+
+enum UserRole {
+  MEMBER
+  TRAINER
+  BOARD_MEMBER
+  TEAM_CAPTAIN
+  PARENT
+  CLUB_ADMIN
+  SYSTEM_ADMIN
+}
+
+enum TeamType {
+  MATCH_TEAM
+  TRAINING_GROUP
+  BOARD_GROUP
+}
+
+enum ChannelVisibility {
+  PUBLIC
+  RESTRICTED
+}
+
+enum ReactionType {
+  THUMBS_UP
+  HEART
+  CELEBRATE
+  THINKING
+}
+
+enum EventType {
+  LEAGUE_MATCH
+  CUP_MATCH
+  CLUB_CHAMPIONSHIP
+  RANKING_MATCH
+  TRAINING
+  CLUB_EVENT
+  TOURNAMENT
+}
+
+enum MatchResultStatus {
+  SUBMITTED
+  CONFIRMED
+  REJECTED
+  DISPUTED
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  NOT_AVAILABLE
+}
+
+enum TodoStatus {
+  OPEN
+  DONE
+}
+
+enum TodoScope {
+  BOARD
+  TRAINERS
+  TEAM
+}
+
+enum NotificationType {
+  CHAT_MESSAGE
+  MENTION
+  AVAILABILITY_REQUEST
+  RESULT_CONFIRMATION
+  EVENT_CHANGE
+  TODO
+  SYSTEM
+}
+
+enum FormType {
+  COURT_DAMAGE
+  MEDIA_UPLOAD
+}
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TournamentType {
+  KNOCKOUT
+  LADDER
+  ROUND_ROBIN
+}
+
+enum TournamentCategory {
+  SINGLES
+  DOUBLES
+  MIXED
+}
+
+enum TournamentStatus {
+  REGISTRATION_OPEN
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TournamentMatchStatus {
+  SCHEDULED
+  COMPLETED
+  WALKOVER
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+// ─── Club ───────────────────────────────────────────────────────────
+
+model Club {
+  id             String   @id @default(uuid())
+  name           String
+  clubCode       String   @unique
+  logo           String?
+  primaryColor   String   @default("#1B4F72")
+  secondaryColor String   @default("#2E86C1")
+  address        String?
+  website        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  users              User[]
+  channels           Channel[]
+  teams              Team[]
+  events             Event[]
+  tournaments        Tournament[]
+  rankings           Ranking[]
+  rankingChallenges  RankingChallenge[]
+  todos              Todo[]
+  files              File[]
+  fileFolders        FileFolder[]
+  formSubmissions    FormSubmission[]
+  notifications      Notification[]
+
+  @@map("clubs")
+}
+
+// ─── User ───────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String
+  passwordHash String
+  firstName    String
+  lastName     String
+  avatarUrl    String?
+  phone        String?
+  isActive     Boolean  @default(true)
+  clubId       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  // Roles (combinable, multi-role system)
+  roles UserRoleAssignment[]
+
+  // Auth
+  refreshTokens RefreshToken[]
+  pushTokens    PushToken[]
+
+  // Chat
+  channelsCreated Channel[]         @relation("ChannelCreator")
+  messages        Message[]
+  messageReactions MessageReaction[]
+  channelMutes    ChannelMute[]
+  channelMembers  ChannelMember[]
+
+  // Teams
+  teamMemberships TeamMember[]
+
+  // Events
+  eventsCreated Event[] @relation("EventCreator")
+
+  // Availability
+  availabilities Availability[]
+
+  // Match Results
+  resultsSubmitted  MatchResult[] @relation("ResultSubmitter")
+  resultsConfirmed  MatchResult[] @relation("ResultConfirmer")
+  resultsWon        MatchResult[] @relation("ResultWinner")
+  resultsResolved   MatchResult[] @relation("ResultResolver")
+
+  // Ranking
+  rankings             Ranking[]
+  challengesSent       RankingChallenge[] @relation("ChallengeChallenger")
+  challengesReceived   RankingChallenge[] @relation("ChallengeChallenged")
+
+  // Training
+  trainingAttendances TrainingAttendance[]
+
+  // Tournaments
+  tournamentsCreated             Tournament[]             @relation("TournamentCreator")
+  tournamentRegistrations        TournamentRegistration[]
+  tournamentMatchesAsPlayer1     TournamentMatch[]        @relation("Player1")
+  tournamentMatchesAsPlayer2     TournamentMatch[]        @relation("Player2")
+  tournamentMatchesWon           TournamentMatch[]        @relation("MatchWinner")
+
+  // Todos
+  todosAssigned  Todo[] @relation("TodoAssignee")
+  todosCreated   Todo[] @relation("TodoCreator")
+
+  // Files
+  filesUploaded    File[]       @relation("FileUploader")
+  foldersCreated   FileFolder[] @relation("FolderCreator")
+
+  // Forms
+  formSubmissions FormSubmission[]
+
+  // Notifications
+  notifications           Notification[]
+  notificationPreferences NotificationPreference[]
+
+  // Lineups
+  matchLineups MatchLineup[]
+
+  @@unique([email, clubId])
+  @@index([clubId])
+  @@index([email])
+  @@map("users")
+}
+
+// ─── User Roles (combinable) ────────────────────────────────────────
+
+model UserRoleAssignment {
+  id     String   @id @default(uuid())
+  userId String
+  clubId String
+  role   UserRole
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, clubId, role])
+  @@index([userId])
+  @@index([clubId])
+  @@map("user_role_assignments")
+}
+
+// ─── Refresh Token ──────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ─── Channel ────────────────────────────────────────────────────────
+
+model Channel {
+  id               String            @id @default(uuid())
+  name             String
+  description      String?
+  visibility       ChannelVisibility @default(PUBLIC)
+  isDefault        Boolean           @default(false)
+  parentChannelId  String?
+  teamId           String?
+  clubId           String
+  createdById      String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  club           Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy      User       @relation("ChannelCreator", fields: [createdById], references: [id])
+  parentChannel  Channel?   @relation("ChannelSubchannels", fields: [parentChannelId], references: [id])
+  subchannels    Channel[]  @relation("ChannelSubchannels")
+  team           Team?      @relation(fields: [teamId], references: [id])
+
+  messages       Message[]
+  mutes          ChannelMute[]
+  members        ChannelMember[]
+  files          File[]
+  fileFolders    FileFolder[]
+
+  @@index([clubId])
+  @@index([parentChannelId])
+  @@index([teamId])
+  @@map("channels")
+}
+
+model ChannelMember {
+  id        String   @id @default(uuid())
+  channelId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("channel_members")
+}
+
+model ChannelMute {
+  id        String   @id @default(uuid())
+  channelId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@map("channel_mutes")
+}
+
+// ─── Message (Chat) ─────────────────────────────────────────────────
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  mediaUrls String[] @default([])
+  channelId String
+  authorId  String
+  replyToId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channel   Channel          @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  author    User             @relation(fields: [authorId], references: [id])
+  replyTo   Message?         @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies   Message[]        @relation("MessageReplies")
+  reactions MessageReaction[]
+
+  @@index([channelId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+model MessageReaction {
+  id        String       @id @default(uuid())
+  messageId String
+  userId    String
+  type      ReactionType
+  createdAt DateTime     @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, type])
+  @@map("message_reactions")
+}
+
+// ─── Team ───────────────────────────────────────────────────────────
+
+model Team {
+  id        String   @id @default(uuid())
+  name      String
+  type      TeamType
+  league    String?
+  season    String?
+  clubId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  club     Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  members  TeamMember[]
+  channels Channel[]
+  events   Event[]
+  todos    Todo[]
+  lineups  MatchLineup[]
+
+  @@index([clubId])
+  @@index([type])
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid())
+  teamId    String
+  userId    String
+  position  Int?
+  createdAt DateTime @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@map("team_members")
+}
+
+// ─── Event ──────────────────────────────────────────────────────────
+
+model Event {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  type        EventType
+  location    String?
+  court       String?
+  isHomeGame  Boolean?
+  startDate   DateTime
+  endDate     DateTime?
+  teamId      String?
+  clubId      String
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  club      Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("EventCreator", fields: [createdById], references: [id])
+  team      Team?  @relation(fields: [teamId], references: [id])
+
+  availabilities      Availability[]
+  matchResults        MatchResult[]
+  trainingAttendances TrainingAttendance[]
+  matchLineups        MatchLineup[]
+
+  @@index([clubId])
+  @@index([startDate])
+  @@index([type])
+  @@index([teamId])
+  @@map("events")
+}
+
+// ─── Availability ───────────────────────────────────────────────────
+
+model Availability {
+  id            String             @id @default(uuid())
+  eventId       String
+  userId        String
+  status        AvailabilityStatus
+  comment       String?
+  remindersLeft Int                @default(2)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("availabilities")
+}
+
+// ─── Match Result (Submit/Confirm/Reject Flow) ─────────────────────
+
+model MatchResult {
+  id              String            @id @default(uuid())
+  eventId         String
+  submittedById   String
+  confirmedById   String?
+  status          MatchResultStatus @default(SUBMITTED)
+  sets            Json              // TennisSet[] → [{games1, games2, tiebreak1?, tiebreak2?}]
+  winnerId        String?
+  rejectionReason String?
+  disputeNote     String?
+  resolvedById    String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  submittedBy User  @relation("ResultSubmitter", fields: [submittedById], references: [id])
+  confirmedBy User? @relation("ResultConfirmer", fields: [confirmedById], references: [id])
+  winner      User? @relation("ResultWinner", fields: [winnerId], references: [id])
+  resolvedBy  User? @relation("ResultResolver", fields: [resolvedById], references: [id])
+
+  @@index([eventId])
+  @@map("match_results")
+}
+
+// ─── Match Lineup ───────────────────────────────────────────────────
+
+model MatchLineup {
+  id        String   @id @default(uuid())
+  eventId   String
+  teamId    String
+  userId    String
+  position  Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@unique([eventId, position])
+  @@map("match_lineups")
+}
+
+// ─── Ranking ────────────────────────────────────────────────────────
+
+model Ranking {
+  id           String   @id @default(uuid())
+  clubId       String
+  userId       String
+  category     String   @default("HERREN")
+  rank         Int
+  previousRank Int?
+  points       Int      @default(0)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  isManual     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId, category])
+  @@unique([clubId, rank, category])
+  @@index([clubId])
+  @@map("rankings")
+}
+
+// ─── Ranking Challenge ──────────────────────────────────────────────
+
+enum ChallengeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  COMPLETED
+  EXPIRED
+}
+
+model RankingChallenge {
+  id            String          @id @default(uuid())
+  clubId        String
+  category      String          @default("HERREN")
+  challengerId  String
+  challengedId  String
+  status        ChallengeStatus @default(PENDING)
+  deadline      DateTime
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  club       Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  challenger User @relation("ChallengeChallenger", fields: [challengerId], references: [id])
+  challenged User @relation("ChallengeChallenged", fields: [challengedId], references: [id])
+
+  @@index([clubId])
+  @@map("ranking_challenges")
+}
+
+// ─── Training Attendance ────────────────────────────────────────────
+
+model TrainingAttendance {
+  id         String    @id @default(uuid())
+  eventId    String
+  userId     String
+  attending  Boolean?
+  deadlineAt DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("training_attendances")
+}
+
+// ─── Tournament ─────────────────────────────────────────────────────
+
+model Tournament {
+  id              String             @id @default(uuid())
+  name            String
+  type            TournamentType
+  category        TournamentCategory
+  status          TournamentStatus   @default(REGISTRATION_OPEN)
+  description     String?
+  startDate       DateTime
+  endDate         DateTime?
+  maxParticipants Int?
+  clubId          String
+  createdById     String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  club          Club                     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy     User                     @relation("TournamentCreator", fields: [createdById], references: [id])
+  registrations TournamentRegistration[]
+  matches       TournamentMatch[]
+
+  @@index([clubId])
+  @@index([status])
+  @@map("tournaments")
+}
+
+model TournamentRegistration {
+  id           String   @id @default(uuid())
+  tournamentId String
+  userId       String
+  partnerId    String?
+  seed         Int?
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@map("tournament_registrations")
+}
+
+model TournamentMatch {
+  id            String                @id @default(uuid())
+  tournamentId  String
+  round         Int
+  position      Int
+  player1Id     String?
+  player2Id     String?
+  winnerId      String?
+  score         String?
+  status        TournamentMatchStatus @default(SCHEDULED)
+  scheduledDate DateTime?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player1    User?      @relation("Player1", fields: [player1Id], references: [id])
+  player2    User?      @relation("Player2", fields: [player2Id], references: [id])
+  winner     User?      @relation("MatchWinner", fields: [winnerId], references: [id])
+
+  @@index([tournamentId])
+  @@map("tournament_matches")
+}
+
+// ─── Todo ───────────────────────────────────────────────────────────
+
+model Todo {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  assigneeId  String
+  dueDate     DateTime?
+  status      TodoStatus @default(OPEN)
+  scope       TodoScope
+  teamId      String?
+  clubId      String
+  createdById String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  assignee       User            @relation("TodoAssignee", fields: [assigneeId], references: [id])
+  createdBy      User            @relation("TodoCreator", fields: [createdById], references: [id])
+  club           Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  team           Team?           @relation(fields: [teamId], references: [id])
+  formSubmission FormSubmission?
+
+  @@index([clubId])
+  @@index([assigneeId])
+  @@index([status])
+  @@map("todos")
+}
+
+// ─── File System ────────────────────────────────────────────────────
+
+model File {
+  id           String   @id @default(uuid())
+  name         String
+  url          String
+  mimeType     String
+  size         Int
+  channelId    String?
+  folderId     String?
+  clubId       String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  channel    Channel?    @relation(fields: [channelId], references: [id])
+  folder     FileFolder? @relation(fields: [folderId], references: [id])
+  club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  uploadedBy User        @relation("FileUploader", fields: [uploadedById], references: [id])
+
+  @@index([clubId])
+  @@index([channelId])
+  @@index([folderId])
+  @@map("files")
+}
+
+model FileFolder {
+  id          String   @id @default(uuid())
+  name        String
+  channelId   String?
+  clubId      String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  channel   Channel? @relation(fields: [channelId], references: [id])
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy User     @relation("FolderCreator", fields: [createdById], references: [id])
+  files     File[]
+
+  @@index([clubId])
+  @@index([channelId])
+  @@map("file_folders")
+}
+
+// ─── Form Submission ────────────────────────────────────────────────
+
+model FormSubmission {
+  id            String   @id @default(uuid())
+  type          FormType
+  data          Json
+  clubId        String
+  submittedById String
+  todoId        String?  @unique
+  status        String   @default("submitted")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  club        Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  submittedBy User  @relation(fields: [submittedById], references: [id])
+  todo        Todo? @relation(fields: [todoId], references: [id])
+
+  @@index([clubId])
+  @@index([type])
+  @@map("form_submissions")
+}
+
+// ─── Notification ───────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  userId    String
+  clubId    String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  club Club @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([clubId])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id      String           @id @default(uuid())
+  userId  String
+  type    NotificationType
+  enabled Boolean          @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@map("notification_preferences")
+}
+
+// ─── Push Token ─────────────────────────────────────────────────────
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  Platform
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_tokens")
+}

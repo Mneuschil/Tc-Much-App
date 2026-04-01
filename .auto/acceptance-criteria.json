@@ -1,0 +1,10 @@
+{
+  "feature": "F-F17 - Forms UI (Platzmeldung + Media)",
+  "criteria": [
+    { "id": "FF17-AC01", "desc": "Platzmeldung-Formular: Platz-Nr, Beschreibung, Foto, Dringlichkeit", "status": "passed" },
+    { "id": "FF17-AC02", "desc": "Absenden → Erfolgs-Meldung + Status-Tracking", "status": "passed" },
+    { "id": "FF17-AC03", "desc": "Meine Meldungen: Liste mit Status-Badge (OPEN/IN_PROGRESS/RESOLVED)", "status": "passed" },
+    { "id": "FF17-AC04", "desc": "Media-Upload: Foto/Video + Kategorie-Tag", "status": "passed" },
+    { "id": "FF17-AC05", "desc": "tsc --noEmit = 0 errors", "status": "passed" }
+  ]
+}

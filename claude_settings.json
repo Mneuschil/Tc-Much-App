@@ -1,0 +1,47 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "write:backend/src/**/*.ts",
+        "command": "cd backend && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:backend/src/**/*.ts",
+        "command": "cd backend && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:app/src/**/*.ts",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:app/src/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:app/src/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:backend/prisma/schema.prisma",
+        "command": "cd backend && npx prisma validate 2>&1 || true",
+        "timeout": 15
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "prompt": "Before allowing Claude to stop, verify the current work is complete and correct. Perform these checks:\n\n1. TYPESCRIPT CHECK: Run 'cd backend && npx tsc --noEmit'. Report any errors.\n2. PRISMA CHECK: Run 'cd backend && npx prisma validate'. Report any errors.\n3. TEST CHECK: Run 'cd backend && npm test 2>&1 | tail -50'. Report pass/fail count.\n4. CHECK FOR INCOMPLETE WORK: Search for 'TODO', 'FIXME', 'throw new Error(\"Not implemented\")' in files changed during this session. If found in files that were supposed to be implemented (not stubs), flag them.\n5. ACCEPTANCE CRITERIA: If a file '.auto/acceptance-criteria.json' exists, read it and check if any criteria have status 'pending'. If so, list them.\n\nIf ANY of checks 1-3 fail, or if there are pending acceptance criteria that should be done, respond with the reason explaining what needs fixing.\n\nIf this is a stop_hook_active=true (meaning we already ran this check and Claude tried to stop again), allow the stop to prevent infinite loops.\n\n$ARGUMENTS",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}

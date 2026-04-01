@@ -1,0 +1,24 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Alert } from 'react-native';
+import { teamService } from '../services/teamService';
+
+export function useAvailability(eventId: string) {
+  return useQuery({
+    queryKey: ['availability', eventId],
+    queryFn: () => teamService.getAvailability(eventId),
+    enabled: !!eventId,
+  });
+}
+
+export function useSetAvailability(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ status, comment }: { status: 'AVAILABLE' | 'NOT_AVAILABLE'; comment?: string }) =>
+      teamService.setAvailability(eventId, status, comment),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+    },
+    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Verfuegbarkeit konnte nicht gespeichert werden'),
+  });
+}

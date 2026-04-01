@@ -1,0 +1,42 @@
+import { Router } from 'express';
+import authRoutes from './auth.routes';
+import clubRoutes from './club.routes';
+import userRoutes from './user.routes';
+import channelRoutes from './channel.routes';
+import teamRoutes from './team.routes';
+import matchRoutes from './match.routes';
+import eventRoutes from './event.routes';
+import calendarRoutes from './calendar.routes';
+import rankingRoutes from './ranking.routes';
+import trainingRoutes from './training.routes';
+import tournamentRoutes from './tournament.routes';
+import todoRoutes from './todo.routes';
+import fileRoutes from './file.routes';
+import formRoutes from './form.routes';
+import notificationRoutes from './notification.routes';
+import uploadRoutes from './upload.routes';
+import pushRoutes from './push.routes';
+import webhookRoutes from './webhook.routes';
+
+const router = Router();
+
+router.use('/auth', authRoutes);
+router.use('/clubs', clubRoutes);
+router.use('/users', userRoutes);
+router.use('/channels', channelRoutes);
+router.use('/teams', teamRoutes);
+router.use('/matches', matchRoutes);
+router.use('/events', eventRoutes);
+router.use('/calendar', calendarRoutes);
+router.use('/rankings', rankingRoutes);
+router.use('/training', trainingRoutes);
+router.use('/tournaments', tournamentRoutes);
+router.use('/todos', todoRoutes);
+router.use('/files', fileRoutes);
+router.use('/forms', formRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/upload', uploadRoutes);
+router.use('/push', pushRoutes);
+router.use('/webhooks', webhookRoutes);
+
+export default router;

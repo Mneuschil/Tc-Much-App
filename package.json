@@ -1,0 +1,24 @@
+{
+  "name": "tennis-club",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "app"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev -w backend",
+    "dev:app": "npm run start -w app",
+    "build:shared": "npm run build -w shared",
+    "db:migrate": "npm run db:migrate -w backend",
+    "db:push": "npm run db:push -w backend",
+    "db:seed": "npm run db:seed -w backend",
+    "db:studio": "npm run db:studio -w backend",
+    "db:generate": "npm run db:generate -w backend",
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w backend"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
