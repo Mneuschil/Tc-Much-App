@@ -1,9 +1,13 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
+import { useSocketEvents } from '../../src/hooks/useSocketEvents';
+import { useClub } from '../../src/hooks/useClub';
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  useSocketEvents();
+  useClub();
 
   return (
     <Tabs

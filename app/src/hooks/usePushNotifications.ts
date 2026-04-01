@@ -66,7 +66,7 @@ async function registerForPushNotifications() {
   const tokenData = await Notifications.getExpoPushTokenAsync({ projectId: projectId ?? 'default' });
   const token = tokenData.data;
 
-  await api.post('/push/register', {
+  await api.post('/push', {
     token,
     platform: Platform.OS === 'ios' ? 'IOS' : 'ANDROID',
   });

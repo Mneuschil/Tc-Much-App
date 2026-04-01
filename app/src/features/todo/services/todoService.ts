@@ -1,4 +1,5 @@
 import api from '../../../lib/api';
+import type { CreateTodoInput, UpdateTodoInput } from '@tennis-club/shared';
 
 export const todoService = {
   getTodos: (scope?: string, teamId?: string) => {
@@ -8,10 +9,10 @@ export const todoService = {
     return api.get(`/todos?${params.toString()}`).then(r => r.data.data);
   },
 
-  createTodo: (input: any) =>
+  createTodo: (input: CreateTodoInput) =>
     api.post('/todos', input).then(r => r.data.data),
 
-  updateTodo: (todoId: string, input: any) =>
+  updateTodo: (todoId: string, input: UpdateTodoInput) =>
     api.put(`/todos/${todoId}`, input).then(r => r.data),
 
   deleteTodo: (todoId: string) =>

@@ -83,7 +83,7 @@ export default function HomeScreen() {
               </View>
               {event.isHomeGame !== null && event.isHomeGame !== undefined && (
                 <View style={[styles.chip, { backgroundColor: event.isHomeGame ? colors.chipActive : colors.chipInactive, borderRadius: borderRadius.full }]}>
-                  <Text style={[typography.captionMedium, { color: event.isHomeGame ? '#FFFFFF' : colors.textSecondary }]}>
+                  <Text style={[typography.captionMedium, { color: event.isHomeGame ? colors.textInverse : colors.textSecondary }]}>
                     {event.isHomeGame ? 'Heim' : 'Ausw.'}
                   </Text>
                 </View>

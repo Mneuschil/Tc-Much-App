@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL, STORAGE_KEYS } from './constants';
+import { useAuthStore } from '../stores/authStore';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -85,9 +86,8 @@ api.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError);
 
-      // Tokens loeschen bei Refresh-Fehler
-      await SecureStore.deleteItemAsync(STORAGE_KEYS.ACCESS_TOKEN);
-      await SecureStore.deleteItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
+      // Store-State konsistent halten bei Refresh-Fehler
+      await useAuthStore.getState().logout();
 
       return Promise.reject(refreshError);
     } finally {

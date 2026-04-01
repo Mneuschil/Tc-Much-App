@@ -19,11 +19,11 @@ export function connectSocket(token: string): Socket | null {
     });
 
     socket.on('connect', () => {
-      console.log('Socket connected');
+      // Verbindung hergestellt
     });
 
     socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+      // Verbindung getrennt
     });
 
     socket.on('connect_error', () => {

@@ -2,17 +2,17 @@ import api from '../../../lib/api';
 import type { TennisSet } from '@tennis-club/shared';
 
 export const matchService = {
-  submitResult: (input: any) =>
-    api.post('/matches/results', input).then(r => r.data.data),
+  submitResult: (matchId: string, input: { sets: TennisSet[]; winnerId: string }) =>
+    api.post(`/matches/${matchId}/result`, input).then(r => r.data.data),
 
-  confirmResult: (resultId: string) =>
-    api.put(`/matches/results/${resultId}/confirm`).then(r => r.data.data),
+  confirmResult: (matchId: string) =>
+    api.post(`/matches/${matchId}/result/confirm`).then(r => r.data.data),
 
-  rejectResult: (resultId: string, rejectionReason: string, correctedSets?: TennisSet[], correctedWinnerId?: string) =>
-    api.put(`/matches/results/${resultId}/reject`, { resultId, rejectionReason, correctedSets, correctedWinnerId }).then(r => r.data.data),
+  rejectResult: (matchId: string, rejectionReason: string, correctedSets?: TennisSet[], correctedWinnerId?: string) =>
+    api.post(`/matches/${matchId}/result/reject`, { rejectionReason, correctedSets, correctedWinnerId }).then(r => r.data.data),
 
-  resolveDispute: (resultId: string, sets: TennisSet[], winnerId: string) =>
-    api.put(`/matches/results/${resultId}/resolve`, { resultId, sets, winnerId }).then(r => r.data.data),
+  resolveDispute: (matchId: string, sets: TennisSet[], winnerId: string) =>
+    api.post(`/matches/${matchId}/result/resolve`, { sets, winnerId }).then(r => r.data.data),
 
   getResultsForEvent: (eventId: string) =>
     api.get(`/matches/results/event/${eventId}`).then(r => r.data.data),

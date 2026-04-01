@@ -75,8 +75,8 @@ export default function MatchDetailScreen() {
                   {r.winner && <Text style={[typography.caption, { color: colors.success, marginTop: spacing.sm }]}>Gewinner: {r.winner.firstName} {r.winner.lastName}</Text>}
                   <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>Eingereicht von: {r.submittedBy.firstName} {r.submittedBy.lastName}</Text>
                   {r.status === 'SUBMITTED' && r.submittedById !== user?.id && (
-                    <Pressable onPress={() => confirmResult.mutate(r.id)} style={[{ backgroundColor: colors.chipActive, borderRadius: borderRadius.lg, padding: spacing.md, marginTop: spacing.md, alignItems: 'center' }]}>
-                      <Text style={[typography.buttonSmall, { color: '#FFFFFF' }]}>Ergebnis bestaetigen</Text>
+                    <Pressable onPress={() => confirmResult.mutate()} style={[{ backgroundColor: colors.chipActive, borderRadius: borderRadius.lg, padding: spacing.md, marginTop: spacing.md, alignItems: 'center' }]}>
+                      <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>Ergebnis bestaetigen</Text>
                     </Pressable>
                   )}
                 </View>
@@ -94,8 +94,8 @@ export default function MatchDetailScreen() {
                 return (
                   <Pressable key={status} onPress={() => setAvailability.mutate({ status })}
                     style={[styles.availButton, { backgroundColor: isSelected ? colors.chipActive : colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, ...(isSelected ? {} : shadows.sm) }]}>
-                    <Ionicons name={isAvail ? 'checkmark-circle' : 'close-circle'} size={28} color={isSelected ? '#FFFFFF' : isAvail ? colors.success : colors.danger} />
-                    <Text style={[typography.captionMedium, { color: isSelected ? '#FFFFFF' : colors.textPrimary, marginTop: spacing.xs }]}>
+                    <Ionicons name={isAvail ? 'checkmark-circle' : 'close-circle'} size={28} color={isSelected ? colors.textInverse : isAvail ? colors.success : colors.danger} />
+                    <Text style={[typography.captionMedium, { color: isSelected ? colors.textInverse : colors.textPrimary, marginTop: spacing.xs }]}>
                       {isAvail ? 'Kann spielen' : 'Kann nicht'}
                     </Text>
                   </Pressable>

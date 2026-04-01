@@ -14,34 +14,44 @@ export function useMatchResults(eventId: string) {
 export function useSubmitResult() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: any) => matchService.submitResult(input),
+    mutationFn: (input: { matchId: string; sets: TennisSet[]; winnerId: string; eventId: string }) =>
+      matchService.submitResult(input.matchId, { sets: input.sets, winnerId: input.winnerId }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['matchResults', variables.eventId] });
       Alert.alert('Erfolg', 'Ergebnis eingereicht');
     },
-    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Ergebnis konnte nicht eingereicht werden'),
+    onError: (err: unknown) => {
+      const message = (err as Record<string, unknown> & { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      Alert.alert('Fehler', (message as string) ?? 'Ergebnis konnte nicht eingereicht werden');
+    },
   });
 }
 
 export function useConfirmResult(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (resultId: string) => matchService.confirmResult(resultId),
+    mutationFn: () => matchService.confirmResult(eventId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matchResults', eventId] });
       Alert.alert('Erfolg', 'Ergebnis bestaetigt');
     },
-    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Ergebnis konnte nicht bestaetigt werden'),
+    onError: (err: unknown) => {
+      const message = (err as Record<string, unknown> & { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      Alert.alert('Fehler', (message as string) ?? 'Ergebnis konnte nicht bestaetigt werden');
+    },
   });
 }
 
 export function useRejectResult(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ resultId, reason, correctedSets, correctedWinnerId }: {
-      resultId: string; reason: string; correctedSets?: TennisSet[]; correctedWinnerId?: string;
-    }) => matchService.rejectResult(resultId, reason, correctedSets, correctedWinnerId),
+    mutationFn: ({ reason, correctedSets, correctedWinnerId }: {
+      reason: string; correctedSets?: TennisSet[]; correctedWinnerId?: string;
+    }) => matchService.rejectResult(eventId, reason, correctedSets, correctedWinnerId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['matchResults', eventId] }),
-    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Ablehnung fehlgeschlagen'),
+    onError: (err: unknown) => {
+      const message = (err as Record<string, unknown> & { response?: { data?: { error?: { message?: string } } } })?.response?.data?.error?.message;
+      Alert.alert('Fehler', (message as string) ?? 'Ablehnung fehlgeschlagen');
+    },
   });
 }
