@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, Modal, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, type DateData } from 'react-native-calendars';
@@ -7,9 +7,11 @@ import type { MarkedDates } from 'react-native-calendars/src/types';
 import { Ionicons } from '@expo/vector-icons';
 import { differenceInHours } from 'date-fns';
 import { useTheme } from '../../src/theme';
-import { Badge, EmptyState } from '../../src/components/ui';
+import { Badge, Avatar, EmptyState } from '../../src/components/ui';
+import { useAuth } from '../../src/hooks/useAuth';
+import { usePermissions } from '../../src/hooks/usePermissions';
 import { useEvents } from '../../src/features/calendar/hooks/useEvents';
-import { useSetTrainingAttendance } from '../../src/features/training/hooks/useTraining';
+import { useSetTrainingAttendance, useTrainerOverview } from '../../src/features/training/hooks/useTraining';
 import { formatDate, formatTime } from '../../src/utils/formatDate';
 import { MOCK_EVENTS } from '../../src/lib/mockData';
 
@@ -17,8 +19,6 @@ const EVENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   LEAGUE_MATCH: 'tennisball', CUP_MATCH: 'trophy', CLUB_CHAMPIONSHIP: 'medal',
   RANKING_MATCH: 'stats-chart', TRAINING: 'fitness', CLUB_EVENT: 'people', TOURNAMENT: 'trophy-outline',
 };
-
-type RsvpStatus = 'AVAILABLE' | 'NOT_AVAILABLE' | null;
 
 interface CalendarEvent {
   id: string;
@@ -45,10 +45,11 @@ function toDateKey(dateStr: string): string {
 }
 
 export default function CalendarScreen() {
-  const { colors, typography, spacing, borderRadius, shadows, radii } = useTheme();
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
   const router = useRouter();
+  const { isTrainer } = usePermissions();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [rsvpMap, setRsvpMap] = useState<Record<string, RsvpStatus>>({});
+  const [trainerModalVisible, setTrainerModalVisible] = useState(false);
 
   const { data, isLoading, refetch } = useEvents();
   const apiEvents = (data ?? []) as CalendarEvent[];
@@ -91,76 +92,6 @@ export default function CalendarScreen() {
     setSelectedDate(prev => (prev === day.dateString ? null : day.dateString));
   }, []);
 
-  const handleRsvp = useCallback((eventId: string, status: RsvpStatus) => {
-    setRsvpMap(prev => ({ ...prev, [eventId]: prev[eventId] === status ? null : status }));
-  }, []);
-
-  const renderEvent = useCallback(({ item }: { item: CalendarEvent }) => {
-    const isTraining = item.type === 'TRAINING';
-    const hoursUntil = differenceInHours(new Date(item.startDate), new Date());
-    const deadlineSoon = isTraining && hoursUntil >= 0 && hoursUntil < 5;
-    const currentRsvp = rsvpMap[item.id] ?? null;
-
-    return (
-      <Pressable
-        onPress={() => router.push(`/match/${item.id}` as never)}
-        style={({ pressed }) => [
-          { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1, ...shadows.sm },
-        ]}
-      >
-        <View style={styles.eventRow}>
-          <View style={[styles.eventIcon, { backgroundColor: colors.surface, borderRadius: borderRadius.lg }]}>
-            <Ionicons name={EVENT_ICONS[item.type] ?? 'calendar'} size={20} color={colors.textPrimary} />
-          </View>
-          <View style={{ flex: 1, marginLeft: spacing.md }}>
-            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>{item.title}</Text>
-            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-              {formatDate(item.startDate)} · {formatTime(item.startDate)}
-            </Text>
-          </View>
-          {item.isHomeGame !== null && item.isHomeGame !== undefined && (
-            <View style={[styles.chip, { backgroundColor: item.isHomeGame ? colors.chipActive : colors.chipInactive, borderRadius: borderRadius.full }]}>
-              <Text style={[typography.captionMedium, { color: item.isHomeGame ? colors.textInverse : colors.textSecondary }]}>
-                {item.isHomeGame ? 'Heim' : 'Ausw.'}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {deadlineSoon && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, marginLeft: 56 }}>
-            <Ionicons name="warning" size={14} color={colors.danger} />
-            <Text style={[typography.caption, { color: colors.danger, marginLeft: 4 }]}>
-              Anmeldefrist in weniger als 5 Stunden
-            </Text>
-          </View>
-        )}
-
-        {isTraining ? (
-          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginLeft: 56 }}>
-            <TrainingAttendancePill
-              label="Ja"
-              active={currentRsvp === 'AVAILABLE'}
-              color={colors.success}
-              onPress={() => handleRsvp(item.id, 'AVAILABLE')}
-            />
-            <TrainingAttendancePill
-              label="Nein"
-              active={currentRsvp === 'NOT_AVAILABLE'}
-              color={colors.danger}
-              onPress={() => handleRsvp(item.id, 'NOT_AVAILABLE')}
-            />
-          </View>
-        ) : (
-          <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md, marginLeft: 56 }}>
-            <RsvpPill label="Zusage" active={currentRsvp === 'AVAILABLE'} color={colors.success} onPress={() => handleRsvp(item.id, 'AVAILABLE')} />
-            <RsvpPill label="Absage" active={currentRsvp === 'NOT_AVAILABLE'} color={colors.danger} onPress={() => handleRsvp(item.id, 'NOT_AVAILABLE')} />
-          </View>
-        )}
-      </Pressable>
-    );
-  }, [colors, typography, spacing, borderRadius, shadows, rsvpMap, handleRsvp, router]);
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
@@ -169,7 +100,9 @@ export default function CalendarScreen() {
       <FlatList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
-        renderItem={renderEvent}
+        renderItem={({ item }) => (
+          <AgendaItem event={item} isTrainer={isTrainer} onShowTrainerOverview={() => setTrainerModalVisible(true)} />
+        )}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />}
         ListHeaderComponent={
@@ -197,47 +130,174 @@ export default function CalendarScreen() {
             />
             {selectedDate && (
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.lg }}>
-                <Text style={[typography.h3, { color: colors.textPrimary }]}>
-                  {formatDate(selectedDate)}
-                </Text>
+                <Text style={[typography.h3, { color: colors.textPrimary }]}>{formatDate(selectedDate)}</Text>
                 <Pressable onPress={() => setSelectedDate(null)}>
                   <Text style={[typography.bodySmall, { color: colors.accentLight }]}>Alle anzeigen</Text>
                 </Pressable>
               </View>
             )}
             {!selectedDate && (
-              <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.lg }]}>
-                Kommende Termine
-              </Text>
+              <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.lg }]}>Kommende Termine</Text>
             )}
           </View>
         }
         ListEmptyComponent={!isLoading ? <EmptyState title="Keine Termine" description={selectedDate ? 'Keine Termine an diesem Tag' : 'Keine kommenden Termine'} /> : null}
       />
+
+      {/* Trainer Overview Modal */}
+      <TrainerOverviewModal visible={trainerModalVisible} onClose={() => setTrainerModalVisible(false)} />
     </SafeAreaView>
   );
 }
 
-interface PillProps {
-  label: string;
-  active: boolean;
-  color: string;
-  onPress: () => void;
+/* ─── AgendaItem ──────────────────────────────────────────────────── */
+
+interface AgendaItemProps {
+  event: CalendarEvent;
+  isTrainer: boolean;
+  onShowTrainerOverview: () => void;
 }
 
-function RsvpPill({ label, active, color, onPress }: PillProps) {
+function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps) {
+  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const router = useRouter();
+  const setTrainingAttendance = useSetTrainingAttendance(event.id);
+  const [myAttendance, setMyAttendance] = useState<'AVAILABLE' | 'NOT_AVAILABLE' | null>(null);
+
+  const isTraining = event.type === 'TRAINING';
+  const hoursUntil = differenceInHours(new Date(event.startDate), new Date());
+  const deadlineExpired = isTraining && hoursUntil >= 0 && hoursUntil < 5;
+
+  const handleAttendance = (status: 'AVAILABLE' | 'NOT_AVAILABLE') => {
+    if (deadlineExpired) return;
+    const newStatus = myAttendance === status ? null : status;
+    setMyAttendance(newStatus);
+    if (newStatus) {
+      setTrainingAttendance.mutate(newStatus === 'AVAILABLE');
+    }
+  };
+
   return (
-    <Pressable onPress={onPress} style={[styles.rsvpPill, { backgroundColor: active ? color : 'transparent', borderColor: color }]}>
-      <Text style={[styles.rsvpPillText, { color: active ? '#FFFFFF' : color }]}>{label}</Text>
+    <Pressable
+      onPress={() => router.push(`/match/${event.id}` as never)}
+      style={({ pressed }) => [
+        { backgroundColor: colors.cardBackground, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, marginHorizontal: spacing.xl, opacity: pressed ? 0.9 : 1, ...shadows.sm },
+      ]}
+    >
+      <View style={styles.eventRow}>
+        <View style={[styles.eventIcon, { backgroundColor: colors.surface, borderRadius: borderRadius.lg }]}>
+          <Ionicons name={EVENT_ICONS[event.type] ?? 'calendar'} size={20} color={colors.textPrimary} />
+        </View>
+        <View style={{ flex: 1, marginLeft: spacing.md }}>
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>{event.title}</Text>
+          <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+            {formatDate(event.startDate)} · {formatTime(event.startDate)}
+          </Text>
+        </View>
+        {event.isHomeGame !== null && event.isHomeGame !== undefined && (
+          <View style={[styles.chip, { backgroundColor: event.isHomeGame ? colors.chipActive : colors.chipInactive, borderRadius: borderRadius.full }]}>
+            <Text style={[typography.captionMedium, { color: event.isHomeGame ? colors.textInverse : colors.textSecondary }]}>
+              {event.isHomeGame ? 'Heim' : 'Ausw.'}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {isTraining && (
+        <View style={{ marginTop: spacing.md, marginLeft: 56 }}>
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <Pressable
+              onPress={() => handleAttendance('AVAILABLE')}
+              disabled={deadlineExpired}
+              style={[styles.attendBtn, {
+                backgroundColor: myAttendance === 'AVAILABLE' ? colors.success : colors.successSurface,
+                borderRadius: 12,
+                opacity: deadlineExpired ? 0.5 : 1,
+              }]}
+            >
+              <Text style={[typography.buttonSmall, { color: myAttendance === 'AVAILABLE' ? '#FFFFFF' : colors.success }]}>Ja</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleAttendance('NOT_AVAILABLE')}
+              disabled={deadlineExpired}
+              style={[styles.attendBtn, {
+                backgroundColor: myAttendance === 'NOT_AVAILABLE' ? colors.danger : colors.dangerSurface,
+                borderRadius: 12,
+                opacity: deadlineExpired ? 0.5 : 1,
+              }]}
+            >
+              <Text style={[typography.buttonSmall, { color: myAttendance === 'NOT_AVAILABLE' ? '#FFFFFF' : colors.danger }]}>Nein</Text>
+            </Pressable>
+          </View>
+          {deadlineExpired && (
+            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.xs }]}>Anmeldefrist abgelaufen</Text>
+          )}
+          {isTrainer && (
+            <Pressable onPress={onShowTrainerOverview} style={{ marginTop: spacing.sm }}>
+              <Text style={[typography.bodySmall, { color: colors.accentLight }]}>Uebersicht</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
     </Pressable>
   );
 }
 
-function TrainingAttendancePill({ label, active, color, onPress }: PillProps) {
+/* ─── TrainerOverviewModal ────────────────────────────────────────── */
+
+interface OverviewEntry {
+  user: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
+  attending: boolean;
+}
+
+interface TrainerOverviewData {
+  total: number;
+  attending: number;
+  notAttending: number;
+  entries: OverviewEntry[];
+}
+
+function TrainerOverviewModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { colors, typography, spacing, borderRadius } = useTheme();
+  const { data } = useTrainerOverview();
+  const overview = (data ?? { total: 0, attending: 0, notAttending: 0, entries: [] }) as TrainerOverviewData;
+
   return (
-    <Pressable onPress={onPress} style={[styles.rsvpPill, { backgroundColor: active ? color : 'transparent', borderColor: color }]}>
-      <Text style={[styles.rsvpPillText, { color: active ? '#FFFFFF' : color }]}>{label}</Text>
-    </Pressable>
+    <Modal visible={visible} presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: spacing.xl }}>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>Trainer-Uebersicht</Text>
+          <Pressable onPress={onClose} hitSlop={12}>
+            <Ionicons name="close" size={24} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+        <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 0 }}>
+          <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.xxl }}>
+            <View style={[styles.summaryBadge, { backgroundColor: colors.successSurface, borderRadius: borderRadius.xl }]}>
+              <Text style={[typography.h3, { color: colors.success }]}>{overview.attending}</Text>
+              <Text style={[typography.caption, { color: colors.success }]}>Zusagen</Text>
+            </View>
+            <View style={[styles.summaryBadge, { backgroundColor: colors.dangerSurface, borderRadius: borderRadius.xl }]}>
+              <Text style={[typography.h3, { color: colors.danger }]}>{overview.notAttending}</Text>
+              <Text style={[typography.caption, { color: colors.danger }]}>Absagen</Text>
+            </View>
+            <View style={[styles.summaryBadge, { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl }]}>
+              <Text style={[typography.h3, { color: colors.textPrimary }]}>{overview.total}</Text>
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>Gesamt</Text>
+            </View>
+          </View>
+          {overview.entries.map(entry => (
+            <View key={entry.user.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}>
+              <Avatar firstName={entry.user.firstName} lastName={entry.user.lastName} imageUrl={entry.user.avatarUrl} size="sm" />
+              <Text style={[typography.bodySmall, { color: colors.textPrimary, flex: 1, marginLeft: spacing.md }]}>
+                {entry.user.firstName} {entry.user.lastName}
+              </Text>
+              <Badge label={entry.attending ? 'Ja' : 'Nein'} variant={entry.attending ? 'success' : 'danger'} />
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
@@ -246,14 +306,6 @@ const styles = StyleSheet.create({
   eventRow: { flexDirection: 'row', alignItems: 'center' },
   eventIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   chip: { paddingHorizontal: 10, paddingVertical: 4 },
-  rsvpPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1.5,
-  },
-  rsvpPillText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  attendBtn: { height: 48, flex: 1, alignItems: 'center', justifyContent: 'center' },
+  summaryBadge: { flex: 1, alignItems: 'center', padding: 16 },
 });

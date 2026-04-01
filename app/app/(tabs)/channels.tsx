@@ -5,17 +5,36 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 import { EmptyState } from '../../src/components/ui';
 import { useChannels } from '../../src/features/chat/hooks/useChannels';
+import { formatTimeAgo } from '../../src/utils/formatDate';
 import { MOCK_CHANNELS } from '../../src/lib/mockData';
+
+interface LastMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  author: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
+}
+
+interface ChannelItem {
+  id: string;
+  name: string;
+  description: string | null;
+  visibility: string;
+  isDefault: boolean;
+  subchannels: Array<{ id: string; name: string }>;
+  _count: { messages: number; members: number };
+  lastMessage: LastMessage | null;
+}
 
 export default function ChannelsScreen() {
   const { colors, typography, spacing, borderRadius, shadows } = useTheme();
   const router = useRouter();
 
   const { data, isLoading, refetch } = useChannels();
-  const apiChannels = ((data ?? []) as any[]);
-  const channels = apiChannels.length > 0 ? apiChannels : MOCK_CHANNELS;
+  const apiChannels = ((data ?? []) as ChannelItem[]);
+  const channels = apiChannels.length > 0 ? apiChannels : (MOCK_CHANNELS as unknown as ChannelItem[]);
 
-  const renderChannel = ({ item }: { item: any }) => (
+  const renderChannel = ({ item }: { item: ChannelItem }) => (
     <Pressable
       onPress={() => router.push(`/channel/${item.id}`)}
       style={({ pressed }) => [
@@ -28,9 +47,16 @@ export default function ChannelsScreen() {
         </View>
         <View style={styles.channelInfo}>
           <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
-          {item.description && <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>{item.description}</Text>}
+          {item.lastMessage ? (
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
+              {item.lastMessage.author.firstName}: {item.lastMessage.content}
+            </Text>
+          ) : item.description ? (
+            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>{item.description}</Text>
+          ) : null}
           <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
-            {item._count.messages} Nachrichten{item.subchannels?.length > 0 && ` · ${item.subchannels.length} Sub`}
+            {item.lastMessage ? formatTimeAgo(item.lastMessage.createdAt) : `${item._count.messages} Nachrichten`}
+            {item.subchannels?.length > 0 && ` · ${item.subchannels.length} Sub`}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />

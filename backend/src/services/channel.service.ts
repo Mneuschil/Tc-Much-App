@@ -26,11 +26,19 @@ export async function getChannelsForClub(clubId: string, userId: string) {
       subchannels: true,
       team: { select: { id: true, name: true } },
       _count: { select: { messages: true, members: true } },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: 'desc' },
+        include: { author: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+      },
     },
     orderBy: { createdAt: 'asc' },
   });
 
-  return channels;
+  return channels.map(({ messages, ...channel }) => ({
+    ...channel,
+    lastMessage: messages[0] ?? null,
+  }));
 }
 
 export async function getChannelById(channelId: string, clubId: string) {

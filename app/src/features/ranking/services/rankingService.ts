@@ -9,4 +9,13 @@ export const rankingService = {
 
   getMatchHistory: (userId: string) =>
     api.get(`/rankings/${userId}/history`).then(r => r.data.data),
+
+  getChallenges: () =>
+    api.get('/rankings/challenges').then(r => r.data.data),
+
+  createChallenge: (challengedId: string) =>
+    api.post('/rankings/challenge', { challengedId }).then(r => r.data.data),
+
+  respondChallenge: (challengeId: string, action: 'ACCEPT' | 'DECLINE') =>
+    api.post(`/rankings/challenge/${challengeId}/respond`, { action }).then(r => r.data.data),
 };

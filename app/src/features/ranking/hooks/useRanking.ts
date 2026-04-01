@@ -24,3 +24,33 @@ export function useInitializeRanking() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['rankings'] }),
   });
 }
+
+export function useMyChallenges() {
+  return useQuery({
+    queryKey: ['myChallenges'],
+    queryFn: rankingService.getChallenges,
+  });
+}
+
+export function useCreateChallenge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (challengedId: string) => rankingService.createChallenge(challengedId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myChallenges'] });
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+    },
+  });
+}
+
+export function useRespondChallenge() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ challengeId, action }: { challengeId: string; action: 'ACCEPT' | 'DECLINE' }) =>
+      rankingService.respondChallenge(challengeId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myChallenges'] });
+      queryClient.invalidateQueries({ queryKey: ['rankings'] });
+    },
+  });
+}
