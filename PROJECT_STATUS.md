@@ -3,7 +3,7 @@
 ## Backend: 18/18 Features ✅
 Alle API-Routen, Services, Tests implementiert.
 
-## Frontend: 13/18 Features
+## Frontend: 18/18 Features ✅
 
 ### Completed
 - F-F01: Expo + Navigation + Theme + 10 UI-Komponenten (Button 4 Varianten, Card, Badge, Avatar, FilterPill, Input, SearchInput, LoadingSkeleton, EmptyState)
@@ -19,14 +19,11 @@ Alle API-Routen, Services, Tests implementiert.
 - F-F11: Match Result (ScoreInput Satz-für-Satz, ResultConfirm, MatchStatusBadge, Status-basierte Views)
 - F-F12: Ranking (RankingRow mit Movement, ChallengeBanner, PlayerDetail Bottom Sheet, ChallengeConfirmModal)
 - F-F13: Tournament + Bracket (TournamentCard, BracketView horizontal scrollbar, PartnerPicker, RegisterModal, Socket.io)
-
-### In Progress
-- F-F14+F-F15: Training Attendance + Todos
-
-### Pending
-- F-F16: File Browser
-- F-F17: Forms (Platzmeldung + Media)
-- F-F18: Profile + Settings + More Tab
+- F-F14: Training Attendance (Ja/Nein Buttons, Deadline-Sperre, Trainer-Übersicht)
+- F-F15: Todos (TodoCard, Checkbox-Toggle, PATCH Status, Todo-Erstellung)
+- F-F16: File Browser (Ordner-Navigation, Upload, Download, Vorschau)
+- F-F17: Forms (Platzmeldung mit Foto + Dringlichkeit, Media Upload, Meine Meldungen, Status-Tracking)
+- F-F18: Profile + Settings + More Tab (Profil bearbeiten, Avatar-Upload, Channel-Mute, Push-Toggle, Theme-Wahl, Admin Mitglieder-Verwaltung, Logout)
 
 ## Architecture
 - StyleSheet.create (kein UI-Library)

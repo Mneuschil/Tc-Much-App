@@ -1,10 +1,13 @@
 {
-  "feature": "F-F17 - Forms UI (Platzmeldung + Media)",
+  "feature": "F-F18 - Profile + Settings + More",
   "criteria": [
-    { "id": "FF17-AC01", "desc": "Platzmeldung-Formular: Platz-Nr, Beschreibung, Foto, Dringlichkeit", "status": "passed" },
-    { "id": "FF17-AC02", "desc": "Absenden → Erfolgs-Meldung + Status-Tracking", "status": "passed" },
-    { "id": "FF17-AC03", "desc": "Meine Meldungen: Liste mit Status-Badge (OPEN/IN_PROGRESS/RESOLVED)", "status": "passed" },
-    { "id": "FF17-AC04", "desc": "Media-Upload: Foto/Video + Kategorie-Tag", "status": "passed" },
-    { "id": "FF17-AC05", "desc": "tsc --noEmit = 0 errors", "status": "passed" }
+    { "id": "FF18-AC01", "desc": "more.tsx: Profil-Header + Menü-Liste (Channels, Todos, Dateien, Formulare, Einstellungen)", "status": "passed" },
+    { "id": "FF18-AC02", "desc": "Profil-Screen: Avatar änderbar, Name, Email, Telefon, Rollen-Badges, meine Teams", "status": "passed" },
+    { "id": "FF18-AC03", "desc": "Profil bearbeiten: PUT /users/me", "status": "passed" },
+    { "id": "FF18-AC04", "desc": "Channel-Verwaltung: Liste aller Channels, Mute-Toggle", "status": "passed" },
+    { "id": "FF18-AC05", "desc": "Einstellungen: Push-Toggle, Theme (System/Light/Dark)", "status": "passed" },
+    { "id": "FF18-AC06", "desc": "Logout: Tokens löschen, SecureStore clearen, Redirect Welcome", "status": "passed" },
+    { "id": "FF18-AC07", "desc": "Admin-Bereich: Mitglieder-Liste mit Rollen-Zuweisung (nur CLUB_ADMIN)", "status": "passed" },
+    { "id": "FF18-AC08", "desc": "tsc --noEmit = 0 errors", "status": "passed" }
   ]
 }
