@@ -1,26 +1,44 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Modal, TextInput } from 'react-native';
+import { useState, useMemo } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+  Modal,
+  TextInput,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { Avatar, Button, CardElevated, LoadingSkeleton } from '../../src/components/ui';
+import { Button } from '../../src/components/ui';
+import { HeroHeader } from '../../src/components/home/HeroHeader';
+import { DayAgenda, type DayEvent } from '../../src/components/calendar/DayAgenda';
+import { NewsFeed, type NewsItem } from '../../src/components/home/NewsFeed';
+import { MOCK_NEWS } from '../../src/components/home/mockNews';
+import { RecentResults } from '../../src/components/home/RecentResults';
+import { MOCK_RESULTS } from '../../src/components/home/mockResults';
 import { useAuth } from '../../src/hooks/useAuth';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
 import { useTodos } from '../../src/features/todo/hooks/useTodos';
 import { useNotifications } from '../../src/features/notifications/hooks/useNotifications';
-import { useChannels } from '../../src/features/chat/hooks/useChannels';
-import { formatDate, formatTime, formatTimeAgo } from '../../src/utils/formatDate';
-import { MOCK_EVENTS, MOCK_TODOS, MOCK_NOTIFICATIONS, MOCK_CHANNELS, MOCK_MESSAGES } from '../../src/lib/mockData';
+import { formatDate } from '../../src/utils/formatDate';
 import { UserRole } from '@tennis-club/shared';
+import { generateMockWeekEvents } from '../../src/components/calendar/mockEvents';
 
-interface EventItem {
+interface WeekEventRaw {
   id: string;
   title: string;
   type: string;
   startDate: string;
+  endDate: string | null;
+  description: string | null;
+  location: string | null;
+  court: string | null;
   isHomeGame: boolean | null;
+  team: { id: string; name: string } | null;
 }
 
 interface TodoItem {
@@ -30,37 +48,41 @@ interface TodoItem {
   dueDate: string | null;
 }
 
+function toDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export default function HomeScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
   const { user, logout } = useAuth();
   const { hasAnyRole } = usePermissions();
   const router = useRouter();
 
-  const { data: weekEvents, isLoading, refetch } = useWeekEvents();
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+
+  const { data: weekEvents, refetch } = useWeekEvents();
   const { data: todosData } = useTodos();
   const { data: notifications } = useNotifications(true);
-  const { data: channelsData } = useChannels();
 
-  const apiEvents = weekEvents ?? [];
-  const apiTodos = todosData ?? [];
-  const apiNotifs = notifications ?? [];
-  const apiChannels = (channelsData ?? []) as Array<{
-    id: string; name: string; isDefault: boolean;
-    lastMessage: { id: string; content: string; createdAt: string; author: { firstName: string; lastName: string } } | null;
-  }>;
+  const mockEvents = useMemo(() => generateMockWeekEvents(), []);
+  const events = useMemo(() => {
+    const api = (weekEvents ?? []) as WeekEventRaw[];
+    return [...api, ...mockEvents];
+  }, [weekEvents, mockEvents]);
 
-  const events = (apiEvents.length > 0 ? apiEvents : MOCK_EVENTS.slice(0, 5)) as EventItem[];
-  const todos = ((apiTodos.length > 0 ? apiTodos : MOCK_TODOS) as TodoItem[]).filter(t => t.status === 'OPEN');
-  const unreadCount = apiNotifs.length > 0 ? apiNotifs.length : MOCK_NOTIFICATIONS.filter(n => !n.isRead).length;
+  const todos = ((todosData ?? []) as TodoItem[]).filter((t) => t.status === 'OPEN');
+  const unreadCount = (notifications ?? []).length;
+  const newsItems: NewsItem[] = MOCK_NEWS;
 
-  // Ankündigungen: last message from General/Official channel
-  const officialChannel = apiChannels.find(ch => ch.isDefault && ch.name.toLowerCase().includes('allgemein'))
-    ?? apiChannels.find(ch => ch.isDefault);
-  const announcement = officialChannel?.lastMessage ?? (MOCK_MESSAGES[0] ? {
-    content: MOCK_MESSAGES[0].content,
-    createdAt: MOCK_MESSAGES[0].createdAt,
-    author: MOCK_MESSAGES[0].author,
-  } : null);
+  const dayEvents = useMemo<DayEvent[]>(() => {
+    const key = toDateKey(selectedDate);
+    return events
+      .filter((e) => toDateKey(new Date(e.startDate)) === key)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  }, [events, selectedDate]);
 
   const canCreatePost = hasAnyRole([UserRole.CLUB_ADMIN, UserRole.BOARD_MEMBER, UserRole.TRAINER]);
   const [showComposer, setShowComposer] = useState(false);
@@ -69,93 +91,40 @@ export default function HomeScreen() {
   const displayName = user?.firstName ?? 'Marius';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg }]}>
-        <View style={styles.headerRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.h1, { color: colors.textPrimary }]}>Hallo, {displayName}</Text>
-            <Text style={[typography.bodySmall, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-              Willkommen bei TC Much
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            <Pressable
-              onPress={() => router.push('/notifications' as never)}
-              style={[styles.iconButton, { backgroundColor: colors.highlight, borderRadius: borderRadius.lg }]}
-            >
-              <Ionicons name="notifications-outline" size={20} color={colors.primaryDark} />
-              {unreadCount > 0 && (
-                <View style={[styles.badge, { backgroundColor: colors.accent }]}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 9, fontWeight: '700' }}>{unreadCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Avatar firstName={displayName} lastName={user?.lastName ?? 'User'} imageUrl={user?.avatarUrl} size="md" />
-          </View>
-        </View>
-      </View>
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.xxl, paddingBottom: 120 }}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.primary} />}
+        contentContainerStyle={{ paddingBottom: 120 }}
+        refreshControl={
+          <RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.primary} />
+        }
       >
-        {/* Ankündigungen */}
-        {announcement && (
-          <View style={{ marginBottom: spacing.xxl }}>
-            <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Neuigkeiten</Text>
-            <CardElevated>
-              <Text style={[typography.bodySmall, { color: colors.textPrimary }]} numberOfLines={3}>
-                {announcement.content}
-              </Text>
-              <Text style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.sm }]}>
-                {announcement.author.firstName} {announcement.author.lastName} · {formatTimeAgo(announcement.createdAt)}
-              </Text>
-            </CardElevated>
-          </View>
-        )}
+        {/* Hero mit Bild + Kalender */}
+        <HeroHeader
+          displayName={displayName}
+          unreadCount={unreadCount}
+          events={events}
+          selectedDate={selectedDate}
+          onDateSelect={setSelectedDate}
+        />
 
-        <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>Diese Woche</Text>
+        {/* Tagesansicht */}
+        <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.lg }}>
+          <DayAgenda events={dayEvents} />
+        </View>
 
-        {/* Skeleton Loading */}
-        {isLoading ? (
-          <View style={{ gap: spacing.md }}>
-            {[1, 2, 3].map(i => (
-              <LoadingSkeleton key={i} width="100%" height={120} borderRadius={16} />
-            ))}
-          </View>
-        ) : (
-          events.map((event) => (
-            <Pressable key={event.id}
-              onPress={() => router.push(`/match/${event.id}` as never)}
-              style={({ pressed }) => [
-                { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.92 : 1 },
-              ]}
-            >
-              <View style={styles.eventRow}>
-                <View style={[styles.eventDot, {
-                  backgroundColor: event.type?.includes('MATCH') ? colors.primary : event.type === 'TRAINING' ? colors.success : colors.accent,
-                  borderRadius: borderRadius.full,
-                }]} />
-                <View style={{ flex: 1, marginLeft: spacing.md }}>
-                  <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>{event.title}</Text>
-                  <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-                    {formatDate(event.startDate)} · {formatTime(event.startDate)}
-                  </Text>
-                </View>
-                {event.isHomeGame !== null && event.isHomeGame !== undefined && (
-                  <View style={[styles.chip, { backgroundColor: event.isHomeGame ? colors.chipActive : colors.chipInactive, borderRadius: borderRadius.full }]}>
-                    <Text style={[typography.captionMedium, { color: event.isHomeGame ? colors.textInverse : colors.textSecondary }]}>
-                      {event.isHomeGame ? 'Heim' : 'Ausw.'}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </Pressable>
-          ))
-        )}
+        {/* Ergebnisse */}
+        <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>
+          <RecentResults results={MOCK_RESULTS} />
+        </View>
 
+        {/* Neuigkeiten */}
+        <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>
+          <NewsFeed items={newsItems} />
+        </View>
+
+        {/* Offene Todos */}
         {todos.length > 0 && (
-          <View style={{ marginTop: spacing.xl }}>
+          <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.xl }}>
             <View style={styles.sectionHeader}>
               <Text style={[typography.h4, { color: colors.textPrimary }]}>Offene Todos</Text>
               <Pressable onPress={() => router.push('/todo' as never)}>
@@ -163,19 +132,51 @@ export default function HomeScreen() {
               </Pressable>
             </View>
             {todos.slice(0, 3).map((todo) => (
-              <View key={todo.id} style={[styles.todoItem, { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.sm }]}>
-                <View style={[styles.todoCheck, { borderColor: colors.primary, borderRadius: borderRadius.xs }]} />
+              <View
+                key={todo.id}
+                style={[
+                  styles.todoItem,
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: borderRadius.xl,
+                    padding: spacing.lg,
+                    marginBottom: spacing.sm,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.todoCheck,
+                    { borderColor: colors.primary, borderRadius: borderRadius.xs },
+                  ]}
+                />
                 <View style={{ marginLeft: spacing.md, flex: 1 }}>
-                  <Text style={[typography.bodySmall, { color: colors.textPrimary }]}>{todo.title}</Text>
-                  {todo.dueDate && <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>Faellig: {formatDate(todo.dueDate)}</Text>}
+                  <Text style={[typography.bodySmall, { color: colors.textPrimary }]}>
+                    {todo.title}
+                  </Text>
+                  {todo.dueDate && (
+                    <Text
+                      style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}
+                    >
+                      Fällig: {formatDate(todo.dueDate)}
+                    </Text>
+                  )}
                 </View>
               </View>
             ))}
           </View>
         )}
 
-        <View style={{ marginTop: 40 }}>
-          <Button title="Abmelden" onPress={async () => { await logout(); router.replace('/(auth)/welcome'); }} variant="outline" fullWidth />
+        <View style={{ marginTop: 40, paddingHorizontal: spacing.xl }}>
+          <Button
+            title="Abmelden"
+            onPress={async () => {
+              await logout();
+              router.replace('/(auth)/welcome');
+            }}
+            variant="outline"
+            fullWidth
+          />
         </View>
       </ScrollView>
 
@@ -192,20 +193,33 @@ export default function HomeScreen() {
       {/* PostComposer Modal */}
       <Modal visible={showComposer} animationType="slide" transparent>
         <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background, borderRadius: borderRadius.xl }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.background, borderRadius: borderRadius.xl },
+            ]}
+          >
             <View style={styles.modalHeader}>
               <Text style={[typography.h3, { color: colors.textPrimary }]}>Neuer Beitrag</Text>
-              <Pressable onPress={() => { setShowComposer(false); setPostText(''); }}>
+              <Pressable
+                onPress={() => {
+                  setShowComposer(false);
+                  setPostText('');
+                }}
+              >
                 <Ionicons name="close" size={24} color={colors.textPrimary} />
               </Pressable>
             </View>
             <TextInput
-              style={[styles.composerInput, {
-                backgroundColor: colors.backgroundSecondary,
-                borderRadius: borderRadius.lg,
-                color: colors.textPrimary,
-                ...typography.body,
-              }]}
+              style={[
+                styles.composerInput,
+                {
+                  backgroundColor: colors.backgroundSecondary,
+                  borderRadius: borderRadius.lg,
+                  color: colors.textPrimary,
+                  ...typography.body,
+                },
+              ]}
               placeholder="Was gibt's Neues?"
               placeholderTextColor={colors.textTertiary}
               value={postText}
@@ -215,7 +229,10 @@ export default function HomeScreen() {
             />
             <Button
               title="Veröffentlichen"
-              onPress={() => { setShowComposer(false); setPostText(''); }}
+              onPress={() => {
+                setShowComposer(false);
+                setPostText('');
+              }}
               variant="primary"
               fullWidth
               disabled={!postText.trim()}
@@ -223,26 +240,37 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {},
-  headerRow: { flexDirection: 'row', alignItems: 'center' },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  badge: { position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center' },
-  eventRow: { flexDirection: 'row', alignItems: 'center' },
-  eventDot: { width: 10, height: 10 },
-  chip: { paddingHorizontal: 10, paddingVertical: 4 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   todoItem: { flexDirection: 'row', alignItems: 'center' },
   todoCheck: { width: 20, height: 20, borderWidth: 1.5 },
-  fab: { position: 'absolute', bottom: 24, right: 20, width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   modalOverlay: { flex: 1, justifyContent: 'flex-end' },
   modalContent: { padding: 20, paddingBottom: 40 },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   composerInput: { height: 120, padding: 16, marginBottom: 16 },
 });

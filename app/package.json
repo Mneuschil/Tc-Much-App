@@ -7,7 +7,10 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint app/ src/ --max-warnings 0",
+    "test": "jest --forceExit --passWithNoTests"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -17,11 +20,13 @@
     "axios": "^1.7.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.0",
+    "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
     "expo-device": "~8.0.10",
     "expo-font": "~14.0.11",
     "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.10",
+    "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.11",
     "expo-notifications": "~0.32.16",
     "expo-router": "~6.0.23",
@@ -44,7 +49,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.1.0",
+    "jest-expo": "^55.0.11",
+    "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.0"
   }
 }
