@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -26,6 +26,7 @@ import {
   useSendMessage,
   useAddReaction,
 } from '../../src/features/chat/hooks/useMessages';
+import { formatChatDate } from '../../src/utils/formatDate';
 import type { ReactionType } from '@tennis-club/shared';
 
 interface ChannelData {
@@ -43,7 +44,7 @@ interface MessagesPage {
 
 export default function ChannelDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { colors, typography, spacing, isDark } = useTheme();
+  const { colors, typography, spacing, borderRadius, isDark } = useTheme();
   const { isBoard, isAdmin } = usePermissions();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const [newMessage, setNewMessage] = useState('');
@@ -56,8 +57,24 @@ export default function ChannelDetailScreen() {
   const addReaction = useAddReaction(id!);
 
   const channel = channelData as ChannelData | undefined;
-  const messages = messagesData?.pages?.flatMap((p) => (p as MessagesPage).messages ?? []) ?? [];
+  const messages = useMemo(
+    () => messagesData?.pages?.flatMap((p) => (p as MessagesPage).messages ?? []) ?? [],
+    [messagesData],
+  );
   const isOfficialRestricted = channel?.isDefault === true && !isBoard && !isAdmin;
+
+  const dateHeaders = useMemo(() => {
+    const headers = new Map<string, string>();
+    let lastKey = '';
+    for (const msg of messages) {
+      const key = new Date(msg.createdAt).toDateString();
+      if (key !== lastKey) {
+        headers.set(msg.id, msg.createdAt);
+        lastKey = key;
+      }
+    }
+    return headers;
+  }, [messages]);
 
   const handleSend = () => {
     const content = newMessage.trim();
@@ -101,13 +118,32 @@ export default function ChannelDetailScreen() {
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <MessageBubble
-                message={item}
-                isOwn={item.author?.id === currentUserId}
-                onReply={setReplyTo}
-                onReaction={handleReaction}
-                onMediaPress={setViewerImage}
-              />
+              <>
+                {dateHeaders.has(item.id) && (
+                  <View style={styles.dateBadgeRow}>
+                    <View
+                      style={[
+                        styles.dateBadge,
+                        {
+                          backgroundColor: colors.backgroundTertiary,
+                          borderRadius: borderRadius.full,
+                        },
+                      ]}
+                    >
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                        {formatChatDate(dateHeaders.get(item.id)!)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                <MessageBubble
+                  message={item}
+                  isOwn={item.author?.id === currentUserId}
+                  onReply={setReplyTo}
+                  onReaction={handleReaction}
+                  onMediaPress={setViewerImage}
+                />
+              </>
             )}
             contentContainerStyle={{
               paddingHorizontal: spacing.lg,
@@ -174,6 +210,8 @@ export default function ChannelDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  dateBadgeRow: { alignItems: 'center', marginVertical: 12 },
+  dateBadge: { paddingHorizontal: 14, paddingVertical: 5 },
   emptyWrap: { paddingTop: 60, alignItems: 'center' },
   viewerOverlay: {
     flex: 1,

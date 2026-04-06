@@ -24,3 +24,10 @@ export function formatRelative(date: string | Date): string {
 export function formatTimeAgo(date: string | Date): string {
   return formatDistanceToNow(new Date(date), { addSuffix: true, locale: de });
 }
+
+export function formatChatDate(date: string | Date): string {
+  const d = new Date(date);
+  if (isToday(d)) return 'Heute';
+  if (isYesterday(d)) return 'Gestern';
+  return format(d, 'd. MMMM yyyy', { locale: de });
+}
