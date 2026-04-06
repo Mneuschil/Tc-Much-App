@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import type { NotificationType } from '@tennis-club/shared';
+import type { Prisma } from '@prisma/client';
 
 // Spec section 15: 7 types, all enabled by default, real-time push, in-app notification center
 
@@ -31,7 +32,14 @@ export async function createNotification(
   if (preference && !preference.enabled) return null;
 
   return prisma.notification.create({
-    data: { type, title, body, data: data as any, userId, clubId },
+    data: {
+      type,
+      title,
+      body,
+      data: (data ?? undefined) as Prisma.InputJsonValue | undefined,
+      userId,
+      clubId,
+    },
   });
 }
 

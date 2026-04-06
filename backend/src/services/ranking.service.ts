@@ -24,23 +24,30 @@ export async function initializeRanking(clubId: string, input: InitializeRanking
   // Delete existing rankings for this club+category
   await prisma.ranking.deleteMany({ where: { clubId, category } });
 
-  const rankings = input.rankings.map((r) =>
-    prisma.ranking.create({
-      data: {
-        clubId,
-        userId: r.userId,
-        category,
-        rank: r.rank,
-        points: r.points ?? 0,
-        isManual: true,
-      },
-    }),
-  );
+  await prisma.ranking.createMany({
+    data: input.rankings.map((r) => ({
+      clubId,
+      userId: r.userId,
+      category,
+      rank: r.rank,
+      points: r.points ?? 0,
+      isManual: true,
+    })),
+  });
 
-  return Promise.all(rankings);
+  return prisma.ranking.findMany({
+    where: { clubId, category },
+    include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+    orderBy: { rank: 'asc' },
+  });
 }
 
-export async function updateRankingFromResult(clubId: string, winnerId: string, loserId: string, category?: string) {
+export async function updateRankingFromResult(
+  clubId: string,
+  winnerId: string,
+  loserId: string,
+  category?: string,
+) {
   const cat = category ?? DEFAULT_CATEGORY;
 
   const winnerRanking = await prisma.ranking.findUnique({
@@ -95,10 +102,7 @@ export async function getMatchHistory(clubId: string, userId: string) {
     where: {
       event: { clubId },
       status: 'CONFIRMED',
-      OR: [
-        { submittedById: userId },
-        { confirmedById: userId },
-      ],
+      OR: [{ submittedById: userId }, { confirmedById: userId }],
     },
     include: {
       event: { select: { id: true, title: true, type: true, startDate: true } },
@@ -112,7 +116,12 @@ export async function getMatchHistory(clubId: string, userId: string) {
 
 // ─── Challenge System ───────────────────────────────────────────────
 
-export async function createChallenge(clubId: string, challengerId: string, challengedId: string, category?: string) {
+export async function createChallenge(
+  clubId: string,
+  challengerId: string,
+  challengedId: string,
+  category?: string,
+) {
   const cat = category ?? DEFAULT_CATEGORY;
 
   const challengerRanking = await prisma.ranking.findUnique({
@@ -123,17 +132,24 @@ export async function createChallenge(clubId: string, challengerId: string, chal
   });
 
   if (!challengerRanking || !challengedRanking) {
-    throw Object.assign(new Error('Beide Spieler muessen in der Rangliste sein'), { statusCode: 400 });
+    throw Object.assign(new Error('Beide Spieler muessen in der Rangliste sein'), {
+      statusCode: 400,
+    });
   }
 
   // Challenger must be lower-ranked (higher number) and within range
   if (challengerRanking.rank <= challengedRanking.rank) {
-    throw Object.assign(new Error('Du kannst nur hoeher platzierte Spieler herausfordern'), { statusCode: 400 });
+    throw Object.assign(new Error('Du kannst nur hoeher platzierte Spieler herausfordern'), {
+      statusCode: 400,
+    });
   }
 
   const rankDiff = challengerRanking.rank - challengedRanking.rank;
   if (rankDiff > CHALLENGE_MAX_RANGE) {
-    throw Object.assign(new Error(`Maximale Herausforderungsreichweite: ${CHALLENGE_MAX_RANGE} Plaetze`), { statusCode: 400 });
+    throw Object.assign(
+      new Error(`Maximale Herausforderungsreichweite: ${CHALLENGE_MAX_RANGE} Plaetze`),
+      { statusCode: 400 },
+    );
   }
 
   // Check for existing pending challenge between these players
@@ -147,7 +163,9 @@ export async function createChallenge(clubId: string, challengerId: string, chal
     },
   });
   if (existing) {
-    throw Object.assign(new Error('Es gibt bereits eine offene Herausforderung'), { statusCode: 409 });
+    throw Object.assign(new Error('Es gibt bereits eine offene Herausforderung'), {
+      statusCode: 409,
+    });
   }
 
   const deadline = new Date();
@@ -191,7 +209,11 @@ export async function getChallengesForUser(clubId: string, userId: string) {
   });
 }
 
-export async function respondToChallenge(challengeId: string, userId: string, action: 'ACCEPT' | 'DECLINE') {
+export async function respondToChallenge(
+  challengeId: string,
+  userId: string,
+  action: 'ACCEPT' | 'DECLINE',
+) {
   const challenge = await prisma.rankingChallenge.findUnique({
     where: { id: challengeId },
     include: {

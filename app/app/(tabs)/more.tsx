@@ -45,11 +45,20 @@ export default function MoreScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: 100 }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: spacing.xl,
+          paddingTop: spacing.lg,
+          paddingBottom: 100,
+        }}
+      >
         {/* Profile Header */}
         <Pressable
           onPress={() => router.push('/profile' as never)}
-          style={({ pressed }) => [styles.profileHeader, { marginBottom: spacing.xxl, opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [
+            styles.profileHeader,
+            { marginBottom: spacing.xxl, opacity: pressed ? 0.7 : 1 },
+          ]}
         >
           <Avatar
             imageUrl={user?.avatarUrl}
@@ -62,7 +71,7 @@ export default function MoreScreen() {
               {user?.firstName} {user?.lastName}
             </Text>
             <View style={[styles.badgeRow, { marginTop: spacing.xs }]}>
-              {user?.roles.map((role) => (
+              {(user?.roles ?? []).map((role) => (
                 <Badge key={role} label={ROLE_LABELS[role]} variant="accent" size="sm" />
               ))}
             </View>
@@ -85,10 +94,20 @@ export default function MoreScreen() {
               },
             ]}
           >
-            <View style={[styles.menuIcon, { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg }]}>
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg },
+              ]}
+            >
               <Ionicons name={item.icon} size={20} color={colors.textPrimary} />
             </View>
-            <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1, marginLeft: spacing.md }]}>
+            <Text
+              style={[
+                typography.bodyMedium,
+                { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
+              ]}
+            >
               {item.title}
             </Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -109,10 +128,20 @@ export default function MoreScreen() {
               },
             ]}
           >
-            <View style={[styles.menuIcon, { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg }]}>
+            <View
+              style={[
+                styles.menuIcon,
+                { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg },
+              ]}
+            >
               <Ionicons name="people-outline" size={20} color={colors.textPrimary} />
             </View>
-            <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1, marginLeft: spacing.md }]}>
+            <Text
+              style={[
+                typography.bodyMedium,
+                { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
+              ]}
+            >
               Mitglieder verwalten
             </Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />

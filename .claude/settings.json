@@ -1,24 +1,76 @@
 {
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "write:backend/src/**/*.ts",
+        "command": "cd backend && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:backend/src/**/*.ts",
+        "command": "cd backend && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:app/src/**/*.ts",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:app/src/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:app/src/**/*.ts",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:app/src/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:app/app/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:app/app/**/*.tsx",
+        "command": "cd app && npx tsc --noEmit 2>&1 | tail -30 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:shared/src/**/*.ts",
+        "command": "npm run build -w shared 2>&1 | tail -20 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "edit:shared/src/**/*.ts",
+        "command": "npm run build -w shared 2>&1 | tail -20 || true",
+        "timeout": 30
+      },
+      {
+        "matcher": "write:backend/prisma/schema.prisma",
+        "command": "cd backend && npx prisma validate 2>&1 || true",
+        "timeout": 15
+      },
+      {
+        "matcher": "edit:backend/prisma/schema.prisma",
+        "command": "cd backend && npx prisma validate 2>&1 || true",
+        "timeout": 15
+      }
+    ],
     "Stop": [
       {
         "hooks": [
           {
             "type": "agent",
-            "prompt": "Verify the current task is complete:\n1. Run 'cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit' - check for TypeScript errors\n2. Run 'cd /Users/marius/Tc\\ Much\\ App/tennis-club && npm run build -w shared' - check shared package builds\n3. Check that no TODO or FIXME comments were left in recently changed files (use git diff --name-only HEAD~1 to find them, then grep)\n4. Verify the changes match the specification in the root file '# Tennis Club App – System Specification.md'\n\nIf ANY check fails, respond with the reason explaining what needs fixing.",
+            "prompt": "Before allowing Claude to stop, verify the current work is complete and correct. Perform these checks:\n\n1. BACKEND TYPESCRIPT CHECK: Run 'cd backend && npx tsc --noEmit'. Report any errors.\n2. APP TYPESCRIPT CHECK: Run 'cd app && npx tsc --noEmit'. Report any errors.\n3. SHARED BUILD CHECK: Run 'npm run build -w shared'. Report any errors.\n4. PRISMA CHECK: Run 'cd backend && npx prisma validate'. Report any errors.\n5. TEST CHECK: Run 'cd backend && npm test 2>&1 | tail -50'. Report pass/fail count.\n6. CHECK FOR INCOMPLETE WORK: Search for 'TODO', 'FIXME', 'throw new Error(\"Not implemented\")' in files changed during this session. If found in files that were supposed to be implemented (not stubs), flag them.\n7. ACCEPTANCE CRITERIA: If a file '.auto/acceptance-criteria.json' exists, read it and check if any criteria have status 'pending'. If so, list them.\n\nIf ANY of checks 1-5 fail, or if there are pending acceptance criteria that should be done, respond with the reason explaining what needs fixing.\n\nIf this is a stop_hook_active=true (meaning we already ran this check and Claude tried to stop again), allow the stop to prevent infinite loops.\n\n$ARGUMENTS",
             "timeout": 120
           }
         ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "write:backend/src/**/*.ts",
-        "command": "cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit 2>&1 | head -20 || true"
-      },
-      {
-        "matcher": "edit:backend/src/**/*.ts",
-        "command": "cd /Users/marius/Tc\\ Much\\ App/tennis-club/backend && npx tsc --noEmit 2>&1 | head -20 || true"
       }
     ]
   }

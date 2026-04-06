@@ -16,9 +16,40 @@
     "db:seed": "npm run db:seed -w backend",
     "db:studio": "npm run db:studio -w backend",
     "db:generate": "npm run db:generate -w backend",
-    "typecheck": "npm run typecheck -w shared && npm run typecheck -w backend"
+    "typecheck": "npm run typecheck -w shared && npm run typecheck -w backend && npm run typecheck -w app",
+    "lint": "npm run lint -w backend && npm run lint -w app",
+    "test": "npm run test -w backend && npm run test -w app",
+    "validate": "npm run build:shared && npm run typecheck && npm run lint && npm run test",
+    "dev": "npm run build:shared && npx concurrently -n shared,backend,app -c blue,green,magenta \"npm run dev -w shared\" \"npm run dev -w backend\" \"npm run start -w app\"",
+    "format": "prettier --write \"**/*.{ts,tsx,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json}\"",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "lint-staged": {
+    "shared/src/**/*.ts": [
+      "prettier --write"
+    ],
+    "backend/src/**/*.ts": [
+      "prettier --write",
+      "eslint --fix --max-warnings 0"
+    ],
+    "app/**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix --max-warnings 0"
+    ]
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1"
   }
 }

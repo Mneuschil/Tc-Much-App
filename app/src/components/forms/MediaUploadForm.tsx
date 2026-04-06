@@ -6,6 +6,7 @@ import { useTheme } from '../../theme';
 import { Button } from '../ui/Button';
 import { FilterPill } from '../ui/FilterPill';
 import { useSubmitMedia } from '../../hooks/useForms';
+import { appendFileToFormData } from '../../utils/createFileFormData';
 
 const CATEGORIES = ['Vereinsleben', 'Training', 'Turniere', 'Platzanlage', 'Sonstiges'];
 
@@ -32,23 +33,34 @@ export function MediaUploadForm() {
 
     const formData = new FormData();
     formData.append('category', category);
-    formData.append('media', {
-      uri: mediaUri,
-      type: 'image/jpeg',
-      name: 'media-upload.jpg',
-    } as unknown as Blob);
+    appendFileToFormData(formData, 'media', mediaUri, 'media-upload.jpg', 'image/jpeg');
 
     mutation.mutate(formData, { onSuccess: () => setSubmitted(true) });
   };
 
   if (submitted) {
     return (
-      <View style={[styles.successCard, { backgroundColor: colors.successSurface, borderRadius: radii.md, padding: spacing.xxl }]}>
+      <View
+        style={[
+          styles.successCard,
+          { backgroundColor: colors.successSurface, borderRadius: radii.md, padding: spacing.xxl },
+        ]}
+      >
         <Ionicons name="checkmark-circle" size={48} color={colors.success} />
-        <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' }]}>
+        <Text
+          style={[
+            typography.h3,
+            { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' },
+          ]}
+        >
           Upload erfolgreich
         </Text>
-        <Text style={[typography.caption, { color: colors.textSecondary, marginTop: spacing.s, textAlign: 'center' }]}>
+        <Text
+          style={[
+            typography.caption,
+            { color: colors.textSecondary, marginTop: spacing.s, textAlign: 'center' },
+          ]}
+        >
           Dein Medium wurde hochgeladen
         </Text>
       </View>
@@ -59,31 +71,60 @@ export function MediaUploadForm() {
     <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl }}>
       {/* Media Picker */}
       <View>
-        <Text style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}>Foto oder Video</Text>
+        <Text
+          style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
+        >
+          Foto oder Video
+        </Text>
         {mediaUri ? (
           <View>
-            <Image source={{ uri: mediaUri }} style={[styles.preview, { borderRadius: radii.md }]} />
+            <Image
+              source={{ uri: mediaUri }}
+              style={[styles.preview, { borderRadius: radii.md }]}
+            />
             <Pressable
               onPress={() => setMediaUri(null)}
-              style={[styles.removeBtn, { backgroundColor: colors.dangerSurface, borderRadius: radii.pill }]}
+              style={[
+                styles.removeBtn,
+                { backgroundColor: colors.dangerSurface, borderRadius: radii.pill },
+              ]}
             >
               <Ionicons name="close" size={18} color={colors.danger} />
             </Pressable>
           </View>
         ) : (
-          <Pressable onPress={pickMedia} style={[styles.placeholder, { borderRadius: radii.md, borderColor: colors.textTertiary }]}>
+          <Pressable
+            onPress={pickMedia}
+            style={[
+              styles.placeholder,
+              { borderRadius: radii.md, borderColor: colors.textTertiary },
+            ]}
+          >
             <Ionicons name="cloud-upload-outline" size={32} color={colors.textTertiary} />
-            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.xs }]}>Medium auswählen</Text>
+            <Text
+              style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.xs }]}
+            >
+              Medium auswählen
+            </Text>
           </Pressable>
         )}
       </View>
 
       {/* Kategorie */}
       <View>
-        <Text style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}>Kategorie</Text>
+        <Text
+          style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
+        >
+          Kategorie
+        </Text>
         <View style={styles.categoryRow}>
           {CATEGORIES.map((cat) => (
-            <FilterPill key={cat} label={cat} isActive={category === cat} onPress={() => setCategory(cat)} />
+            <FilterPill
+              key={cat}
+              label={cat}
+              isActive={category === cat}
+              onPress={() => setCategory(cat)}
+            />
           ))}
         </View>
       </View>

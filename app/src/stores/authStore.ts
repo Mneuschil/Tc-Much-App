@@ -16,7 +16,7 @@ interface AuthState {
   loadStoredAuth: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, _get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,

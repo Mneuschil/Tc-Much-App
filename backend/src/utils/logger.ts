@@ -22,8 +22,13 @@ function formatMessage(level: LogLevel, message: string, meta?: Record<string, u
   }
 
   const timestamp = new Date().toISOString().split('T')[1]?.replace('Z', '') ?? '';
-  const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
-  return `[${timestamp}] ${level.toUpperCase().padEnd(5)} ${message}${metaStr}`;
+  const requestId = meta?.requestId ? ` [${meta.requestId}]` : '';
+  const filteredMeta = meta
+    ? Object.fromEntries(Object.entries(meta).filter(([k]) => k !== 'requestId'))
+    : undefined;
+  const metaStr =
+    filteredMeta && Object.keys(filteredMeta).length > 0 ? ` ${JSON.stringify(filteredMeta)}` : '';
+  return `[${timestamp}] ${level.toUpperCase().padEnd(5)}${requestId} ${message}${metaStr}`;
 }
 
 function log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {

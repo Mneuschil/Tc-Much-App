@@ -25,7 +25,8 @@ export function useCreateTodo() {
   return useMutation({
     mutationFn: (input: CreateTodoInput) => todoService.createTodo(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
-    onError: (err: Error) => Alert.alert('Fehler', getErrorMessage(err, 'Todo konnte nicht erstellt werden')),
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Todo konnte nicht erstellt werden')),
   });
 }
 
@@ -35,7 +36,19 @@ export function useUpdateTodo() {
     mutationFn: ({ todoId, input }: { todoId: string; input: UpdateTodoInput }) =>
       todoService.updateTodo(todoId, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
-    onError: (err: Error) => Alert.alert('Fehler', getErrorMessage(err, 'Todo konnte nicht aktualisiert werden')),
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Todo konnte nicht aktualisiert werden')),
+  });
+}
+
+export function useToggleTodoStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ todoId, status }: { todoId: string; status: 'OPEN' | 'DONE' }) =>
+      todoService.toggleStatus(todoId, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Status konnte nicht geaendert werden')),
   });
 }
 

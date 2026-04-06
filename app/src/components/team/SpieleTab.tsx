@@ -1,0 +1,149 @@
+import { View, Text, StyleSheet, SectionList, Pressable, Linking } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../theme';
+import { Badge, CardElevated, EmptyState } from '../ui';
+import { useEvents } from '../../features/calendar/hooks/useEvents';
+import { formatDate, formatTime, formatRelative } from '../../utils/formatDate';
+
+interface EventData {
+  id: string;
+  title: string;
+  type: string;
+  startDate: string;
+  location: string | null;
+  isHomeGame: boolean | null;
+  teamId: string | null;
+}
+
+interface SpieleTabProps {
+  teamId: string;
+}
+
+export function SpieleTab({ teamId }: SpieleTabProps) {
+  const { colors, typography, spacing } = useTheme();
+  const router = useRouter();
+  const { data } = useEvents(undefined);
+  const allEvents = ((data ?? []) as EventData[]).filter(
+    (e) => e.teamId === teamId && (e.type === 'LEAGUE_MATCH' || e.type === 'CUP_MATCH'),
+  );
+
+  const now = new Date();
+  const upcoming = allEvents
+    .filter((e) => new Date(e.startDate) >= now)
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const past = allEvents
+    .filter((e) => new Date(e.startDate) < now)
+    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+  const nextMatch = upcoming[0];
+
+  const sections = [
+    ...(upcoming.length > 0 ? [{ title: 'Kommende', data: upcoming }] : []),
+    ...(past.length > 0 ? [{ title: 'Vergangene', data: past }] : []),
+  ];
+
+  return (
+    <SectionList
+      sections={sections}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={{ paddingBottom: 100 }}
+      ListHeaderComponent={
+        nextMatch ? (
+          <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
+            <CardElevated>
+              <Pressable onPress={() => router.push(`/match/${nextMatch.id}` as never)}>
+                <Text
+                  style={[
+                    typography.labelSmall,
+                    { color: colors.textSecondary, marginBottom: spacing.xs },
+                  ]}
+                >
+                  NAECHSTES SPIEL
+                </Text>
+                <Text style={[typography.h2, { color: colors.textPrimary }]}>
+                  {nextMatch.title}
+                </Text>
+                <Text
+                  style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}
+                >
+                  {formatRelative(nextMatch.startDate)}
+                </Text>
+                {nextMatch.location && (
+                  <Pressable
+                    onPress={() =>
+                      Linking.openURL(
+                        `https://maps.apple.com/?q=${encodeURIComponent(nextMatch.location!)}`,
+                      )
+                    }
+                    style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
+                  >
+                    <Ionicons name="location-outline" size={14} color={colors.accentLight} />
+                    <Text
+                      style={[typography.bodySmall, { color: colors.accentLight, marginLeft: 4 }]}
+                    >
+                      {nextMatch.location}
+                    </Text>
+                  </Pressable>
+                )}
+                <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
+                  {nextMatch.isHomeGame !== null && (
+                    <Badge
+                      label={nextMatch.isHomeGame ? 'Heim' : 'Auswärts'}
+                      variant={nextMatch.isHomeGame ? 'success' : 'neutral'}
+                      size="sm"
+                    />
+                  )}
+                </View>
+              </Pressable>
+            </CardElevated>
+          </View>
+        ) : null
+      }
+      renderSectionHeader={({ section }) => (
+        <View
+          style={{
+            paddingHorizontal: spacing.xl,
+            paddingTop: spacing.lg,
+            paddingBottom: spacing.sm,
+            backgroundColor: colors.background,
+          }}
+        >
+          <Text style={[typography.h4, { color: colors.textPrimary }]}>{section.title}</Text>
+        </View>
+      )}
+      renderItem={({ item }) => (
+        <Pressable
+          onPress={() => router.push(`/match/${item.id}` as never)}
+          style={({ pressed }) => [
+            {
+              paddingHorizontal: spacing.xl,
+              paddingVertical: spacing.md,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.separator,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              {formatDate(item.startDate)} · {formatTime(item.startDate)}
+            </Text>
+            {item.isHomeGame !== null && (
+              <Badge
+                label={item.isHomeGame ? 'H' : 'A'}
+                variant={item.isHomeGame ? 'success' : 'neutral'}
+                size="sm"
+              />
+            )}
+          </View>
+        </Pressable>
+      )}
+      ListEmptyComponent={
+        <EmptyState title="Keine Spiele" description="Keine Mannschaftsspiele geplant" />
+      }
+    />
+  );
+}

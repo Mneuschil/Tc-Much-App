@@ -7,6 +7,7 @@ import { queryClient } from '../src/lib/queryClient';
 import { useAuthStore } from '../src/stores/authStore';
 import { useThemeStore } from '../src/stores/themeStore';
 import { useColorScheme } from 'react-native';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,7 +23,7 @@ export default function RootLayout() {
       await loadStoredAuth();
     }
     init();
-  }, []);
+  }, [colorScheme, initTheme, loadStoredAuth]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -36,10 +37,12 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+      <ErrorBoundary>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+      </ErrorBoundary>
       <StatusBar style="auto" />
     </QueryClientProvider>
   );

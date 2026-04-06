@@ -41,7 +41,11 @@ export async function getTournamentById(tournamentId: string, clubId: string) {
   return tournament;
 }
 
-export async function createTournament(input: CreateTournamentInput, clubId: string, createdById: string) {
+export async function createTournament(
+  input: CreateTournamentInput,
+  clubId: string,
+  createdById: string,
+) {
   return prisma.tournament.create({
     data: {
       name: input.name,
@@ -111,7 +115,9 @@ export async function startDraw(tournamentId: string, clubId: string) {
     throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
   }
   if (tournament.status !== 'REGISTRATION_OPEN') {
-    throw Object.assign(new Error('Auslosung nur bei offener Registrierung moeglich'), { statusCode: 400 });
+    throw Object.assign(new Error('Auslosung nur bei offener Registrierung moeglich'), {
+      statusCode: 400,
+    });
   }
   if (tournament.registrations.length < 2) {
     throw Object.assign(new Error('Mindestens 2 Teilnehmer erforderlich'), { statusCode: 400 });
@@ -127,7 +133,7 @@ export async function startDraw(tournamentId: string, clubId: string) {
   });
 
   // Push to all registered players
-  const playerIds = tournament.registrations.map(r => r.userId);
+  const playerIds = tournament.registrations.map((r) => r.userId);
   await pushService.sendToUsers(playerIds, {
     title: 'Auslosung fertig!',
     body: `Die Auslosung fuer "${tournament.name}" ist abgeschlossen. Schau dir dein Bracket an!`,
@@ -141,7 +147,13 @@ export async function getBracket(tournamentId: string) {
   return bracketService.getBracket(tournamentId);
 }
 
-export async function reportResult(tournamentId: string, matchId: string, winnerId: string, score: string, clubId: string) {
+export async function reportResult(
+  tournamentId: string,
+  matchId: string,
+  winnerId: string,
+  score: string,
+  clubId: string,
+) {
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament || tournament.clubId !== clubId) {
     throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
@@ -150,8 +162,13 @@ export async function reportResult(tournamentId: string, matchId: string, winner
   const result = await bracketService.advanceWinner(matchId, winnerId, score);
 
   // Check if tournament is complete (final match decided)
-  const remainingMatches = await prisma.tournamentMatch.count({
-    where: { tournamentId, status: 'SCHEDULED', player1Id: { not: null }, player2Id: { not: null } },
+  const _remainingMatches = await prisma.tournamentMatch.count({
+    where: {
+      tournamentId,
+      status: 'SCHEDULED',
+      player1Id: { not: null },
+      player2Id: { not: null },
+    },
   });
   // Also check if there's a winner of the last round
   const allMatches = await prisma.tournamentMatch.findMany({

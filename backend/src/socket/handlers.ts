@@ -1,4 +1,5 @@
 import { Server, Socket } from 'socket.io';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
 import type { TokenPayload } from '@tennis-club/shared';
 import { prisma } from '../config/database';
 
@@ -10,16 +11,16 @@ export function registerHandlers(_io: Server, socket: Socket): void {
 
   // Manual join/leave for dynamic channel switching
   socket.on('channel:join', (channelId: string) => {
-    socket.join(`channel:${channelId}`);
+    socket.join(SOCKET_ROOMS.channel(channelId));
   });
 
   socket.on('channel:leave', (channelId: string) => {
-    socket.leave(`channel:${channelId}`);
+    socket.leave(SOCKET_ROOMS.channel(channelId));
   });
 }
 
 async function joinUserChannels(socket: Socket, user: TokenPayload): Promise<void> {
-  const isPrivileged = user.roles.some(r =>
+  const isPrivileged = user.roles.some((r) =>
     ['CLUB_ADMIN', 'SYSTEM_ADMIN', 'BOARD_MEMBER'].includes(r),
   );
 
@@ -36,16 +37,13 @@ async function joinUserChannels(socket: Socket, user: TokenPayload): Promise<voi
     channels = await prisma.channel.findMany({
       where: {
         clubId: user.clubId,
-        OR: [
-          { visibility: 'PUBLIC' },
-          { members: { some: { userId: user.userId } } },
-        ],
+        OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId: user.userId } } }],
       },
       select: { id: true },
     });
   }
 
   for (const ch of channels) {
-    socket.join(`channel:${ch.id}`);
+    socket.join(SOCKET_ROOMS.channel(ch.id));
   }
 }

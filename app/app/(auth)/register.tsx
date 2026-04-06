@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
@@ -19,7 +28,13 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !clubCode.trim()) {
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !password.trim() ||
+      !clubCode.trim()
+    ) {
       Alert.alert('Fehler', 'Bitte alle Felder ausfuellen');
       return;
     }
@@ -39,8 +54,9 @@ export default function RegisterScreen() {
         clubCode: clubCode.trim().toUpperCase(),
       });
       router.replace('/(tabs)/home');
-    } catch (err: any) {
-      const message = err?.response?.data?.error?.message || 'Registrierung fehlgeschlagen';
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const message = axiosErr?.response?.data?.error?.message || 'Registrierung fehlgeschlagen';
       Alert.alert('Fehler', message);
     } finally {
       setLoading(false);
@@ -72,7 +88,12 @@ export default function RegisterScreen() {
 
           <View style={styles.row}>
             <View style={styles.halfField}>
-              <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+              <Text
+                style={[
+                  typography.bodySmall,
+                  { color: colors.textSecondary, marginBottom: spacing.xs },
+                ]}
+              >
                 Vorname
               </Text>
               <TextInput
@@ -85,7 +106,12 @@ export default function RegisterScreen() {
               />
             </View>
             <View style={[styles.halfField, { marginLeft: spacing.md }]}>
-              <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+              <Text
+                style={[
+                  typography.bodySmall,
+                  { color: colors.textSecondary, marginBottom: spacing.xs },
+                ]}
+              >
                 Nachname
               </Text>
               <TextInput
@@ -99,7 +125,12 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Text
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
             E-Mail
           </Text>
           <TextInput
@@ -113,7 +144,12 @@ export default function RegisterScreen() {
             autoCorrect={false}
           />
 
-          <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Text
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
             Passwort
           </Text>
           <TextInput
@@ -125,7 +161,12 @@ export default function RegisterScreen() {
             secureTextEntry
           />
 
-          <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Text
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
             Club-Code
           </Text>
           <TextInput

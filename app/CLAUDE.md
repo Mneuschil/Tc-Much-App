@@ -16,12 +16,33 @@
 - Pull-to-Refresh auf allen Listen-Screens
 - Alle Texte in Deutsch (UI-Sprache)
 
-## App starten
+## Quick Commands (vom app/ Verzeichnis)
 ```bash
 npx expo start           # Expo Dev Server
 npx expo start --ios     # iOS Simulator
 npx expo start --android # Android Emulator
+npm run typecheck        # tsc --noEmit
+npm run lint             # ESLint
 ```
+
+## Feature-Modul Struktur
+Jedes Feature in `src/features/{domain}/` folgt:
+```
+src/features/{domain}/
+  hooks/        → React Query Hooks (useTeams.ts)
+  services/     → API-Call Funktionen (teamService.ts)
+  utils/        → Helper (tennisScoring.ts)
+```
+Screens liegen in `app/app/` (Expo Router file-based routing).
+UI-Komponenten in `src/components/{domain}/PascalCase.tsx`.
+
+## Error Handling
+- Mutations: `onError` Callback mit `Alert.alert('Fehler', message)`
+- Typ-sichere Error-Extraktion: `(err: unknown)` + cast auf AxiosError-Shape
+- ErrorBoundary in `app/_layout.tsx` faengt Rendering-Crashes
+- Queries: `isError` von useQuery pruefen und Error-State mit Retry anzeigen
+- NIEMALS lautlos auf Mock-Daten zurueckfallen bei leerer API-Response
+- Unterscheide: Loading (Skeleton) → Error (Error-Komponente) → Empty (EmptyState) → Data
 
 ## Neuen Screen hinzufuegen
 1. Datei in `app/` Verzeichnis erstellen (Expo Router file-based routing)

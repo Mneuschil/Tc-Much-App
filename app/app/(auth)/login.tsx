@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
@@ -25,8 +34,9 @@ export default function LoginScreen() {
     try {
       await login({ email: email.trim().toLowerCase(), password });
       router.replace('/(tabs)/home');
-    } catch (err: any) {
-      const message = err?.response?.data?.error?.message || 'Anmeldung fehlgeschlagen';
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      const message = axiosErr?.response?.data?.error?.message || 'Anmeldung fehlgeschlagen';
       Alert.alert('Fehler', message);
     } finally {
       setLoading(false);
@@ -44,7 +54,12 @@ export default function LoginScreen() {
             Anmelden
           </Text>
 
-          <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Text
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
             E-Mail
           </Text>
           <TextInput
@@ -68,7 +83,12 @@ export default function LoginScreen() {
             autoCorrect={false}
           />
 
-          <Text style={[typography.bodySmall, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+          <Text
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
             Passwort
           </Text>
           <TextInput

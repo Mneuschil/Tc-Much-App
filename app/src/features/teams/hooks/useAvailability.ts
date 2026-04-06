@@ -13,12 +13,24 @@ export function useAvailability(eventId: string) {
 export function useSetAvailability(eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ status, comment }: { status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE'; comment?: string }) =>
-      teamService.setAvailability(eventId, status, comment),
+    mutationFn: ({
+      status,
+      comment,
+    }: {
+      status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE';
+      comment?: string;
+    }) => teamService.setAvailability(eventId, status, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Verfuegbarkeit konnte nicht gespeichert werden'),
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      Alert.alert(
+        'Fehler',
+        axiosErr?.response?.data?.error?.message ??
+          'Verfuegbarkeit konnte nicht gespeichert werden',
+      );
+    },
   });
 }

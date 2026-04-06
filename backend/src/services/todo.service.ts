@@ -1,19 +1,31 @@
 import { prisma } from '../config/database';
+import { UserRole, ROLE_HIERARCHY } from '@tennis-club/shared';
 import type { CreateTodoInput, UpdateTodoInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
 
 // Spec section 12: Todos only for board, trainers, teams
 
-export async function getTodos(clubId: string, userId: string, scope?: string, teamId?: string) {
+function isBoardOrAdmin(roles: UserRole[]): boolean {
+  return roles.some((r) => ROLE_HIERARCHY[r] >= 3);
+}
+
+export async function getTodos(
+  clubId: string,
+  userId: string,
+  scope?: string,
+  teamId?: string,
+  roles: UserRole[] = [],
+) {
   return prisma.todo.findMany({
     where: {
       clubId,
       ...(scope ? { scope: scope as 'BOARD' | 'TRAINERS' | 'TEAM' } : {}),
       ...(teamId ? { teamId } : {}),
-      OR: [
-        { assigneeId: userId },
-        { createdById: userId },
-      ],
+      ...(!isBoardOrAdmin(roles)
+        ? {
+            OR: [{ assigneeId: userId }, { createdById: userId }],
+          }
+        : {}),
     },
     include: {
       assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },

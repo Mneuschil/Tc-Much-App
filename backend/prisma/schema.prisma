@@ -132,6 +132,7 @@ model Club {
   secondaryColor String   @default("#2E86C1")
   address        String?
   website        String?
+  nuligaClubId   String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

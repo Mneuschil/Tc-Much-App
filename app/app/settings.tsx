@@ -10,7 +10,7 @@ import { useThemeStore } from '../src/stores/themeStore';
 type ThemeOption = 'system' | 'light' | 'dark';
 
 export default function SettingsScreen() {
-  const { colors, spacing, typography, radii } = useTheme();
+  const { colors, spacing, typography } = useTheme();
   const { isDarkMode, setDarkMode } = useThemeStore();
   const [pushEnabled, setPushEnabled] = useState(false);
 
@@ -41,13 +41,35 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: 100 }}>
-        <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xxl }]}>Einstellungen</Text>
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: spacing.xl,
+          paddingTop: spacing.lg,
+          paddingBottom: 100,
+        }}
+      >
+        <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xxl }]}>
+          Einstellungen
+        </Text>
 
         {/* Benachrichtigungen */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>Benachrichtigungen</Text>
-        <View style={[styles.settingRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator, paddingBottom: spacing.lg, marginBottom: spacing.xxl }]}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>Push-Benachrichtigungen</Text>
+        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          Benachrichtigungen
+        </Text>
+        <View
+          style={[
+            styles.settingRow,
+            {
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.separator,
+              paddingBottom: spacing.lg,
+              marginBottom: spacing.xxl,
+            },
+          ]}
+        >
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>
+            Push-Benachrichtigungen
+          </Text>
           <Switch
             value={pushEnabled}
             onValueChange={togglePush}
@@ -56,34 +78,72 @@ export default function SettingsScreen() {
         </View>
 
         {/* Darstellung */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>Darstellung</Text>
+        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          Darstellung
+        </Text>
         <View style={[styles.themeRow, { marginBottom: spacing.xxl }]}>
           <FilterPill label="System" isActive={false} onPress={() => handleThemeChange('system')} />
-          <FilterPill label="Hell" isActive={currentTheme === 'light'} onPress={() => handleThemeChange('light')} />
-          <FilterPill label="Dunkel" isActive={currentTheme === 'dark'} onPress={() => handleThemeChange('dark')} />
+          <FilterPill
+            label="Hell"
+            isActive={currentTheme === 'light'}
+            onPress={() => handleThemeChange('light')}
+          />
+          <FilterPill
+            label="Dunkel"
+            isActive={currentTheme === 'dark'}
+            onPress={() => handleThemeChange('dark')}
+          />
         </View>
 
         {/* App Info */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>App</Text>
+        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          App
+        </Text>
 
-        <View style={[styles.settingRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator, paddingVertical: spacing.lg }]}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>Version</Text>
+        <View
+          style={[
+            styles.settingRow,
+            {
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.separator,
+              paddingVertical: spacing.lg,
+            },
+          ]}
+        >
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>
+            Version
+          </Text>
           <Text style={[typography.bodySmall, { color: colors.textSecondary }]}>1.0.0</Text>
         </View>
 
         <Pressable
           onPress={() => Linking.openURL('https://example.com/datenschutz')}
-          style={({ pressed }) => [styles.settingRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator, paddingVertical: spacing.lg, opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [
+            styles.settingRow,
+            {
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: colors.separator,
+              paddingVertical: spacing.lg,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
         >
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>Datenschutz</Text>
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>
+            Datenschutz
+          </Text>
           <Ionicons name="open-outline" size={18} color={colors.textTertiary} />
         </Pressable>
 
         <Pressable
           onPress={() => Linking.openURL('https://example.com/impressum')}
-          style={({ pressed }) => [styles.settingRow, { paddingVertical: spacing.lg, opacity: pressed ? 0.7 : 1 }]}
+          style={({ pressed }) => [
+            styles.settingRow,
+            { paddingVertical: spacing.lg, opacity: pressed ? 0.7 : 1 },
+          ]}
         >
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>Impressum</Text>
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>
+            Impressum
+          </Text>
           <Ionicons name="open-outline" size={18} color={colors.textTertiary} />
         </Pressable>
       </ScrollView>

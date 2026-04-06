@@ -1,12 +1,16 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
+import jwt, { type SignOptions } from 'jsonwebtoken';
+import { randomUUID, createHash } from 'crypto';
 import { addDays, addMinutes } from 'date-fns';
 import { prisma } from '../config/database';
 import { env } from '../config/env';
 import type { User, AuthTokens, TokenPayload, UserRole } from '@tennis-club/shared';
 
 const SALT_ROUNDS = 12;
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, SALT_ROUNDS);
@@ -17,19 +21,19 @@ export async function comparePassword(password: string, hash: string): Promise<b
 }
 
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(
-    { ...payload },
-    env.JWT_ACCESS_SECRET,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    { expiresIn: env.JWT_ACCESS_EXPIRY } as any,
-  );
+  return jwt.sign({ ...payload }, env.JWT_ACCESS_SECRET, {
+    expiresIn: env.JWT_ACCESS_EXPIRY as SignOptions['expiresIn'],
+  });
 }
 
 export function generateRefreshToken(): string {
   return randomUUID();
 }
 
-export function generateTokens(payload: TokenPayload): { accessToken: string; rawRefreshToken: string } {
+export function generateTokens(payload: TokenPayload): {
+  accessToken: string;
+  rawRefreshToken: string;
+} {
   return {
     accessToken: generateAccessToken(payload),
     rawRefreshToken: generateRefreshToken(),
@@ -71,18 +75,21 @@ function parseExpiry(expiry: string): Date {
   const [, value, unit] = match;
   const num = parseInt(value!, 10);
   switch (unit) {
-    case 'm': return addMinutes(new Date(), num);
-    case 'h': return addMinutes(new Date(), num * 60);
-    case 'd': return addDays(new Date(), num);
-    default: return addDays(new Date(), 30);
+    case 'm':
+      return addMinutes(new Date(), num);
+    case 'h':
+      return addMinutes(new Date(), num * 60);
+    case 'd':
+      return addDays(new Date(), num);
+    default:
+      return addDays(new Date(), 30);
   }
 }
 
 async function storeRefreshToken(userId: string, rawToken: string): Promise<void> {
-  const hashedToken = await bcrypt.hash(rawToken, 10);
   await prisma.refreshToken.create({
     data: {
-      token: hashedToken,
+      token: hashToken(rawToken),
       userId,
       expiresAt: parseExpiry(env.JWT_REFRESH_EXPIRY),
     },
@@ -149,7 +156,10 @@ export async function register(input: {
   };
 }
 
-export async function login(email: string, password: string): Promise<{ user: User; tokens: AuthTokens }> {
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ user: User; tokens: AuthTokens }> {
   const dbUser = await prisma.user.findFirst({
     where: { email, isActive: true },
     include: { roles: true },
@@ -180,23 +190,21 @@ export async function login(email: string, password: string): Promise<{ user: Us
 }
 
 export async function refreshToken(token: string): Promise<{ tokens: AuthTokens; user: User }> {
-  const storedTokens = await prisma.refreshToken.findMany({
-    where: { expiresAt: { gt: new Date() } },
+  const hashed = hashToken(token);
+  const matchedRecord = await prisma.refreshToken.findUnique({
+    where: { token: hashed },
     include: { user: { include: { roles: true } } },
   });
 
-  let matchedRecord: (typeof storedTokens)[number] | null = null;
-
-  for (const record of storedTokens) {
-    const isMatch = await bcrypt.compare(token, record.token);
-    if (isMatch) {
-      matchedRecord = record;
-      break;
+  if (!matchedRecord || matchedRecord.expiresAt <= new Date()) {
+    if (matchedRecord) {
+      await prisma.refreshToken.delete({ where: { id: matchedRecord.id } });
     }
-  }
-
-  if (!matchedRecord) {
-    throw new AuthError('Ungueltiger oder abgelaufener Refresh-Token', 'INVALID_REFRESH_TOKEN', 401);
+    throw new AuthError(
+      'Ungueltiger oder abgelaufener Refresh-Token',
+      'INVALID_REFRESH_TOKEN',
+      401,
+    );
   }
 
   await prisma.refreshToken.delete({ where: { id: matchedRecord.id } });
@@ -222,17 +230,8 @@ export async function refreshToken(token: string): Promise<{ tokens: AuthTokens;
 }
 
 export async function logout(token: string): Promise<void> {
-  const storedTokens = await prisma.refreshToken.findMany({
-    where: { expiresAt: { gt: new Date() } },
-  });
-
-  for (const record of storedTokens) {
-    const isMatch = await bcrypt.compare(token, record.token);
-    if (isMatch) {
-      await prisma.refreshToken.delete({ where: { id: record.id } });
-      return;
-    }
-  }
+  const hashed = hashToken(token);
+  await prisma.refreshToken.deleteMany({ where: { token: hashed } });
 }
 
 export class AuthError extends Error {

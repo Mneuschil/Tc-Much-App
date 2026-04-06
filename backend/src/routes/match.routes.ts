@@ -2,10 +2,11 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireBoard } from '../middleware/roles';
 import { validate } from '../middleware/validate';
-import { submitResultSchema, rejectResultSchema, resolveDisputeSchema, setLineupSchema } from '@tennis-club/shared';
+import { setLineupSchema, SOCKET_ROOMS } from '@tennis-club/shared';
 import * as matchResultService from '../services/matchResult.service';
 import * as lineupService from '../services/lineup.service';
 import { success, error } from '../utils/apiResponse';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -34,7 +35,7 @@ router.post('/:matchId/result', async (req: Request, res: Response, next: NextFu
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`club:${req.user!.clubId}`).emit('result:submitted', result);
+      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:submitted', result);
     }
 
     success(res, result, 201);
@@ -48,7 +49,7 @@ router.post('/:matchId/result/confirm', async (req: Request, res: Response, next
   try {
     // Find the SUBMITTED result for this event
     const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-    const pending = results.find(r => r.status === 'SUBMITTED');
+    const pending = results.find((r) => r.status === 'SUBMITTED');
     if (!pending) {
       error(res, 'Kein offenes Ergebnis gefunden', 400, 'NO_PENDING_RESULT');
       return;
@@ -58,7 +59,7 @@ router.post('/:matchId/result/confirm', async (req: Request, res: Response, next
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`club:${req.user!.clubId}`).emit('result:confirmed', result);
+      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:confirmed', result);
     }
 
     success(res, result);
@@ -71,7 +72,7 @@ router.post('/:matchId/result/confirm', async (req: Request, res: Response, next
 router.post('/:matchId/result/reject', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-    const pending = results.find(r => r.status === 'SUBMITTED');
+    const pending = results.find((r) => r.status === 'SUBMITTED');
     if (!pending) {
       error(res, 'Kein offenes Ergebnis gefunden', 400, 'NO_PENDING_RESULT');
       return;
@@ -85,7 +86,7 @@ router.post('/:matchId/result/reject', async (req: Request, res: Response, next:
 
     const io = req.app.get('io');
     if (io) {
-      io.to(`club:${req.user!.clubId}`).emit('result:disputed', result);
+      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:disputed', result);
     }
 
     success(res, result);
@@ -95,26 +96,30 @@ router.post('/:matchId/result/reject', async (req: Request, res: Response, next:
 });
 
 // POST /:matchId/result/resolve – Sportwart resolves dispute (AC-07)
-router.post('/:matchId/result/resolve', requireBoard, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-    const disputed = results.find(r => r.status === 'DISPUTED');
-    if (!disputed) {
-      error(res, 'Kein strittiges Ergebnis gefunden', 400, 'NO_DISPUTED_RESULT');
-      return;
-    }
+router.post(
+  '/:matchId/result/resolve',
+  requireBoard,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
+      const disputed = results.find((r) => r.status === 'DISPUTED');
+      if (!disputed) {
+        error(res, 'Kein strittiges Ergebnis gefunden', 400, 'NO_DISPUTED_RESULT');
+        return;
+      }
 
-    const result = await matchResultService.resolveDispute(
-      disputed.id,
-      req.user!.userId,
-      req.body.sets,
-      req.body.winnerId,
-    );
-    success(res, result);
-  } catch (err) {
-    next(err);
-  }
-});
+      const result = await matchResultService.resolveDispute(
+        disputed.id,
+        req.user!.userId,
+        req.body.sets,
+        req.body.winnerId,
+      );
+      success(res, result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // Legacy: GET /results/event/:eventId – Results for an event
 router.get('/results/event/:eventId', async (req: Request, res: Response, next: NextFunction) => {
@@ -139,25 +144,37 @@ router.get('/lineup/:eventId', async (req: Request, res: Response, next: NextFun
 });
 
 // PUT /lineup – Aufstellung manuell setzen (Team Captain / Board)
-router.put('/lineup', validate(setLineupSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const lineup = await lineupService.setLineup(req.body);
+router.put(
+  '/lineup',
+  validate(setLineupSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const lineup = await lineupService.setLineup(req.body);
 
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`club:${req.user!.clubId}`).emit('match:lineup', { eventId: req.body.eventId });
+      const io = req.app.get('io');
+      if (io) {
+        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('match:lineup', {
+          eventId: req.body.eventId,
+        });
+      }
+
+      logAudit('LINEUP_SET', req.user!.userId, req.user!.clubId, {
+        eventId: req.body.eventId,
+      });
+      success(res, lineup);
+    } catch (err) {
+      next(err);
     }
-
-    success(res, lineup);
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 // POST /lineup/:eventId/auto – Aufstellung auto-generieren
 router.post('/lineup/:eventId/auto', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const lineup = await lineupService.autoGenerateLineup(req.params.eventId as string, req.body.teamId);
+    const lineup = await lineupService.autoGenerateLineup(
+      req.params.eventId as string,
+      req.body.teamId,
+    );
     success(res, lineup);
   } catch (err) {
     next(err);

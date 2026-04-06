@@ -1,5 +1,62 @@
 # Tennis Vereins-App – Claude Code Wissensdatei
 
+## MONOREPO BUILD ORDER (CRITICAL)
+Shared-Package MUSS vor Backend/App gebaut werden.
+- Nach JEDER Aenderung in shared/src/: `npm run build -w shared`
+- Ohne Rebuild → Phantom-Import-Errors in Backend und App
+- Das `validate` Script macht dies automatisch
+
+## VERIFICATION COMMANDS (vom Monorepo-Root ausfuehren)
+
+### Quick (nach jeder Dateiaenderung):
+```bash
+cd backend && npx tsc --noEmit    # Backend Types
+cd app && npx tsc --noEmit        # App Types
+```
+
+### Full (bevor du "fertig" sagst):
+```bash
+npm run validate    # build shared + typecheck all + lint + test
+```
+
+### Nach Aenderungen an shared/:
+```bash
+npm run build -w shared && npm run typecheck
+```
+
+### Nach Prisma-Schema-Aenderungen:
+```bash
+cd backend && npx prisma validate && npx prisma generate
+```
+
+## DATEI-NAMENSKONVENTIONEN (bestehend – NICHT abweichen)
+
+### Backend (backend/src/)
+- Routes:     {entity}.routes.ts       (team.routes.ts)
+- Services:   {entity}.service.ts      (team.service.ts, matchResult.service.ts)
+- Tests:      {entity}.test.ts         (team.test.ts) in src/__tests__/
+- Middleware:  {name}.ts               (clubGuard.ts, errorHandler.ts)
+
+### Shared (shared/src/)
+- Types:       types/{entity}.ts       (team.ts)
+- Validation:  validation/{entity}.schema.ts (team.schema.ts)
+
+### App (app/)
+- Screens:      app/(tabs)/{route}.tsx oder app/{entity}/[id].tsx
+- Components:   src/components/{domain}/PascalCase.tsx
+- Hooks:        src/features/{domain}/hooks/use{Name}.ts
+- Services:     src/features/{domain}/services/{entity}Service.ts
+
+## HAEUFIGE FEHLERQUELLEN
+1. shared/ nicht rebuilt nach Type-Aenderung → "Cannot find module" in Backend/App
+2. app/app/ Doppelstruktur ist KORREKT (Workspace-Dir / Expo Router-Dir)
+3. Metro Config loest shared via watchFolders auf – KEINE manuellen Symlinks
+4. Backend Tests nutzen src/__tests__/setup.ts → Prisma disconnect – NICHT entfernen
+5. Root tsconfig.json ist nur IDE-Fallback (expo/tsconfig.base) – nicht die Build-Config
+6. Neue Dependencies nur nach Rueckfrage installieren
+
+---
+
 ## MANDATORY VERIFICATION PROTOCOL
 
 ### After EVERY feature implementation:
@@ -118,3 +175,10 @@ Vor dem ersten Deployment alle Punkte prüfen:
 - File Upload: Typ-Whitelist + Max Size enforced
 - Socket.io: JWT Auth im Handshake
 - Keine Secrets in Git (.env in .gitignore)
+
+## Code Quality Regeln (aus Review 2026-04-02)
+- Kein Mock-Data-Fallback in Production-Screens. Nutze isLoading/isError/EmptyState stattdessen.
+- Maximale Screen-Datei-Laenge: 200 Zeilen. Sub-Komponenten muessen in eigene Dateien.
+- Batch-Inserts: `createMany` statt `Promise.all` mit einzelnen creates.
+- Token-Lookups: Immer per eindeutigem Identifier narrowen, nie Full-Table-Scan + Iteration.
+- ESLint `--max-warnings 0` in allen Packages. Keine neuen Warnings einfuehren.

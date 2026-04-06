@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
 import { registerHandlers } from './handlers';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
 import type { TokenPayload } from '@tennis-club/shared';
 
 export function initializeSocket(httpServer: HttpServer): Server {
@@ -36,7 +37,7 @@ export function initializeSocket(httpServer: HttpServer): Server {
     logger.info('Socket connected', { userId: user.userId, clubId: user.clubId });
 
     // User joint seinen Club-Room
-    socket.join(`club:${user.clubId}`);
+    socket.join(SOCKET_ROOMS.club(user.clubId));
 
     registerHandlers(io, socket);
 

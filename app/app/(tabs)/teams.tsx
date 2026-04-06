@@ -1,21 +1,32 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, SectionList, Pressable, RefreshControl, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SectionList,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { EmptyState } from '../../src/components/ui';
+import { EmptyState, QueryError } from '../../src/components/ui';
 import { useMyTeams } from '../../src/features/teams/hooks/useMyTeams';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
 import { formatDate } from '../../src/utils/formatDate';
-import { MOCK_TEAMS, MOCK_EVENTS } from '../../src/lib/mockData';
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  MATCH_TEAM: 'tennisball', TRAINING_GROUP: 'fitness', BOARD_GROUP: 'briefcase',
+  MATCH_TEAM: 'tennisball',
+  TRAINING_GROUP: 'fitness',
+  BOARD_GROUP: 'briefcase',
 };
 const FILTERS = [
-  { key: '', label: 'Alle' }, { key: 'MATCH_TEAM', label: 'Mannschaften' },
-  { key: 'TRAINING_GROUP', label: 'Training' }, { key: 'BOARD_GROUP', label: 'Vorstand' },
+  { key: '', label: 'Alle' },
+  { key: 'MATCH_TEAM', label: 'Mannschaften' },
+  { key: 'TRAINING_GROUP', label: 'Training' },
+  { key: 'BOARD_GROUP', label: 'Vorstand' },
 ];
 
 interface TeamItem {
@@ -41,22 +52,24 @@ export default function TeamsScreen() {
   const router = useRouter();
   const [filter, setFilter] = useState('');
 
-  const { myTeams: apiMyTeams, otherTeams: apiOtherTeams, isLoading, refetch, data } = useMyTeams();
+  const {
+    myTeams: apiMyTeams,
+    otherTeams: apiOtherTeams,
+    isLoading,
+    isError,
+    refetch,
+  } = useMyTeams();
   const { data: weekEventsData } = useWeekEvents();
 
-  const allApiTeams = (data ?? []) as TeamItem[];
-  const hasMockData = allApiTeams.length === 0;
-
-  const myTeams = (hasMockData ? MOCK_TEAMS.slice(0, 2) : apiMyTeams) as TeamItem[];
-  const otherTeams = (hasMockData ? MOCK_TEAMS.slice(2) : apiOtherTeams) as TeamItem[];
-
-  const upcomingEvents = ((weekEventsData ?? []).length > 0 ? weekEventsData : MOCK_EVENTS) as EventItem[];
+  const myTeams = (apiMyTeams ?? []) as TeamItem[];
+  const otherTeams = (apiOtherTeams ?? []) as TeamItem[];
+  const upcomingEvents = useMemo(() => (weekEventsData ?? []) as EventItem[], [weekEventsData]);
 
   // Map teamId → next match
   const nextMatchByTeam = useMemo(() => {
     const map = new Map<string, EventItem>();
     const sorted = [...upcomingEvents]
-      .filter(e => e.teamId && e.type?.includes('MATCH'))
+      .filter((e) => e.teamId && e.type?.includes('MATCH'))
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     for (const ev of sorted) {
       if (ev.teamId && !map.has(ev.teamId)) {
@@ -67,7 +80,7 @@ export default function TeamsScreen() {
   }, [upcomingEvents]);
 
   const applyFilter = (teams: TeamItem[]) =>
-    filter ? teams.filter(t => t.type === filter) : teams;
+    filter ? teams.filter((t) => t.type === filter) : teams;
 
   const filteredMy = applyFilter(myTeams);
   const filteredOther = applyFilter(otherTeams);
@@ -80,23 +93,49 @@ export default function TeamsScreen() {
   const renderTeam = ({ item }: { item: TeamItem }) => {
     const nextMatch = nextMatchByTeam.get(item.id);
     return (
-      <Pressable onPress={() => router.push(`/team/${item.id}`)}
+      <Pressable
+        onPress={() => router.push(`/team/${item.id}`)}
         style={({ pressed }) => [
-          { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1 },
-        ]}>
+          {
+            backgroundColor: colors.backgroundSecondary,
+            borderRadius: borderRadius.xl,
+            padding: spacing.lg,
+            marginBottom: spacing.md,
+            opacity: pressed ? 0.9 : 1,
+          },
+        ]}
+      >
         <View style={styles.teamRow}>
-          <View style={[styles.teamIcon, { backgroundColor: colors.surface, borderRadius: borderRadius.lg }]}>
-            <Ionicons name={TYPE_ICONS[item.type] ?? 'people'} size={20} color={colors.textPrimary} />
+          <View
+            style={[
+              styles.teamIcon,
+              { backgroundColor: colors.surface, borderRadius: borderRadius.lg },
+            ]}
+          >
+            <Ionicons
+              name={TYPE_ICONS[item.type] ?? 'people'}
+              size={20}
+              color={colors.textPrimary}
+            />
           </View>
           <View style={{ flex: 1, marginLeft: spacing.md }}>
             <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
-            {item.league && <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>{item.league}</Text>}
+            {item.league && (
+              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                {item.league}
+              </Text>
+            )}
             {nextMatch && (
-              <Text style={[typography.caption, { color: colors.accentLight, marginTop: 2 }]} numberOfLines={1}>
+              <Text
+                style={[typography.caption, { color: colors.accentLight, marginTop: 2 }]}
+                numberOfLines={1}
+              >
                 Nächstes Spiel: {nextMatch.title}, {formatDate(nextMatch.startDate)}
               </Text>
             )}
-            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>{item._count.members} Spieler</Text>
+            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
+              {item._count.members} Spieler
+            </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
         </View>
@@ -106,14 +145,41 @@ export default function TeamsScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
+      <View
+        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}
+      >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Teams</Text>
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, gap: spacing.sm }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.xl,
+          paddingBottom: spacing.lg,
+          gap: spacing.sm,
+        }}
+      >
         {FILTERS.map((f) => (
-          <Pressable key={f.key} onPress={() => setFilter(f.key)}
-            style={[{ backgroundColor: filter === f.key ? colors.chipActive : colors.chipInactive, borderRadius: borderRadius.full, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }]}>
-            <Text style={[typography.captionMedium, { color: filter === f.key ? colors.textInverse : colors.textPrimary }]}>{f.label}</Text>
+          <Pressable
+            key={f.key}
+            onPress={() => setFilter(f.key)}
+            style={[
+              {
+                backgroundColor: filter === f.key ? colors.chipActive : colors.chipInactive,
+                borderRadius: borderRadius.full,
+                paddingHorizontal: spacing.lg,
+                paddingVertical: spacing.sm,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                typography.captionMedium,
+                { color: filter === f.key ? colors.textInverse : colors.textPrimary },
+              ]}
+            >
+              {f.label}
+            </Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -122,13 +188,33 @@ export default function TeamsScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderTeam}
         renderSectionHeader={({ section }) => (
-          <Text style={[typography.captionMedium, { color: colors.textSecondary, paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: spacing.sm }]}>
+          <Text
+            style={[
+              typography.captionMedium,
+              {
+                color: colors.textSecondary,
+                paddingHorizontal: spacing.xl,
+                paddingTop: spacing.md,
+                paddingBottom: spacing.sm,
+              },
+            ]}
+          >
             {section.title}
           </Text>
         )}
         contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />}
-        ListEmptyComponent={!isLoading ? <EmptyState title="Keine Teams" description="Keine Teams angelegt" /> : null}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            isError ? (
+              <QueryError onRetry={refetch} />
+            ) : (
+              <EmptyState title="Keine Teams" description="Keine Teams angelegt" />
+            )
+          ) : null
+        }
       />
     </SafeAreaView>
   );

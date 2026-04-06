@@ -5,18 +5,23 @@ import morgan from 'morgan';
 import compression from 'compression';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
+import { requestId } from './middleware/requestId';
 import { defaultLimiter } from './middleware/rateLimiter';
 import routes from './routes';
 import { success } from './utils/apiResponse';
 
 const app = express();
 
+app.use(requestId);
+
 app.use(helmet());
 
-app.use(cors({
-  origin: env.CORS_ORIGIN === '*' ? '*' : env.CORS_ORIGIN.split(','),
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: env.CORS_ORIGIN === '*' ? '*' : env.CORS_ORIGIN.split(','),
+    credentials: true,
+  }),
+);
 
 app.use(compression());
 

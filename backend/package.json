@@ -13,7 +13,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "test": "jest --forceExit --detectOpenHandles",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src/"
+    "lint": "eslint src/ --max-warnings 0"
   },
   "dependencies": {
     "@prisma/client": "6.16.0",
@@ -60,6 +60,7 @@
     "prisma": "6.16.0",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "~5.8.0"
   }

@@ -38,6 +38,36 @@ Request → CORS → Helmet → Morgan → JSON Parser → Rate Limiter (nur Aut
 - Jeder User joint bei Connect seinen Club-Room: `club:{clubId}`
 - Events: `post:created`, `tournament:result`, `match:lineup`
 
+## Quick Commands (vom backend/ Verzeichnis)
+```bash
+npm run dev           # tsx watch src/server.ts (Hot Reload)
+npm test              # Jest – alle 19 Test-Suiten
+npm run typecheck     # tsc --noEmit
+npm run lint          # ESLint mit max-warnings
+npm run db:migrate    # Prisma migrate dev
+npm run db:generate   # Prisma Client regenerieren nach Schema-Aenderungen
+npm run db:seed       # Seed-Daten laden (tsx prisma/seed.ts)
+```
+
+## Test-Patterns
+- Alle Tests: `src/__tests__/{entity}.test.ts`
+- Setup: `src/__tests__/setup.ts` (Prisma disconnect nach Tests)
+- Mocks: `src/__tests__/__mocks__/` (z.B. expo-server-sdk.ts)
+- Module-Mapper: `@/` → `src/` (via jest.config.ts moduleNameMapper)
+- Neuer Test: Datei in `src/__tests__/{entity}.test.ts` anlegen
+
+## Validation mit Shared Schemas
+```typescript
+// Route: Zod Schema aus @tennis-club/shared importieren
+import { createTeamSchema } from '@tennis-club/shared';
+router.post('/', requireAuth, validate(createTeamSchema), handler);
+// validate() Middleware parsed und validiert req.body/query/params
+```
+
+## Performance
+- Batch-Operationen: `prisma.entity.createMany()` statt `Promise.all(items.map(i => prisma.entity.create()))`
+- Token-Lookups: Immer per eindeutigem Identifier narrowen, nie Full-Table-Scan + Iteration
+
 ## Umgebungsvariablen
 Kopiere `backend/.env.example` nach `backend/.env` und passe die Werte an.
 JWT Secrets muessen mindestens 32 Zeichen lang sein.

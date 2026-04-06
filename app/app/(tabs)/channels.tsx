@@ -4,111 +4,107 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { EmptyState, SearchInput, Badge } from '../../src/components/ui';
+import { SearchInput, EmptyState, QueryError } from '../../src/components/ui';
+import { ChannelListItem, CreateChannelModal } from '../../src/components/chat';
+import type { ChannelItem } from '../../src/components/chat';
 import { useChannels } from '../../src/features/chat/hooks/useChannels';
-import { formatTimeAgo } from '../../src/utils/formatDate';
-import { MOCK_CHANNELS } from '../../src/lib/mockData';
-
-interface LastMessage {
-  id: string;
-  content: string;
-  createdAt: string;
-  author: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
-}
-
-interface ChannelItem {
-  id: string;
-  name: string;
-  description: string | null;
-  visibility: string;
-  isDefault: boolean;
-  subchannels: Array<{ id: string; name: string }>;
-  _count: { messages: number; members: number };
-  lastMessage: LastMessage | null;
-}
+import { usePermissions } from '../../src/hooks/usePermissions';
 
 export default function ChannelsScreen() {
-  const { colors, typography, spacing, borderRadius } = useTheme();
+  const { colors, typography, spacing } = useTheme();
   const router = useRouter();
+  const { isBoard, isAdmin } = usePermissions();
+  const canCreateChannel = isBoard || isAdmin;
   const [search, setSearch] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
 
-  const { data, isLoading, refetch } = useChannels();
-  const apiChannels = ((data ?? []) as ChannelItem[]);
-  const allChannels = apiChannels.length > 0 ? apiChannels : (MOCK_CHANNELS as unknown as ChannelItem[]);
+  const { data, isLoading, isError, refetch } = useChannels();
+  const allChannels = useMemo(() => (data ?? []) as ChannelItem[], [data]);
 
   const channels = useMemo(() => {
     if (!search.trim()) return allChannels;
     const q = search.toLowerCase();
-    return allChannels.filter(ch => ch.name.toLowerCase().includes(q));
+    return allChannels.filter((ch) => ch.name.toLowerCase().includes(q));
   }, [allChannels, search]);
 
-  const isOfficial = (item: ChannelItem) => item.isDefault && item.visibility === 'PUBLIC';
+  const handleChannelPress = (id: string) => router.push(`/channel/${id}`);
 
-  const renderChannel = ({ item }: { item: ChannelItem }) => (
-    <Pressable
-      onPress={() => router.push(`/channel/${item.id}`)}
-      style={({ pressed }) => [
-        { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl, padding: spacing.lg, marginBottom: spacing.md, opacity: pressed ? 0.9 : 1 },
-      ]}
-    >
-      <View style={styles.channelRow}>
-        <View style={[styles.channelIcon, {
-          backgroundColor: isOfficial(item) ? colors.accentSurface : item.visibility === 'RESTRICTED' ? colors.accent + '12' : colors.surface,
-          borderRadius: borderRadius.lg,
-        }]}>
-          {isOfficial(item) ? (
-            <Ionicons name="lock-closed" size={18} color={colors.accent} />
-          ) : item.visibility === 'RESTRICTED' ? (
-            <Ionicons name="lock-closed" size={18} color={colors.textSecondary} />
-          ) : (
-            <Ionicons name="chatbubble" size={18} color={colors.textSecondary} />
-          )}
-        </View>
-        <View style={styles.channelInfo}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
-            {isOfficial(item) && <Badge label="Offiziell" variant="accent" size="sm" />}
-          </View>
-          {item.lastMessage ? (
-            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>
-              {item.lastMessage.author.firstName}: {item.lastMessage.content}
-            </Text>
-          ) : item.description ? (
-            <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]} numberOfLines={1}>{item.description}</Text>
-          ) : null}
-          <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
-            {item.lastMessage ? formatTimeAgo(item.lastMessage.createdAt) : `${item._count.messages} Nachrichten`}
-            {item.subchannels?.length > 0 && ` · ${item.subchannels.length} Sub`}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-      </View>
-    </Pressable>
+  const separator = () => (
+    <View
+      style={{
+        height: StyleSheet.hairlineWidth,
+        backgroundColor: colors.separator,
+        marginLeft: 86,
+      }}
+    />
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}>
+      <View
+        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}
+      >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Chats</Text>
       </View>
-      <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.md }}>
+      <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.sm }}>
         <SearchInput placeholder="Channel suchen..." value={search} onChangeText={setSearch} />
       </View>
+
       <FlatList
         data={channels}
         keyExtractor={(item) => item.id}
-        renderItem={renderChannel}
-        contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
-        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />}
-        ListEmptyComponent={!isLoading ? <EmptyState title="Keine Channels" description={search ? 'Kein Channel gefunden' : 'Es gibt noch keine Channels'} /> : null}
+        renderItem={({ item }) => <ChannelListItem item={item} onPress={handleChannelPress} />}
+        ItemSeparatorComponent={separator}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
+        }
+        ListEmptyComponent={
+          !isLoading ? (
+            isError ? (
+              <QueryError onRetry={refetch} />
+            ) : (
+              <EmptyState
+                title="Keine Channels"
+                description={search ? 'Kein Channel gefunden' : 'Es gibt noch keine Channels'}
+              />
+            )
+          ) : null
+        }
+        removeClippedSubviews
+        maxToRenderPerBatch={10}
+        windowSize={5}
       />
+
+      {canCreateChannel && (
+        <Pressable
+          onPress={() => setShowCreate(true)}
+          style={[styles.fab, { backgroundColor: colors.accent }]}
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </Pressable>
+      )}
+
+      <CreateChannelModal visible={showCreate} onClose={() => setShowCreate(false)} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  channelRow: { flexDirection: 'row', alignItems: 'center' },
-  channelIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
-  channelInfo: { flex: 1 },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
+  },
 });

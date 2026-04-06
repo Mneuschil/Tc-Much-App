@@ -54,7 +54,7 @@ export default function AdminMembersScreen() {
 
   const openRoleModal = (user: User) => {
     setSelectedUser(user);
-    setSelectedRoles([...user.roles]);
+    setSelectedRoles([...(user.roles ?? [])]);
   };
 
   const toggleRole = (role: UserRole) => {
@@ -76,16 +76,26 @@ export default function AdminMembersScreen() {
       onPress={() => openRoleModal(item)}
       style={({ pressed }) => [
         styles.memberRow,
-        { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator, paddingVertical: spacing.md, opacity: pressed ? 0.7 : 1 },
+        {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.separator,
+          paddingVertical: spacing.md,
+          opacity: pressed ? 0.7 : 1,
+        },
       ]}
     >
-      <Avatar imageUrl={item.avatarUrl} firstName={item.firstName} lastName={item.lastName} size="sm" />
+      <Avatar
+        imageUrl={item.avatarUrl}
+        firstName={item.firstName}
+        lastName={item.lastName}
+        size="sm"
+      />
       <View style={{ flex: 1, marginLeft: spacing.md }}>
         <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
           {item.firstName} {item.lastName}
         </Text>
         <View style={[styles.badgeRow, { marginTop: spacing.xs }]}>
-          {item.roles.map((role) => (
+          {(item.roles ?? []).map((role) => (
             <Badge key={role} label={ROLE_LABELS[role]} variant="accent" size="sm" />
           ))}
         </View>
@@ -96,7 +106,9 @@ export default function AdminMembersScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
+      <View
+        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}
+      >
         <View style={styles.headerRow}>
           <Text style={[typography.h1, { color: colors.textPrimary }]}>Mitglieder</Text>
           <Badge label={`${members?.length ?? 0}`} variant="neutral" size="md" />
@@ -118,7 +130,12 @@ export default function AdminMembersScreen() {
       {/* Role Edit Modal */}
       <Modal visible={selectedUser !== null} transparent animationType="slide">
         <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
-          <View style={[styles.modalContent, { backgroundColor: colors.background, borderRadius: radii.xl, padding: spacing.xl }]}>
+          <View
+            style={[
+              styles.modalContent,
+              { backgroundColor: colors.background, borderRadius: radii.xl, padding: spacing.xl },
+            ]}
+          >
             <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.lg }]}>
               Rollen für {selectedUser?.firstName} {selectedUser?.lastName}
             </Text>
@@ -136,7 +153,12 @@ export default function AdminMembersScreen() {
                     size={24}
                     color={isChecked ? colors.accent : colors.textTertiary}
                   />
-                  <Text style={[typography.bodyMedium, { color: colors.textPrimary, marginLeft: spacing.md }]}>
+                  <Text
+                    style={[
+                      typography.bodyMedium,
+                      { color: colors.textPrimary, marginLeft: spacing.md },
+                    ]}
+                  >
                     {ROLE_LABELS[role]}
                   </Text>
                 </Pressable>
@@ -152,8 +174,18 @@ export default function AdminMembersScreen() {
                 loading={updateRoles.isPending}
                 disabled={selectedRoles.length === 0}
               />
-              <Pressable onPress={() => setSelectedUser(null)} style={{ paddingVertical: spacing.sm }}>
-                <Text style={[typography.bodyMedium, { color: colors.textSecondary, textAlign: 'center' }]}>Abbrechen</Text>
+              <Pressable
+                onPress={() => setSelectedUser(null)}
+                style={{ paddingVertical: spacing.sm }}
+              >
+                <Text
+                  style={[
+                    typography.bodyMedium,
+                    { color: colors.textSecondary, textAlign: 'center' },
+                  ]}
+                >
+                  Abbrechen
+                </Text>
               </Pressable>
             </View>
           </View>

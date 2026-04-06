@@ -47,6 +47,7 @@ async function main() {
       secondaryColor: '#0EA65A',
       address: 'Tennisweg 1, 53804 Much',
       website: 'https://tc-much.de',
+      nuligaClubId: '35656',
     },
   });
 

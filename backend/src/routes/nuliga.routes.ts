@@ -22,11 +22,13 @@ router.post(
         return;
       }
 
-      // NuLiga Club-ID aus der Datenbank (oder default TC Much)
-      const nuligaClubId = '35656'; // TODO: In Club-Tabelle speichern
-      const season = (req.body.season as string) || '2026';
+      if (!club.nuligaClubId) {
+        error(res, 'NuLiga Club-ID ist nicht konfiguriert', 400, 'NULIGA_NOT_CONFIGURED');
+        return;
+      }
 
-      const result = await syncTeamsAndMatches(req.user!.clubId, nuligaClubId, season);
+      const season = (req.body.season as string) || '2026';
+      const result = await syncTeamsAndMatches(req.user!.clubId, club.nuligaClubId, season);
       success(res, {
         message: `Sync abgeschlossen: ${result.teams} Teams, ${result.matches} Spiele`,
         ...result,
@@ -34,14 +36,19 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 // GET /preview/teams – Vorschau: Teams von NuLiga abrufen (ohne DB-Import)
 router.get('/preview/teams', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const club = await prisma.club.findUnique({ where: { id: req.user!.clubId } });
+    if (!club?.nuligaClubId) {
+      error(res, 'NuLiga Club-ID ist nicht konfiguriert', 400, 'NULIGA_NOT_CONFIGURED');
+      return;
+    }
     const season = (req.query.season as string) || '2026';
-    const teams = await scrapeTeams('35656', season);
+    const teams = await scrapeTeams(club.nuligaClubId, season);
     success(res, teams);
   } catch (err) {
     next(err);
@@ -51,8 +58,13 @@ router.get('/preview/teams', async (req: Request, res: Response, next: NextFunct
 // GET /preview/matches – Vorschau: Spiele von NuLiga abrufen (ohne DB-Import)
 router.get('/preview/matches', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const club = await prisma.club.findUnique({ where: { id: req.user!.clubId } });
+    if (!club?.nuligaClubId) {
+      error(res, 'NuLiga Club-ID ist nicht konfiguriert', 400, 'NULIGA_NOT_CONFIGURED');
+      return;
+    }
     const season = (req.query.season as string) || '2026';
-    const matches = await scrapeMatches('35656', season);
+    const matches = await scrapeMatches(club.nuligaClubId, season);
     success(res, matches);
   } catch (err) {
     next(err);

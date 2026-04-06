@@ -8,7 +8,7 @@ export function useMessages(channelId: string) {
     queryFn: ({ pageParam }) => chatService.getMessages(channelId, pageParam, 20),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: { nextCursor: string | null; hasMore: boolean }) =>
-      lastPage.hasMore ? lastPage.nextCursor ?? undefined : undefined,
+      lastPage.hasMore ? (lastPage.nextCursor ?? undefined) : undefined,
     enabled: !!channelId,
   });
 }
@@ -19,7 +19,13 @@ export function useSendMessage(channelId: string) {
     mutationFn: (input: { content: string; replyToId?: string; mediaUrls?: string[] }) =>
       chatService.sendMessage(channelId, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channelId] }),
-    onError: (err: any) => Alert.alert('Fehler', err?.response?.data?.error?.message ?? 'Nachricht konnte nicht gesendet werden'),
+    onError: (err: unknown) => {
+      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
+      Alert.alert(
+        'Fehler',
+        axiosErr?.response?.data?.error?.message ?? 'Nachricht konnte nicht gesendet werden',
+      );
+    },
   });
 }
 
@@ -35,8 +41,13 @@ export function useDeleteMessage(channelId: string) {
 export function useAddReaction(channelId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ messageId, type }: { messageId: string; type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING' }) =>
-      chatService.addReaction(messageId, type),
+    mutationFn: ({
+      messageId,
+      type,
+    }: {
+      messageId: string;
+      type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING';
+    }) => chatService.addReaction(messageId, type),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channelId] }),
   });
 }
