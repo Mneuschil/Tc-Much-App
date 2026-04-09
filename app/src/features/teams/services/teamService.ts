@@ -10,11 +10,21 @@ export const teamService = {
   createTeam: (input: Record<string, unknown>) =>
     api.post(ENDPOINTS.teams.create, input).then((r) => r.data.data),
 
+  updateTeam: (
+    teamId: string,
+    input: { name?: string; league?: string | null; season?: string | null },
+  ) => api.put(ENDPOINTS.teams.detail(teamId), input).then((r) => r.data.data),
+
+  deleteTeam: (teamId: string) => api.delete(ENDPOINTS.teams.detail(teamId)).then((r) => r.data),
+
   addMember: (teamId: string, userId: string, position?: number) =>
     api.post(ENDPOINTS.teams.addMember(teamId), { userId, position }).then((r) => r.data.data),
 
   removeMember: (teamId: string, userId: string) =>
     api.delete(ENDPOINTS.teams.removeMember(teamId, userId)).then((r) => r.data),
+
+  ensureChannel: (teamId: string) =>
+    api.post(ENDPOINTS.teams.ensureChannel(teamId)).then((r) => r.data.data),
 
   getAvailability: (eventId: string) =>
     api.get(ENDPOINTS.events.availability(eventId)).then((r) => r.data.data),

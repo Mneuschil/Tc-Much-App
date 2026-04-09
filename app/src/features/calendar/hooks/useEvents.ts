@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService } from '../services/calendarService';
 import type { CreateEventInput } from '@tennis-club/shared';
 
-export function useEvents(type?: string, from?: string, to?: string) {
+export function useEvents(type?: string, from?: string, to?: string, teamId?: string) {
   return useQuery({
-    queryKey: ['events', type, from, to],
-    queryFn: () => calendarService.getEvents(type, from, to),
+    queryKey: ['events', type, from, to, teamId],
+    queryFn: () => calendarService.getEvents(type, from, to, teamId),
   });
 }
 

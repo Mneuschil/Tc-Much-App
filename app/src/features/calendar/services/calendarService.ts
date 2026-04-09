@@ -2,11 +2,12 @@ import api from '../../../lib/api';
 import { ENDPOINTS } from '../../../lib/endpoints';
 
 export const calendarService = {
-  getEvents: (type?: string, from?: string, to?: string) => {
+  getEvents: (type?: string, from?: string, to?: string, teamId?: string) => {
     const params = new URLSearchParams();
     if (type) params.set('type', type);
     if (from) params.set('from', from);
     if (to) params.set('to', to);
+    if (teamId) params.set('teamId', teamId);
     return api.get(`${ENDPOINTS.calendar.list}?${params.toString()}`).then((r) => r.data.data);
   },
 

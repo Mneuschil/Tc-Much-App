@@ -1,19 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { fileService } from '../services/fileService';
+import api from '../../../lib/api';
+import { ENDPOINTS } from '../../../lib/endpoints';
+import { appendFileToFormData } from '../../../utils/createFileFormData';
 
-export function useFiles(channelId: string, folderId?: string) {
-  return useQuery({
-    queryKey: ['files', channelId, folderId],
-    queryFn: () => fileService.getFiles(channelId, folderId).then(r => r.data),
-    enabled: !!channelId,
-  });
+interface UploadInput {
+  uri: string;
+  fileName: string;
+  mimeType: string;
+  displayName: string;
+  channelId: string;
+  folderId?: string;
 }
 
-export function useChannelFiles(channelId: string) {
+export function useChannelFiles(channelId: string, folderId?: string) {
   return useQuery({
-    queryKey: ['files', channelId],
-    queryFn: () => fileService.getFiles(channelId).then(r => r.data),
+    queryKey: ['files', channelId, folderId ?? null],
+    queryFn: () => fileService.getFiles(channelId, folderId).then((r) => r.data.data),
     enabled: !!channelId,
   });
 }
@@ -21,17 +25,38 @@ export function useChannelFiles(channelId: string) {
 export function useFolders(channelId: string) {
   return useQuery({
     queryKey: ['folders', channelId],
-    queryFn: () => fileService.getFolders(channelId).then(r => r.data),
+    queryFn: () => fileService.getFolders(channelId).then((r) => r.data.data),
     enabled: !!channelId,
+  });
+}
+
+export function useUploadFile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UploadInput) => {
+      const formData = new FormData();
+      appendFileToFormData(formData, 'file', input.uri, input.displayName, input.mimeType);
+      formData.append('channelId', input.channelId);
+      if (input.folderId) formData.append('folderId', input.folderId);
+      return api.post(ENDPOINTS.files.upload, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+    },
+    onSuccess: (_data, input) => {
+      queryClient.invalidateQueries({ queryKey: ['files', input.channelId] });
+    },
+    onError: () => Alert.alert('Fehler', 'Datei konnte nicht hochgeladen werden'),
   });
 }
 
 export function useCreateFolder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ name, channelId }: { name: string; channelId?: string }) =>
+    mutationFn: ({ name, channelId }: { name: string; channelId: string }) =>
       fileService.createFolder(name, channelId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['folders'] }),
+    onSuccess: (_data, input) => {
+      queryClient.invalidateQueries({ queryKey: ['folders', input.channelId] });
+    },
     onError: () => Alert.alert('Fehler', 'Ordner konnte nicht erstellt werden'),
   });
 }

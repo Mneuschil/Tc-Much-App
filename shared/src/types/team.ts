@@ -33,6 +33,24 @@ export interface TeamMember {
   createdAt: string;
 }
 
+/** TeamMember with populated user relation — returned by GET /teams/:id */
+export interface TeamMemberWithUser extends TeamMember {
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    phone?: string | null;
+  };
+}
+
+/** Full team detail with members and channels — returned by GET /teams/:id */
+export interface TeamDetail extends Team {
+  members: TeamMemberWithUser[];
+  channels: Array<{ id: string; name: string }>;
+  _count?: { members: number };
+}
+
 // Spec section 10: Availability per event
 export interface Availability {
   id: string;

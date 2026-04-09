@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, SectionList, Pressable, Linking } from 'react-native';
+import { useMemo } from 'react';
+import { View, Text, StyleSheet, SectionList, Pressable, Linking, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -20,27 +21,46 @@ interface SpieleTabProps {
   teamId: string;
 }
 
+function openMaps(location: string) {
+  const encoded = encodeURIComponent(location);
+  const url = Platform.select({
+    ios: `https://maps.apple.com/?q=${encoded}`,
+    default: `https://www.google.com/maps/search/?api=1&query=${encoded}`,
+  });
+  if (url) Linking.openURL(url);
+}
+
 export function SpieleTab({ teamId }: SpieleTabProps) {
   const { colors, typography, spacing } = useTheme();
   const router = useRouter();
-  const { data } = useEvents(undefined);
-  const allEvents = ((data ?? []) as EventData[]).filter(
-    (e) => e.teamId === teamId && (e.type === 'LEAGUE_MATCH' || e.type === 'CUP_MATCH'),
-  );
+  const { data } = useEvents(undefined, undefined, undefined, teamId);
 
-  const now = new Date();
-  const upcoming = allEvents
-    .filter((e) => new Date(e.startDate) >= now)
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  const past = allEvents
-    .filter((e) => new Date(e.startDate) < now)
-    .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-  const nextMatch = upcoming[0];
+  const allEvents = useMemo(() => {
+    const events = ((data ?? []) as EventData[]).filter(
+      (e) => e.type === 'LEAGUE_MATCH' || e.type === 'CUP_MATCH',
+    );
+    return events;
+  }, [data]);
+
+  const { upcoming, past, nextMatch } = useMemo(() => {
+    const now = new Date();
+    const up = allEvents
+      .filter((e) => new Date(e.startDate) >= now)
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    const pa = allEvents
+      .filter((e) => new Date(e.startDate) < now)
+      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    return { upcoming: up, past: pa, nextMatch: up[0] as EventData | undefined };
+  }, [allEvents]);
 
   const sections = [
     ...(upcoming.length > 0 ? [{ title: 'Kommende', data: upcoming }] : []),
     ...(past.length > 0 ? [{ title: 'Vergangene', data: past }] : []),
   ];
+
+  const navigateToMatch = (matchId: string) => {
+    router.push({ pathname: '/match/[id]', params: { id: matchId } });
+  };
 
   return (
     <SectionList
@@ -51,14 +71,14 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
         nextMatch ? (
           <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
             <CardElevated>
-              <Pressable onPress={() => router.push(`/match/${nextMatch.id}` as never)}>
+              <Pressable onPress={() => navigateToMatch(nextMatch.id)}>
                 <Text
                   style={[
                     typography.labelSmall,
                     { color: colors.textSecondary, marginBottom: spacing.xs },
                   ]}
                 >
-                  NAECHSTES SPIEL
+                  NÄCHSTES SPIEL
                 </Text>
                 <Text style={[typography.h2, { color: colors.textPrimary }]}>
                   {nextMatch.title}
@@ -70,11 +90,7 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
                 </Text>
                 {nextMatch.location && (
                   <Pressable
-                    onPress={() =>
-                      Linking.openURL(
-                        `https://maps.apple.com/?q=${encodeURIComponent(nextMatch.location!)}`,
-                      )
-                    }
+                    onPress={() => openMaps(nextMatch.location!)}
                     style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
                   >
                     <Ionicons name="location-outline" size={14} color={colors.accentLight} />
@@ -113,7 +129,7 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
       )}
       renderItem={({ item }) => (
         <Pressable
-          onPress={() => router.push(`/match/${item.id}` as never)}
+          onPress={() => navigateToMatch(item.id)}
           style={({ pressed }) => [
             {
               paddingHorizontal: spacing.xl,

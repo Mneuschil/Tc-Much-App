@@ -55,15 +55,22 @@ export default function TeamsScreen() {
   }, [upcomingEvents]);
 
   const sections: TeamSection[] = useMemo(() => {
-    const visible = myTeams.filter((t) => t.type !== 'TRAINING_GROUP');
-    const mannschaften = visible.filter((t) => t.type === 'MATCH_TEAM');
-    const organisation = visible.filter((t) => t.type === 'BOARD_GROUP');
+    const mannschaften = myTeams.filter((t) => t.type === 'MATCH_TEAM');
+    const training = myTeams.filter((t) => t.type === 'TRAINING_GROUP');
+    const organisation = myTeams.filter((t) => t.type === 'BOARD_GROUP');
     const result: TeamSection[] = [];
     if (mannschaften.length > 0) {
       result.push({
         title: 'Mannschaften',
         subtitle: `${mannschaften.length} ${mannschaften.length === 1 ? 'Team' : 'Teams'}`,
         data: mannschaften,
+      });
+    }
+    if (training.length > 0) {
+      result.push({
+        title: 'Trainingsgruppen',
+        subtitle: `${training.length} ${training.length === 1 ? 'Gruppe' : 'Gruppen'}`,
+        data: training,
       });
     }
     if (organisation.length > 0) {
@@ -76,8 +83,14 @@ export default function TeamsScreen() {
     return result;
   }, [myTeams]);
 
+  const getTeamIcon = (type: string): { name: keyof typeof Ionicons.glyphMap; accent: boolean } => {
+    if (type === 'MATCH_TEAM') return { name: 'tennisball', accent: true };
+    if (type === 'TRAINING_GROUP') return { name: 'fitness', accent: true };
+    return { name: 'briefcase', accent: false };
+  };
+
   const renderTeam = ({ item }: { item: TeamItem }) => {
-    const isMatch = item.type === 'MATCH_TEAM';
+    const icon = getTeamIcon(item.type);
     const nextMatch = nextMatchByTeam.get(item.id);
     return (
       <Pressable
@@ -97,15 +110,15 @@ export default function TeamsScreen() {
             style={[
               styles.teamIcon,
               {
-                backgroundColor: isMatch ? colors.accentSurface : colors.backgroundTertiary,
+                backgroundColor: icon.accent ? colors.accentSurface : colors.backgroundTertiary,
                 borderRadius: borderRadius.lg,
               },
             ]}
           >
             <Ionicons
-              name={isMatch ? 'tennisball' : 'briefcase'}
+              name={icon.name}
               size={20}
-              color={isMatch ? colors.accent : colors.textPrimary}
+              color={icon.accent ? colors.accent : colors.textPrimary}
             />
           </View>
           <View style={{ flex: 1, marginLeft: spacing.md }}>

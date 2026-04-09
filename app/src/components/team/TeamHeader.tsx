@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { TeamDetail } from '@tennis-club/shared';
 import { useTheme } from '../../theme';
 import { Avatar, Badge } from '../ui';
 import { useChannel } from '../../features/chat/hooks/useChannels';
@@ -10,21 +11,8 @@ const TYPE_LABELS: Record<string, string> = {
   BOARD_GROUP: 'Organisation',
 };
 
-interface MemberData {
-  id: string;
-  position: number | null;
-  user: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
-}
-
 interface TeamHeaderProps {
-  team: {
-    id: string;
-    name: string;
-    type: string;
-    league: string | null;
-    season: string | null;
-    members?: MemberData[];
-  };
+  team: Pick<TeamDetail, 'id' | 'name' | 'type' | 'league' | 'season' | 'members'>;
   channelId: string | null | undefined;
   onMembersPress: () => void;
 }
