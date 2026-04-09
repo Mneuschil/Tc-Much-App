@@ -1,13 +1,5 @@
-import { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SectionList,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-} from 'react-native';
+import { useMemo } from 'react';
+import { View, Text, StyleSheet, SectionList, Pressable, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,18 +8,6 @@ import { EmptyState, QueryError } from '../../src/components/ui';
 import { useMyTeams } from '../../src/features/teams/hooks/useMyTeams';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
 import { formatDate } from '../../src/utils/formatDate';
-
-const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-  MATCH_TEAM: 'tennisball',
-  TRAINING_GROUP: 'fitness',
-  BOARD_GROUP: 'briefcase',
-};
-const FILTERS = [
-  { key: '', label: 'Alle' },
-  { key: 'MATCH_TEAM', label: 'Mannschaften' },
-  { key: 'TRAINING_GROUP', label: 'Training' },
-  { key: 'BOARD_GROUP', label: 'Vorstand' },
-];
 
 interface TeamItem {
   id: string;
@@ -47,50 +27,57 @@ interface EventItem {
   opponent?: string;
 }
 
+interface TeamSection {
+  title: string;
+  subtitle: string;
+  data: TeamItem[];
+}
+
 export default function TeamsScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
-  const [filter, setFilter] = useState('');
 
-  const {
-    myTeams: apiMyTeams,
-    otherTeams: apiOtherTeams,
-    isLoading,
-    isError,
-    refetch,
-  } = useMyTeams();
+  const { myTeams: apiMyTeams, isLoading, isError, refetch } = useMyTeams();
   const { data: weekEventsData } = useWeekEvents();
 
-  const myTeams = (apiMyTeams ?? []) as TeamItem[];
-  const otherTeams = (apiOtherTeams ?? []) as TeamItem[];
+  const myTeams = useMemo(() => (apiMyTeams ?? []) as TeamItem[], [apiMyTeams]);
   const upcomingEvents = useMemo(() => (weekEventsData ?? []) as EventItem[], [weekEventsData]);
 
-  // Map teamId → next match
   const nextMatchByTeam = useMemo(() => {
     const map = new Map<string, EventItem>();
     const sorted = [...upcomingEvents]
       .filter((e) => e.teamId && e.type?.includes('MATCH'))
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
     for (const ev of sorted) {
-      if (ev.teamId && !map.has(ev.teamId)) {
-        map.set(ev.teamId, ev);
-      }
+      if (ev.teamId && !map.has(ev.teamId)) map.set(ev.teamId, ev);
     }
     return map;
   }, [upcomingEvents]);
 
-  const applyFilter = (teams: TeamItem[]) =>
-    filter ? teams.filter((t) => t.type === filter) : teams;
-
-  const filteredMy = applyFilter(myTeams);
-  const filteredOther = applyFilter(otherTeams);
-
-  const sections = [
-    ...(filteredMy.length > 0 ? [{ title: 'Meine Teams', data: filteredMy }] : []),
-    ...(filteredOther.length > 0 ? [{ title: 'Alle Teams', data: filteredOther }] : []),
-  ];
+  const sections: TeamSection[] = useMemo(() => {
+    const visible = myTeams.filter((t) => t.type !== 'TRAINING_GROUP');
+    const mannschaften = visible.filter((t) => t.type === 'MATCH_TEAM');
+    const organisation = visible.filter((t) => t.type === 'BOARD_GROUP');
+    const result: TeamSection[] = [];
+    if (mannschaften.length > 0) {
+      result.push({
+        title: 'Mannschaften',
+        subtitle: `${mannschaften.length} ${mannschaften.length === 1 ? 'Team' : 'Teams'}`,
+        data: mannschaften,
+      });
+    }
+    if (organisation.length > 0) {
+      result.push({
+        title: 'Organisation',
+        subtitle: `${organisation.length} ${organisation.length === 1 ? 'Team' : 'Teams'}`,
+        data: organisation,
+      });
+    }
+    return result;
+  }, [myTeams]);
 
   const renderTeam = ({ item }: { item: TeamItem }) => {
+    const isMatch = item.type === 'MATCH_TEAM';
     const nextMatch = nextMatchByTeam.get(item.id);
     return (
       <Pressable
@@ -109,13 +96,16 @@ export default function TeamsScreen() {
           <View
             style={[
               styles.teamIcon,
-              { backgroundColor: colors.surface, borderRadius: borderRadius.lg },
+              {
+                backgroundColor: isMatch ? colors.accentSurface : colors.backgroundTertiary,
+                borderRadius: borderRadius.lg,
+              },
             ]}
           >
             <Ionicons
-              name={TYPE_ICONS[item.type] ?? 'people'}
+              name={isMatch ? 'tennisball' : 'briefcase'}
               size={20}
-              color={colors.textPrimary}
+              color={isMatch ? colors.accent : colors.textPrimary}
             />
           </View>
           <View style={{ flex: 1, marginLeft: spacing.md }}>
@@ -134,7 +124,7 @@ export default function TeamsScreen() {
               </Text>
             )}
             <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
-              {item._count.members} Spieler
+              {item._count.members} {item._count.members === 1 ? 'Mitglied' : 'Mitglieder'}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -146,63 +136,31 @@ export default function TeamsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View
-        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}
+        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}
       >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Teams</Text>
       </View>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: spacing.xl,
-          paddingBottom: spacing.lg,
-          gap: spacing.sm,
-        }}
-      >
-        {FILTERS.map((f) => (
-          <Pressable
-            key={f.key}
-            onPress={() => setFilter(f.key)}
-            style={[
-              {
-                backgroundColor: filter === f.key ? colors.chipActive : colors.chipInactive,
-                borderRadius: borderRadius.full,
-                paddingHorizontal: spacing.lg,
-                paddingVertical: spacing.sm,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                typography.captionMedium,
-                { color: filter === f.key ? colors.textInverse : colors.textPrimary },
-              ]}
-            >
-              {f.label}
-            </Text>
-          </Pressable>
-        ))}
-      </ScrollView>
       <SectionList
         sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderTeam}
         renderSectionHeader={({ section }) => (
-          <Text
-            style={[
-              typography.captionMedium,
-              {
-                color: colors.textSecondary,
-                paddingHorizontal: spacing.xl,
-                paddingTop: spacing.md,
-                paddingBottom: spacing.sm,
-              },
-            ]}
+          <View
+            style={{
+              paddingHorizontal: spacing.xl,
+              paddingTop: spacing.lg,
+              paddingBottom: spacing.md,
+              backgroundColor: colors.background,
+            }}
           >
-            {section.title}
-          </Text>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>{section.title}</Text>
+            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
+              {section.subtitle}
+            </Text>
+          </View>
         )}
         contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
+        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
         }
@@ -211,7 +169,7 @@ export default function TeamsScreen() {
             isError ? (
               <QueryError onRetry={refetch} />
             ) : (
-              <EmptyState title="Keine Teams" description="Keine Teams angelegt" />
+              <EmptyState title="Keine Teams" description="Du bist noch in keinem Team Mitglied" />
             )
           ) : null
         }
