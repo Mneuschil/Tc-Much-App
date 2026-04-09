@@ -3,11 +3,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 import { useSocketEvents } from '../../src/hooks/useSocketEvents';
 import { useClub } from '../../src/hooks/useClub';
+import { useProfile } from '../../src/hooks/useProfile';
 
 export default function TabLayout() {
   const { colors } = useTheme();
   useSocketEvents();
   useClub();
+  useProfile();
 
   return (
     <Tabs
@@ -24,26 +26,51 @@ export default function TabLayout() {
         },
       }}
     >
-      <Tabs.Screen name="home" options={{
-        title: 'Home',
-        tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
-      }} />
-      <Tabs.Screen name="channels" options={{
-        title: 'Chats',
-        tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble-outline" size={size} color={color} />,
-      }} />
-      <Tabs.Screen name="calendar" options={{
-        title: 'Kalender',
-        tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
-      }} />
-      <Tabs.Screen name="teams" options={{
-        title: 'Teams',
-        tabBarIcon: ({ color, size }) => <Ionicons name="people-outline" size={size} color={color} />,
-      }} />
-      <Tabs.Screen name="more" options={{
-        title: 'Mehr',
-        tabBarIcon: ({ color, size }) => <Ionicons name="ellipsis-horizontal-outline" size={size} color={color} />,
-      }} />
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="channels"
+        options={{
+          title: 'Chats',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="calendar"
+        options={{
+          title: 'Kalender',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="teams"
+        options={{
+          title: 'Teams',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="people-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="more"
+        options={{
+          title: 'Mehr',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="ellipsis-horizontal-outline" size={size} color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen name="tournaments" options={{ href: null }} />
     </Tabs>
   );

@@ -7,14 +7,12 @@ import {
   updateChannelSchema,
   createMessageSchema,
   messageReactionSchema,
-  SOCKET_ROOMS,
 } from '@tennis-club/shared';
 import * as channelService from '../services/channel.service';
 import * as messageService from '../services/message.service';
 import * as reactionService from '../services/reaction.service';
-import * as pushService from '../services/push.service';
-import { success, error } from '../utils/apiResponse';
-import { logAudit } from '../utils/audit';
+import { success } from '../utils/apiResponse';
+import type { Server } from 'socket.io';
 
 const router = Router();
 
@@ -52,14 +50,10 @@ router.post(
 // GET /:channelId – Channel-Details mit Subchannels
 router.get('/:channelId', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const channel = await channelService.getChannelById(
+    const channel = await channelService.getChannelByIdOrFail(
       req.params.channelId as string,
       req.user!.clubId,
     );
-    if (!channel) {
-      error(res, 'Channel nicht gefunden', 404, 'NOT_FOUND');
-      return;
-    }
     success(res, channel);
   } catch (err) {
     next(err);
@@ -110,10 +104,11 @@ router.delete(
   requireAdmin,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await channelService.deleteChannel(req.params.channelId as string, req.user!.clubId);
-      logAudit('CHANNEL_DELETED', req.user!.userId, req.user!.clubId, {
-        channelId: req.params.channelId,
-      });
+      await channelService.deleteChannel(
+        req.params.channelId as string,
+        req.user!.clubId,
+        req.user!.userId,
+      );
       success(res, { message: 'Channel geloescht' });
     } catch (err) {
       next(err);
@@ -138,18 +133,15 @@ router.post('/:channelId/mute', async (req: Request, res: Response, next: NextFu
 // GET /:channelId/messages – Nachrichten mit cursor-based pagination + search
 router.get('/:channelId/messages', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await messageService.checkChannelAccess(
+    const result = await messageService.getMessagesWithAccessCheck(
       req.params.channelId as string,
       req.user!.userId,
       req.user!.clubId,
-    );
-    const cursor = req.query.cursor as string | undefined;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const search = req.query.search as string | undefined;
-    const result = await messageService.getChannelMessages(
-      req.params.channelId as string,
-      req.user!.userId,
-      { cursor, limit, search },
+      {
+        cursor: req.query.cursor as string | undefined,
+        limit: parseInt(req.query.limit as string) || 20,
+        search: req.query.search as string | undefined,
+      },
     );
     success(res, result);
   } catch (err) {
@@ -163,41 +155,14 @@ router.post(
   validate(createMessageSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await messageService.checkChannelAccess(
-        req.params.channelId as string,
-        req.user!.userId,
-        req.user!.clubId,
-      );
-      const message = await messageService.createMessage(
+      const io = req.app.get('io') as Server | null;
+      const message = await messageService.createMessageAndNotify(
         req.params.channelId as string,
         req.body,
         req.user!.userId,
+        req.user!.clubId,
+        io,
       );
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.channel(req.params.channelId as string)).emit(
-          'message:created',
-          message,
-        );
-      }
-
-      // Push notification (fire-and-forget, exclude author + muted)
-      const authorName = `${message.author.firstName} ${message.author.lastName}`;
-      pushService
-        .sendToChannel(
-          req.params.channelId as string,
-          {
-            title: authorName,
-            body: message.content.substring(0, 200),
-            data: { channelId: req.params.channelId, messageId: message.id },
-          },
-          req.user!.userId,
-        )
-        .catch((_err) => {
-          /* swallow push errors */
-        });
-
       success(res, message, 201);
     } catch (err) {
       next(err);
@@ -208,19 +173,12 @@ router.post(
 // DELETE /messages/:messageId – Eigene Nachricht loeschen
 router.delete('/messages/:messageId', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const deleted = await messageService.deleteMessage(
+    const io = req.app.get('io') as Server | null;
+    await messageService.deleteMessageAndNotify(
       req.params.messageId as string,
       req.user!.userId,
+      io,
     );
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(SOCKET_ROOMS.channel(deleted.channelId)).emit('message:deleted', {
-        id: deleted.id,
-        channelId: deleted.channelId,
-      });
-    }
-
     success(res, { message: 'Nachricht geloescht' });
   } catch (err) {
     next(err);
@@ -233,28 +191,17 @@ router.post(
   validate(messageReactionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const reaction = await reactionService.addReaction(
-        req.params.messageId as string,
-        req.user!.userId,
+      const io = req.app.get('io') as Server | null;
+      const result = await reactionService.addReactionAndNotify(
+        {
+          messageId: req.params.messageId as string,
+          userId: req.user!.userId,
+          clubId: req.user!.clubId,
+          io,
+        },
         req.body.type,
       );
-      const aggregated = await reactionService.getAggregatedReactions(
-        req.params.messageId as string,
-        req.user!.userId,
-      );
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('message:reaction', {
-          messageId: req.params.messageId,
-          action: 'added',
-          type: req.body.type,
-          userId: req.user!.userId,
-          reactions: aggregated,
-        });
-      }
-
-      success(res, { reaction, reactions: aggregated }, 201);
+      success(res, result, 201);
     } catch (err) {
       next(err);
     }
@@ -266,28 +213,17 @@ router.delete(
   '/messages/:messageId/reactions/:type',
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await reactionService.removeReaction(
-        req.params.messageId as string,
-        req.user!.userId,
+      const io = req.app.get('io') as Server | null;
+      const result = await reactionService.removeReactionAndNotify(
+        {
+          messageId: req.params.messageId as string,
+          userId: req.user!.userId,
+          clubId: req.user!.clubId,
+          io,
+        },
         req.params.type as 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING',
       );
-      const aggregated = await reactionService.getAggregatedReactions(
-        req.params.messageId as string,
-        req.user!.userId,
-      );
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('message:reaction', {
-          messageId: req.params.messageId,
-          action: 'removed',
-          type: req.params.type,
-          userId: req.user!.userId,
-          reactions: aggregated,
-        });
-      }
-
-      success(res, { reactions: aggregated });
+      success(res, result);
     } catch (err) {
       next(err);
     }
@@ -297,14 +233,9 @@ router.delete(
 // GET /search – Nachrichten suchen
 router.get('/search', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const query = req.query.q as string;
-    if (!query) {
-      error(res, 'Suchbegriff erforderlich', 400, 'VALIDATION_ERROR');
-      return;
-    }
     const results = await messageService.searchMessages(
       req.user!.clubId,
-      query,
+      req.query.q as string,
       req.query.channelId as string,
     );
     success(res, results);

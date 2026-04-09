@@ -78,6 +78,7 @@ export const ENDPOINTS = {
     create: '/teams',
     addMember: (teamId: string) => `/teams/${teamId}/members`,
     removeMember: (teamId: string, userId: string) => `/teams/${teamId}/members/${userId}`,
+    ensureChannel: (teamId: string) => `/teams/${teamId}/ensure-channel`,
   },
 
   // Events / Availability
@@ -95,7 +96,7 @@ export const ENDPOINTS = {
     folders: (channelId: string) => `/files/folders/${channelId}`,
     createFolder: '/files/folders',
     delete: (fileId: string) => `/files/${fileId}`,
-    upload: '/files/upload',
+    upload: '/upload',
   },
 
   // Tournaments

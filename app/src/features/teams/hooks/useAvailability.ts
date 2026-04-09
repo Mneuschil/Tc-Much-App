@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { teamService } from '../services/teamService';
+import { getErrorMessage } from '../../../utils/errorUtils';
 
 export function useAvailability(eventId: string) {
   return useQuery({
@@ -24,13 +25,8 @@ export function useSetAvailability(eventId: string) {
       queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
     },
-    onError: (err: unknown) => {
-      const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-      Alert.alert(
-        'Fehler',
-        axiosErr?.response?.data?.error?.message ??
-          'Verfuegbarkeit konnte nicht gespeichert werden',
-      );
+    onError: (err: Error) => {
+      Alert.alert('Fehler', getErrorMessage(err, 'Verfügbarkeit konnte nicht gespeichert werden'));
     },
   });
 }

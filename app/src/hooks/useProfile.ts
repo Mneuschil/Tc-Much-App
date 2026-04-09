@@ -1,18 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
-import { AxiosError } from 'axios';
 import { userService } from '../features/profile/services/userService';
+import { getErrorMessage } from '../utils/errorUtils';
 import { useAuthStore } from '../stores/authStore';
 import type { UpdateProfileInput, UpdateRolesInput } from '@tennis-club/shared';
-
-interface ApiErrorResponse {
-  error?: { message?: string };
-}
-
-function getErrorMessage(err: Error, fallback: string): string {
-  const axiosErr = err as AxiosError<ApiErrorResponse>;
-  return axiosErr.response?.data?.error?.message ?? fallback;
-}
 
 export function useProfile() {
   const setUser = useAuthStore((s) => s.setUser);
@@ -31,7 +22,8 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (input: UpdateProfileInput) => userService.updateProfile(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile'] }),
-    onError: (err: Error) => Alert.alert('Fehler', getErrorMessage(err, 'Profil konnte nicht aktualisiert werden')),
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Profil konnte nicht aktualisiert werden')),
   });
 }
 
@@ -48,6 +40,7 @@ export function useUpdateRoles() {
     mutationFn: ({ userId, input }: { userId: string; input: UpdateRolesInput }) =>
       userService.updateUserRoles(userId, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['clubMembers'] }),
-    onError: (err: Error) => Alert.alert('Fehler', getErrorMessage(err, 'Rollen konnten nicht aktualisiert werden')),
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Rollen konnten nicht aktualisiert werden')),
   });
 }

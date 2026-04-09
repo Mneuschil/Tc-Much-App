@@ -1,15 +1,7 @@
 import { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { useTheme } from '../../theme';
-import { EmptyState, QueryError } from '../ui';
+import { EmptyState, QueryError, LoadingSkeleton } from '../ui';
 import { MessageBubble, ChatInputBar } from '../chat';
 import type { ChatMessage } from '../chat';
 import { useAuthStore } from '../../stores/authStore';
@@ -25,9 +17,10 @@ interface MessagesPage {
 
 interface TeamChatTabProps {
   channelId: string | undefined | null;
+  isCreatingChannel?: boolean;
 }
 
-export function TeamChatTab({ channelId }: TeamChatTabProps) {
+export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) {
   const { colors, typography, spacing, borderRadius } = useTheme();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const [newMessage, setNewMessage] = useState('');
@@ -50,18 +43,25 @@ export function TeamChatTab({ channelId }: TeamChatTabProps) {
 
   const dateHeaders = useMemo(() => {
     const headers = new Map<string, string>();
-    let lastKey = '';
-    for (const msg of messages) {
-      const key = new Date(msg.createdAt).toDateString();
-      if (key !== lastKey) {
-        headers.set(msg.id, msg.createdAt);
-        lastKey = key;
+    for (let i = 0; i < messages.length; i++) {
+      const key = new Date(messages[i].createdAt).toDateString();
+      const nextKey =
+        i + 1 < messages.length ? new Date(messages[i + 1].createdAt).toDateString() : null;
+      if (key !== nextKey) {
+        headers.set(messages[i].id, messages[i].createdAt);
       }
     }
     return headers;
   }, [messages]);
 
   if (!channelId) {
+    if (isCreatingChannel) {
+      return (
+        <View style={styles.emptyWrap}>
+          <LoadingSkeleton width={200} height={20} />
+        </View>
+      );
+    }
     return (
       <EmptyState
         title="Kein Chat verknüpft"
@@ -89,16 +89,20 @@ export function TeamChatTab({ channelId }: TeamChatTabProps) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={120}
-    >
+    <View style={{ flex: 1 }}>
       <FlatList<ChatMessage>
         data={messages}
+        inverted
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <>
+            <MessageBubble
+              message={item}
+              isOwn={item.author?.id === currentUserId}
+              onReply={setReplyTo}
+              onReaction={handleReaction}
+              onMediaPress={() => {}}
+            />
             {dateHeaders.has(item.id) && (
               <View style={styles.dateBadgeRow}>
                 <View
@@ -116,19 +120,12 @@ export function TeamChatTab({ channelId }: TeamChatTabProps) {
                 </View>
               </View>
             )}
-            <MessageBubble
-              message={item}
-              isOwn={item.author?.id === currentUserId}
-              onReply={setReplyTo}
-              onReaction={handleReaction}
-              onMediaPress={() => {}}
-            />
           </>
         )}
         contentContainerStyle={{
           paddingHorizontal: spacing.lg,
-          paddingTop: spacing.md,
-          paddingBottom: spacing.sm,
+          paddingTop: spacing.sm,
+          paddingBottom: spacing.md,
         }}
         refreshControl={
           <RefreshControl
@@ -164,7 +161,7 @@ export function TeamChatTab({ channelId }: TeamChatTabProps) {
         replyTo={replyTo}
         onCancelReply={() => setReplyTo(null)}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 

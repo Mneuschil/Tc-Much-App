@@ -2,16 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireBoard, requireAdmin } from '../middleware/roles';
 import { validate } from '../middleware/validate';
-import {
-  createEventSchema,
-  updateEventSchema,
-  availabilitySchema,
-  SOCKET_ROOMS,
-} from '@tennis-club/shared';
+import { createEventSchema, updateEventSchema, availabilitySchema } from '@tennis-club/shared';
 import * as eventService from '../services/event.service';
 import * as availabilityService from '../services/availability.service';
 import * as trainingService from '../services/training.service';
-import * as pushService from '../services/push.service';
 import * as lineupService from '../services/lineup.service';
 import { requireAnyRole } from '../middleware/roles';
 import { UserRole } from '@tennis-club/shared';
@@ -44,30 +38,13 @@ router.post(
   validate(createEventSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const event = await eventService.createEvent(req.body, req.user!.clubId, req.user!.userId);
-
       const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('event:created', event);
-      }
-
-      // Auto-push to team members for team events (fire-and-forget)
-      if (req.body.teamId) {
-        pushService
-          .sendToTeam(
-            req.body.teamId,
-            {
-              title: 'Neues Event',
-              body: `"${event.title}" wurde erstellt. Bitte Verfuegbarkeit eintragen.`,
-              data: { eventId: event.id },
-            },
-            req.user!.userId,
-          )
-          .catch(() => {
-            /* swallow */
-          });
-      }
-
+      const event = await eventService.createEventAndNotify(
+        req.body,
+        req.user!.clubId,
+        req.user!.userId,
+        io,
+      );
       success(res, event, 201);
     } catch (err) {
       next(err);
@@ -96,33 +73,13 @@ router.put(
   validate(updateEventSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const updated = await eventService.updateEvent(
+      const io = req.app.get('io');
+      const updated = await eventService.updateEventAndNotify(
         req.params.eventId as string,
         req.user!.clubId,
         req.body,
+        io,
       );
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('event:updated', {
-          eventId: req.params.eventId,
-        });
-      }
-
-      // Push to RSVP users (fire-and-forget)
-      const rsvpUserIds = await eventService.getAvailabilityUserIds(req.params.eventId as string);
-      if (rsvpUserIds.length > 0) {
-        pushService
-          .sendToUsers(rsvpUserIds, {
-            title: 'Event geaendert',
-            body: `"${updated.title}" wurde aktualisiert`,
-            data: { eventId: updated.id },
-          })
-          .catch(() => {
-            /* swallow push errors */
-          });
-      }
-
       success(res, updated);
     } catch (err) {
       next(err);
@@ -180,31 +137,15 @@ router.put(
   validate(availabilitySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await availabilityService.checkTeamMembership(
+      const io = req.app.get('io');
+      const availability = await availabilityService.setAvailabilityAndNotify(
         req.params.eventId as string,
         req.user!.userId,
         req.user!.clubId,
-      );
-
-      const availability = await availabilityService.setAvailability(
-        req.params.eventId as string,
-        req.user!.userId,
         req.body.status,
         req.body.comment,
+        io,
       );
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('availability:updated', availability);
-      }
-
-      // Lineup integration: notify captain if player was in lineup and now unavailable
-      lineupService
-        .handleAvailabilityChange(req.params.eventId as string, req.user!.userId, req.body.status)
-        .catch(() => {
-          /* swallow */
-        });
-
       success(res, availability);
     } catch (err) {
       next(err);
@@ -257,27 +198,15 @@ router.post(
   requireBoard,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const event = await eventService.getEventById(req.params.eventId as string, req.user!.clubId);
-      if (!event) {
-        error(res, 'Event nicht gefunden', 404, 'NOT_FOUND');
-        return;
-      }
-      const lineup = await lineupService.saveLineup(
-        req.params.eventId as string,
-        event.team?.id || '',
-        req.body.lineup,
-      );
-
       const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('match:lineup', {
-          eventId: req.params.eventId,
-        });
-      }
-
-      logAudit('LINEUP_SAVED', req.user!.userId, req.user!.clubId, {
-        eventId: req.params.eventId,
-      });
+      const lineup = await eventService.saveLineupForEvent(
+        req.params.eventId as string,
+        req.user!.clubId,
+        req.user!.userId,
+        req.body.lineup,
+        io,
+        'LINEUP_SAVED',
+      );
       success(res, lineup, 201);
     } catch (err) {
       next(err);
@@ -291,27 +220,15 @@ router.put(
   requireBoard,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const event = await eventService.getEventById(req.params.eventId as string, req.user!.clubId);
-      if (!event) {
-        error(res, 'Event nicht gefunden', 404, 'NOT_FOUND');
-        return;
-      }
-      const lineup = await lineupService.saveLineup(
-        req.params.eventId as string,
-        event.team?.id || '',
-        req.body.lineup,
-      );
-
       const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('match:lineup', {
-          eventId: req.params.eventId,
-        });
-      }
-
-      logAudit('LINEUP_UPDATED', req.user!.userId, req.user!.clubId, {
-        eventId: req.params.eventId,
-      });
+      const lineup = await eventService.saveLineupForEvent(
+        req.params.eventId as string,
+        req.user!.clubId,
+        req.user!.userId,
+        req.body.lineup,
+        io,
+        'LINEUP_UPDATED',
+      );
       success(res, lineup);
     } catch (err) {
       next(err);

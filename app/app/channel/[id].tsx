@@ -101,7 +101,7 @@ export default function ChannelDetailScreen() {
           headerShown: true,
           title: channel?.name ?? 'Channel',
           headerStyle: { backgroundColor: isDark ? colors.background : colors.accent },
-          headerTintColor: isDark ? colors.textPrimary : '#FFFFFF',
+          headerTintColor: isDark ? colors.textPrimary : colors.buttonPrimaryText,
           headerShadowVisible: false,
         }}
       />
@@ -115,6 +115,7 @@ export default function ChannelDetailScreen() {
           keyboardVerticalOffset={100}
         >
           <FlatList<ChatMessage>
+            inverted
             data={messages}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
@@ -184,7 +185,7 @@ export default function ChannelDetailScreen() {
             replyTo={replyTo}
             onCancelReply={() => setReplyTo(null)}
             disabled={isOfficialRestricted}
-            disabledText="Nur Admins koennen hier posten"
+            disabledText="Nur Admins können hier posten"
           />
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -197,7 +198,7 @@ export default function ChannelDetailScreen() {
       >
         <Pressable style={styles.viewerOverlay} onPress={() => setViewerImage(null)}>
           <Pressable onPress={() => setViewerImage(null)} style={styles.viewerClose}>
-            <Ionicons name="close-circle" size={32} color="#FFFFFF" />
+            <Ionicons name="close-circle" size={32} color={colors.buttonPrimaryText} />
           </Pressable>
           {viewerImage && (
             <Image source={{ uri: viewerImage }} style={styles.viewerImage} resizeMode="contain" />

@@ -87,6 +87,20 @@ router.delete('/:teamId', requireAdmin, async (req: Request, res: Response, next
   }
 });
 
+// POST /:teamId/ensure-channel – Channel sicherstellen (idempotent)
+router.post('/:teamId/ensure-channel', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const channel = await teamService.ensureTeamChannel(
+      req.params.teamId as string,
+      req.user!.clubId,
+      req.user!.userId,
+    );
+    success(res, channel);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /:teamId/members – Mitglied hinzufuegen (Board/Admin) + ChannelMember-Sync
 router.post(
   '/:teamId/members',

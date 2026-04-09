@@ -222,6 +222,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  fab: { position: 'absolute', bottom: 100, right: 20, width: 56, height: 56 },
+  fab: { position: 'absolute', bottom: 100, right: 20, width: 52, height: 52 },
   fabInner: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

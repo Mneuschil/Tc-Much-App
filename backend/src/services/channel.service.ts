@@ -1,5 +1,10 @@
 import { prisma } from '../config/database';
-import type { CreateChannelInput, CreateMessageInput, UpdateChannelInput } from '@tennis-club/shared';
+import type {
+  CreateChannelInput,
+  CreateMessageInput,
+  UpdateChannelInput,
+} from '@tennis-club/shared';
+import { logAudit } from '../utils/audit';
 
 export async function getChannelsForClub(clubId: string, userId: string) {
   // Check if user is admin/board (should see all channels)
@@ -7,20 +12,19 @@ export async function getChannelsForClub(clubId: string, userId: string) {
     where: { userId },
     select: { role: true },
   });
-  const isPrivileged = userRoles.some(r =>
-    ['CLUB_ADMIN', 'SYSTEM_ADMIN', 'BOARD_MEMBER'].includes(r.role)
+  const isPrivileged = userRoles.some((r) =>
+    ['CLUB_ADMIN', 'SYSTEM_ADMIN', 'BOARD_MEMBER'].includes(r.role),
   );
 
   const channels = await prisma.channel.findMany({
     where: {
       clubId,
       parentChannelId: null,
-      ...(isPrivileged ? {} : {
-        OR: [
-          { visibility: 'PUBLIC' },
-          { members: { some: { userId } } },
-        ],
-      }),
+      ...(isPrivileged
+        ? {}
+        : {
+            OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId } } }],
+          }),
     },
     include: {
       subchannels: true,
@@ -29,7 +33,9 @@ export async function getChannelsForClub(clubId: string, userId: string) {
       messages: {
         take: 1,
         orderBy: { createdAt: 'desc' },
-        include: { author: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+        include: {
+          author: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        },
       },
     },
     orderBy: { createdAt: 'asc' },
@@ -47,12 +53,28 @@ export async function getChannelById(channelId: string, clubId: string) {
     include: {
       subchannels: true,
       team: { select: { id: true, name: true } },
-      members: { include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } } },
+      members: {
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        },
+      },
     },
   });
 }
 
-export async function createChannel(input: CreateChannelInput, clubId: string, createdById: string) {
+export async function getChannelByIdOrFail(channelId: string, clubId: string) {
+  const channel = await getChannelById(channelId, clubId);
+  if (!channel) {
+    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+  }
+  return channel;
+}
+
+export async function createChannel(
+  input: CreateChannelInput,
+  clubId: string,
+  createdById: string,
+) {
   if (input.parentChannelId) {
     const parent = await prisma.channel.findUnique({ where: { id: input.parentChannelId } });
     if (parent?.parentChannelId) {
@@ -108,18 +130,23 @@ export async function updateChannel(channelId: string, clubId: string, data: Upd
   });
 }
 
-export async function deleteChannel(channelId: string, clubId: string) {
+export async function deleteChannel(channelId: string, clubId: string, userId: string) {
   const channel = await prisma.channel.findFirst({ where: { id: channelId, clubId } });
   if (!channel) {
     throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
   }
   if (channel.isDefault) {
-    throw Object.assign(new Error('Default-Channels koennen nicht geloescht werden'), { statusCode: 400, code: 'CANNOT_DELETE_DEFAULT' });
+    throw Object.assign(new Error('Default-Channels koennen nicht geloescht werden'), {
+      statusCode: 400,
+      code: 'CANNOT_DELETE_DEFAULT',
+    });
   }
 
   // Delete subchannels first
   await prisma.channel.deleteMany({ where: { parentChannelId: channelId } });
-  return prisma.channel.delete({ where: { id: channelId } });
+  const deleted = await prisma.channel.delete({ where: { id: channelId } });
+  logAudit('CHANNEL_DELETED', userId, clubId, { channelId });
+  return deleted;
 }
 
 export async function toggleMute(channelId: string, userId: string, clubId: string) {
@@ -186,13 +213,21 @@ export async function deleteMessage(messageId: string, userId: string) {
   return prisma.message.delete({ where: { id: messageId } });
 }
 
-export async function addReaction(messageId: string, userId: string, type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING') {
+export async function addReaction(
+  messageId: string,
+  userId: string,
+  type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING',
+) {
   return prisma.messageReaction.create({
     data: { messageId, userId, type },
   });
 }
 
-export async function removeReaction(messageId: string, userId: string, type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING') {
+export async function removeReaction(
+  messageId: string,
+  userId: string,
+  type: 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING',
+) {
   return prisma.messageReaction.deleteMany({
     where: { messageId, userId, type },
   });

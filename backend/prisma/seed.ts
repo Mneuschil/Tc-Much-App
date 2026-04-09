@@ -92,6 +92,26 @@ async function main() {
     data: { email: 'eltern@tcmuch.de', passwordHash, firstName: 'Sabine', lastName: 'Mueller', clubId: club.id,
       roles: { create: [{ role: 'PARENT', clubId: club.id }] } },
   });
+  const spielerin1 = await prisma.user.create({
+    data: { email: 'spielerin1@tcmuch.de', passwordHash, firstName: 'Anna', lastName: 'Wagner', clubId: club.id,
+      roles: { create: [{ role: 'MEMBER', clubId: club.id }] } },
+  });
+  const spielerin2 = await prisma.user.create({
+    data: { email: 'spielerin2@tcmuch.de', passwordHash, firstName: 'Lisa', lastName: 'Hoffmann', clubId: club.id,
+      roles: { create: [{ role: 'MEMBER', clubId: club.id }] } },
+  });
+  const spielerin3 = await prisma.user.create({
+    data: { email: 'spielerin3@tcmuch.de', passwordHash, firstName: 'Julia', lastName: 'Schulz', clubId: club.id,
+      roles: { create: [{ role: 'MEMBER', clubId: club.id }] } },
+  });
+  const spielerin4 = await prisma.user.create({
+    data: { email: 'spielerin4@tcmuch.de', passwordHash, firstName: 'Sandra', lastName: 'Richter', clubId: club.id,
+      roles: { create: [{ role: 'MEMBER', clubId: club.id }] } },
+  });
+  const spielerin5 = await prisma.user.create({
+    data: { email: 'spielerin5@tcmuch.de', passwordHash, firstName: 'Kathrin', lastName: 'Wolf', clubId: club.id,
+      roles: { create: [{ role: 'MEMBER', clubId: club.id }] } },
+  });
 
   const allPlayers = [admin, sportwart, trainer, kapitaen, spieler1, spieler2, spieler3, spieler4, spieler5];
   const herren1Players = [kapitaen, spieler1, spieler2, spieler3, spieler4, spieler5];
@@ -109,6 +129,9 @@ async function main() {
   const boardGroup = await prisma.team.create({
     data: { name: 'Vorstand', type: 'BOARD_GROUP', clubId: club.id },
   });
+  const damen1 = await prisma.team.create({
+    data: { name: 'Damen 1', type: 'MATCH_TEAM', league: 'Bezirksklasse', season: '2026', clubId: club.id },
+  });
 
   // Team Members
   for (const [i, p] of herren1Players.entries()) {
@@ -122,6 +145,10 @@ async function main() {
   }
   await prisma.teamMember.create({ data: { teamId: boardGroup.id, userId: admin.id } });
   await prisma.teamMember.create({ data: { teamId: boardGroup.id, userId: sportwart.id } });
+  const damen1Players = [spielerin1, spielerin2, spielerin3, spielerin4, spielerin5, spieler3];
+  for (const [i, p] of damen1Players.entries()) {
+    await prisma.teamMember.create({ data: { teamId: damen1.id, userId: p.id, position: i + 1 } });
+  }
 
   // ─── Channels (with teamId links) ────────────────────────────────
   const chGeneral = await prisma.channel.create({
@@ -150,10 +177,16 @@ async function main() {
   const chHerren2 = await prisma.channel.create({
     data: { name: 'Herren 2 Chat', description: 'Interner Chat Herren 2', visibility: 'RESTRICTED', parentChannelId: chMannschaft.id, teamId: herren2.id, clubId: club.id, createdById: sportwart.id },
   });
+  const chVorstandTeam = await prisma.channel.create({
+    data: { name: 'Vorstand Chat', description: 'Interner Vorstand-Chat', visibility: 'RESTRICTED', teamId: boardGroup.id, clubId: club.id, createdById: admin.id },
+  });
+  const chDamen1 = await prisma.channel.create({
+    data: { name: 'Damen 1 Chat', description: 'Interner Chat Damen 1', visibility: 'RESTRICTED', parentChannelId: chMannschaft.id, teamId: damen1.id, clubId: club.id, createdById: admin.id },
+  });
 
   // ─── Channel Members ──────────────────────────────────────────────
   // Admin + Sportwart in ALLE restricted channels
-  for (const ch of [chJugend, chTraining, chMannschaft, chVorstand, chHerren1, chHerren2]) {
+  for (const ch of [chJugend, chTraining, chMannschaft, chVorstand, chHerren1, chHerren2, chVorstandTeam, chDamen1]) {
     await prisma.channelMember.create({ data: { channelId: ch.id, userId: admin.id } });
     await prisma.channelMember.create({ data: { channelId: ch.id, userId: sportwart.id } });
   }
@@ -172,6 +205,11 @@ async function main() {
   // Herren 2 Chat: nur Herren 2 Spieler
   for (const p of [spieler1, spieler2, spieler3, spieler4, spieler5]) {
     await prisma.channelMember.create({ data: { channelId: chHerren2.id, userId: p.id } });
+  }
+
+  // Damen 1 Chat: Damen 1 Spielerinnen
+  for (const p of damen1Players) {
+    await prisma.channelMember.create({ data: { channelId: chDamen1.id, userId: p.id } });
   }
 
   // Jugend: Trainer + Elternteil
@@ -211,6 +249,9 @@ async function main() {
   });
   const trainingEvent = await prisma.event.create({
     data: { title: 'Erwachsenen-Training', type: 'TRAINING', location: 'Tennisanlage Much', court: 'Platz 1-2', startDate: trainingDate, teamId: trainingGroupAdults.id, clubId: club.id, createdById: trainer.id },
+  });
+  await prisma.event.create({
+    data: { title: 'Damen 1 vs TC Troisdorf', type: 'LEAGUE_MATCH', location: 'Tennisanlage Much', court: 'Plaetze 1-3', isHomeGame: true, startDate: addWeeks(new Date(), 3), teamId: damen1.id, clubId: club.id, createdById: sportwart.id },
   });
   await prisma.event.create({
     data: { title: 'Saiseroeffnung & Grillabend', description: 'Gemeinsamer Start in die Sommersaison', type: 'CLUB_EVENT', location: 'Clubhaus TC Much', startDate: addWeeks(new Date(), 4), clubId: club.id, createdById: admin.id },
@@ -259,10 +300,10 @@ async function main() {
 
   console.log('Seed completed:');
   console.log('  - 1 Club: TC Much e.V.');
-  console.log('  - 8 Users (Admin, Sportwart, Trainer, Kapitaen, 3 Spieler, 1 Elternteil)');
-  console.log('  - 8 Channels (6 Default + 2 Team-Subchannels mit teamId)');
-  console.log('  - 4 Teams (2 Match, 1 Training, 1 Board) - verknuepft mit Channels');
-  console.log('  - 5 Events, 5 Rankings, 1 Match Result, 3 Todos, 4 Notifications');
+  console.log('  - 15 Users (Admin, Sportwart, Trainer, Kapitaen, 5 Spieler, 5 Spielerinnen, 1 Elternteil)');
+  console.log('  - 10 Channels (6 Default + 4 Team-Channels mit teamId)');
+  console.log('  - 5 Teams (3 Match, 1 Training, 1 Board) - verknuepft mit Channels');
+  console.log('  - 6 Events, 5 Rankings, 1 Match Result, 3 Todos, 4 Notifications');
 }
 
 main()

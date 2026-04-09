@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
@@ -11,6 +11,13 @@ import {
 } from '../../src/features/notifications/hooks/useNotifications';
 import { formatTimeAgo } from '../../src/utils/formatDate';
 
+interface NotificationData {
+  channelId?: string;
+  eventId?: string;
+  teamId?: string;
+  tournamentId?: string;
+}
+
 interface NotificationItem {
   id: string;
   type: string;
@@ -18,6 +25,7 @@ interface NotificationItem {
   body: string;
   isRead: boolean;
   createdAt: string;
+  data?: NotificationData;
 }
 
 const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -30,19 +38,41 @@ const TYPE_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   SYSTEM: 'information-circle',
 };
 
+function getNotificationRoute(item: NotificationItem): string | null {
+  const d = item.data;
+  switch (item.type) {
+    case 'CHAT_MESSAGE':
+    case 'MENTION':
+      return d?.channelId ? `/channel/${d.channelId}` : null;
+    case 'AVAILABILITY_REQUEST':
+    case 'RESULT_CONFIRMATION':
+    case 'EVENT_CHANGE':
+      return d?.eventId ? `/match/${d.eventId}` : null;
+    case 'TODO':
+      return '/todo';
+    default:
+      return null;
+  }
+}
+
 export default function NotificationsScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
+  const router = useRouter();
   const { data, isLoading, isError, refetch } = useNotifications();
   const markAsRead = useMarkAsRead();
   const markAllAsRead = useMarkAllAsRead();
 
   const notifications = (data ?? []) as NotificationItem[];
 
+  const handleNotificationPress = (item: NotificationItem) => {
+    if (!item.isRead) markAsRead.mutate(item.id);
+    const route = getNotificationRoute(item);
+    if (route) router.push(route as never);
+  };
+
   const renderNotification = ({ item }: { item: NotificationItem }) => (
     <Pressable
-      onPress={() => {
-        if (!item.isRead) markAsRead.mutate(item.id);
-      }}
+      onPress={() => handleNotificationPress(item)}
       style={[
         styles.notifCard,
         {

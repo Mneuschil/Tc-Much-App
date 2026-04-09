@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  Modal,
+  TextInput,
+  ScrollView,
+  Platform,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { useTheme } from '../../theme';
 import { Avatar } from '../ui';
 import { useCreateTodo } from '../../features/todo/hooks/useTodos';
@@ -18,10 +28,11 @@ interface MemberItem {
 interface CreateTodoModalProps {
   visible: boolean;
   onClose: () => void;
+  teamId?: string;
 }
 
-export function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
-  const { colors, typography, spacing, borderRadius } = useTheme();
+export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalProps) {
+  const { colors, typography, spacing, borderRadius, isDark } = useTheme();
   const createTodo = useCreateTodo();
   const { data: membersData } = useClubMembers();
   const members = (membersData ?? []) as MemberItem[];
@@ -29,11 +40,26 @@ export function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [scope, setScope] = useState<'BOARD' | 'TRAINERS' | 'TEAM'>('BOARD');
   const [showPicker, setShowPicker] = useState(false);
 
   const selectedMember = members.find((m) => m.id === assigneeId);
+
+  const formatDisplayDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+  };
+
+  const formatISODate = (date: Date) => date.toISOString();
+
+  const handleDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selected) setDueDate(selected);
+  };
 
   const handleCreate = () => {
     if (!title.trim() || !assigneeId) return;
@@ -41,15 +67,16 @@ export function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
       title: title.trim(),
       description: description.trim() || undefined,
       assigneeId,
-      scope,
-      dueDate: dueDate.trim() || undefined,
+      scope: teamId ? 'TEAM' : scope,
+      teamId,
+      dueDate: dueDate ? formatISODate(dueDate) : undefined,
     };
     createTodo.mutate(input, {
       onSuccess: () => {
         setTitle('');
         setDescription('');
         setAssigneeId('');
-        setDueDate('');
+        setDueDate(null);
         onClose();
       },
     });
@@ -198,7 +225,7 @@ export function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
               </View>
             ) : (
               <Text style={[typography.body, { color: colors.textTertiary }]}>
-                Mitglied auswaehlen
+                Mitglied auswählen
               </Text>
             )}
             <Ionicons name="chevron-down" size={18} color={colors.textTertiary} />
@@ -254,22 +281,78 @@ export function CreateTodoModal({ visible, onClose }: CreateTodoModalProps) {
               { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.xs },
             ]}
           >
-            Faellig am (optional)
+            Fällig am (optional)
           </Text>
-          <TextInput
+          <Pressable
+            onPress={() => setShowDatePicker(true)}
             style={[
               styles.input,
               {
                 backgroundColor: colors.backgroundSecondary,
                 borderRadius: borderRadius.md,
-                color: colors.textPrimary,
+                flexDirection: 'row',
+                alignItems: 'center',
               },
             ]}
-            value={dueDate}
-            onChangeText={setDueDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.textTertiary}
-          />
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color={dueDate ? colors.textPrimary : colors.textTertiary}
+              style={{ marginRight: spacing.sm }}
+            />
+            <Text
+              style={[
+                typography.body,
+                { color: dueDate ? colors.textPrimary : colors.textTertiary, flex: 1 },
+              ]}
+            >
+              {dueDate ? formatDisplayDate(dueDate) : 'Datum auswählen'}
+            </Text>
+            {dueDate && (
+              <Pressable onPress={() => setDueDate(null)} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+              </Pressable>
+            )}
+          </Pressable>
+          {showDatePicker && (
+            <View
+              style={{
+                backgroundColor: colors.backgroundSecondary,
+                borderRadius: borderRadius.md,
+                marginTop: spacing.xs,
+                overflow: 'hidden',
+              }}
+            >
+              <DateTimePicker
+                value={dueDate ?? new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                minimumDate={new Date()}
+                locale="de-DE"
+                themeVariant={isDark ? 'dark' : 'light'}
+                accentColor={colors.accent}
+                onChange={handleDateChange}
+              />
+              {Platform.OS === 'ios' && (
+                <Pressable
+                  onPress={() => setShowDatePicker(false)}
+                  style={[
+                    styles.createBtn,
+                    {
+                      backgroundColor: colors.accent,
+                      borderRadius: borderRadius.md,
+                      margin: spacing.md,
+                    },
+                  ]}
+                >
+                  <Text style={[typography.buttonSmall, { color: colors.textInverse }]}>
+                    Fertig
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
 
           <Pressable
             onPress={handleCreate}

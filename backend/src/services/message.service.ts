@@ -1,5 +1,8 @@
 import { prisma } from '../config/database';
 import type { CreateMessageInput } from '@tennis-club/shared';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
+import type { Server } from 'socket.io';
+import * as pushService from './push.service';
 
 const REACTION_TYPES = ['THUMBS_UP', 'HEART', 'CELEBRATE', 'THINKING'] as const;
 
@@ -49,7 +52,7 @@ export async function checkChannelAccess(channelId: string, userId: string, club
     where: { userId },
     select: { role: true },
   });
-  const isPrivileged = userRoles.some(r =>
+  const isPrivileged = userRoles.some((r) =>
     ['CLUB_ADMIN', 'SYSTEM_ADMIN', 'BOARD_MEMBER'].includes(r.role),
   );
   if (isPrivileged) {
@@ -60,7 +63,10 @@ export async function checkChannelAccess(channelId: string, userId: string, club
     where: { channelId_userId: { channelId, userId } },
   });
   if (!membership) {
-    throw Object.assign(new Error('Kein Zugriff auf diesen Channel'), { statusCode: 403, code: 'CHANNEL_ACCESS_DENIED' });
+    throw Object.assign(new Error('Kein Zugriff auf diesen Channel'), {
+      statusCode: 403,
+      code: 'CHANNEL_ACCESS_DENIED',
+    });
   }
 
   return channel;
@@ -90,7 +96,9 @@ export async function getChannelMessages(
     findArgs.skip = 1; // skip the cursor itself
   }
 
-  const rawMessages = await prisma.message.findMany(findArgs as Parameters<typeof prisma.message.findMany>[0]) as Array<{
+  const rawMessages = (await prisma.message.findMany(
+    findArgs as Parameters<typeof prisma.message.findMany>[0],
+  )) as Array<{
     id: string;
     content: string;
     mediaUrls: string[];
@@ -100,7 +108,11 @@ export async function getChannelMessages(
     createdAt: Date;
     updatedAt: Date;
     author: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
-    replyTo: { id: string; content: string; author: { id: string; firstName: string; lastName: string } } | null;
+    replyTo: {
+      id: string;
+      content: string;
+      author: { id: string; firstName: string; lastName: string };
+    } | null;
     reactions: { type: string; userId: string }[];
   }>;
 
@@ -109,9 +121,14 @@ export async function getChannelMessages(
     rawMessages.pop();
   }
 
-  const nextCursor = hasMore && rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].id : null;
+  const nextCursor =
+    hasMore && rawMessages.length > 0 ? rawMessages[rawMessages.length - 1].id : null;
 
-  return { messages: rawMessages.map(m => aggregateReactions(m, currentUserId)), nextCursor, hasMore };
+  return {
+    messages: rawMessages.map((m) => aggregateReactions(m, currentUserId)),
+    nextCursor,
+    hasMore,
+  };
 }
 
 export async function createMessage(
@@ -138,12 +155,22 @@ export async function deleteMessage(messageId: string, userId: string) {
     throw Object.assign(new Error('Nachricht nicht gefunden'), { statusCode: 404 });
   }
   if (message.authorId !== userId) {
-    throw Object.assign(new Error('Keine Berechtigung diese Nachricht zu loeschen'), { statusCode: 403, code: 'FORBIDDEN' });
+    throw Object.assign(new Error('Keine Berechtigung diese Nachricht zu loeschen'), {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
   }
   return prisma.message.delete({ where: { id: messageId } });
 }
 
 export async function searchMessages(clubId: string, query: string, channelId?: string) {
+  if (!query) {
+    throw Object.assign(new Error('Suchbegriff erforderlich'), {
+      statusCode: 400,
+      code: 'VALIDATION_ERROR',
+    });
+  }
+
   return prisma.message.findMany({
     where: {
       channel: { clubId },
@@ -157,4 +184,59 @@ export async function searchMessages(clubId: string, query: string, channelId?: 
     orderBy: { createdAt: 'desc' },
     take: 50,
   });
+}
+
+export async function getMessagesWithAccessCheck(
+  channelId: string,
+  userId: string,
+  clubId: string,
+  opts: { cursor?: string; limit?: number; search?: string },
+) {
+  await checkChannelAccess(channelId, userId, clubId);
+  return getChannelMessages(channelId, userId, opts);
+}
+
+export async function createMessageAndNotify(
+  channelId: string,
+  body: Pick<CreateMessageInput, 'content' | 'mediaUrls' | 'replyToId'>,
+  userId: string,
+  clubId: string,
+  io: Server | null,
+) {
+  await checkChannelAccess(channelId, userId, clubId);
+  const message = await createMessage(channelId, body, userId);
+
+  if (io) {
+    io.to(SOCKET_ROOMS.channel(channelId)).emit('message:created', message);
+  }
+
+  const authorName = `${message.author.firstName} ${message.author.lastName}`;
+  pushService
+    .sendToChannel(
+      channelId,
+      {
+        title: authorName,
+        body: message.content.substring(0, 200),
+        data: { channelId, messageId: message.id },
+      },
+      userId,
+    )
+    .catch(() => {
+      /* swallow push errors */
+    });
+
+  return message;
+}
+
+export async function deleteMessageAndNotify(messageId: string, userId: string, io: Server | null) {
+  const deleted = await deleteMessage(messageId, userId);
+
+  if (io) {
+    io.to(SOCKET_ROOMS.channel(deleted.channelId)).emit('message:deleted', {
+      id: deleted.id,
+      channelId: deleted.channelId,
+    });
+  }
+
+  return deleted;
 }

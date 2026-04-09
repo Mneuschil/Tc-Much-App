@@ -1,17 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
-import { AxiosError } from 'axios';
 import { todoService } from '../services/todoService';
+import { getErrorMessage } from '../../../utils/errorUtils';
 import type { CreateTodoInput, UpdateTodoInput } from '@tennis-club/shared';
-
-interface ApiErrorResponse {
-  error?: { message?: string };
-}
-
-function getErrorMessage(err: Error, fallback: string): string {
-  const axiosErr = err as AxiosError<ApiErrorResponse>;
-  return axiosErr.response?.data?.error?.message ?? fallback;
-}
 
 export function useTodos(scope?: string, teamId?: string) {
   return useQuery({
@@ -48,7 +39,7 @@ export function useToggleTodoStatus() {
       todoService.toggleStatus(todoId, status),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
     onError: (err: Error) =>
-      Alert.alert('Fehler', getErrorMessage(err, 'Status konnte nicht geaendert werden')),
+      Alert.alert('Fehler', getErrorMessage(err, 'Status konnte nicht geändert werden')),
   });
 }
 
@@ -57,6 +48,6 @@ export function useDeleteTodo() {
   return useMutation({
     mutationFn: (todoId: string) => todoService.deleteTodo(todoId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['todos'] }),
-    onError: () => Alert.alert('Fehler', 'Todo konnte nicht geloescht werden'),
+    onError: () => Alert.alert('Fehler', 'Todo konnte nicht gelöscht werden'),
   });
 }

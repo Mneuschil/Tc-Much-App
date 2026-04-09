@@ -81,7 +81,7 @@ export default function ChannelsScreen() {
           onPress={() => setShowCreate(true)}
           style={[styles.fab, { backgroundColor: colors.accent }]}
         >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
+          <Ionicons name="add" size={24} color={colors.buttonPrimaryText} />
         </Pressable>
       )}
 

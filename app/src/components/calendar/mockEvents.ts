@@ -2,27 +2,11 @@
  * Mock events for UI development — remove once real data is available.
  */
 
-interface MockEvent {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-  location: string | null;
-  court: string | null;
-  isHomeGame: boolean | null;
-  team: { id: string; name: string } | null;
-}
+import { getWeekDays } from '../../utils/calendarUtils';
+import type { DayEvent } from './DayAgenda';
 
 function getMonday(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const offset = day === 0 ? -6 : 1 - day;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() + offset);
-  monday.setHours(0, 0, 0, 0);
-  return monday;
+  return getWeekDays(new Date())[0];
 }
 
 function dayAt(dayOffset: number, hour: number, minute = 0): string {
@@ -32,7 +16,7 @@ function dayAt(dayOffset: number, hour: number, minute = 0): string {
   return d.toISOString();
 }
 
-export function generateMockWeekEvents(): MockEvent[] {
+export function generateMockWeekEvents(): DayEvent[] {
   return [
     // Montag (0)
     {
@@ -45,6 +29,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '1',
       isHomeGame: null,
+      teamId: 't1',
       team: { id: 't1', name: 'Jugend U14' },
     },
     {
@@ -57,13 +42,14 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '2',
       isHomeGame: null,
+      teamId: 't2',
       team: { id: 't2', name: 'Damen 40' },
     },
 
     // Dienstag (1)
     {
       id: 'mock-3',
-      title: 'Ranglistenspiel Müller vs. Schmidt',
+      title: 'Ranglistenspiel Mueller vs. Schmidt',
       type: 'RANKING_MATCH',
       startDate: dayAt(1, 17, 0),
       endDate: dayAt(1, 18, 30),
@@ -71,6 +57,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '3',
       isHomeGame: null,
+      teamId: null,
       team: null,
     },
     {
@@ -83,6 +70,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '1',
       isHomeGame: null,
+      teamId: 't3',
       team: { id: 't3', name: 'Herren 30' },
     },
 
@@ -97,10 +85,11 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '1',
       isHomeGame: null,
+      teamId: 't4',
       team: { id: 't4', name: 'Bambini' },
     },
 
-    // Donnerstag (3) — "heute" bei normalem Verlauf
+    // Donnerstag (3)
     {
       id: 'mock-6',
       title: 'Herren 30 vs. TC Overath',
@@ -111,6 +100,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: null,
       isHomeGame: true,
+      teamId: 't3',
       team: { id: 't3', name: 'Herren 30' },
     },
     {
@@ -123,6 +113,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '2',
       isHomeGame: null,
+      teamId: 't1',
       team: { id: 't1', name: 'Jugend U14' },
     },
     {
@@ -135,6 +126,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '3',
       isHomeGame: null,
+      teamId: null,
       team: null,
     },
 
@@ -149,6 +141,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Bergheim',
       court: null,
       isHomeGame: false,
+      teamId: 't2',
       team: { id: 't2', name: 'Damen 40' },
     },
     {
@@ -161,6 +154,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: '1',
       isHomeGame: null,
+      teamId: 't3',
       team: { id: 't3', name: 'Herren 30' },
     },
 
@@ -175,6 +169,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: null,
       isHomeGame: null,
+      teamId: null,
       team: null,
     },
     {
@@ -187,6 +182,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much Clubhaus',
       court: null,
       isHomeGame: null,
+      teamId: null,
       team: null,
     },
 
@@ -201,6 +197,7 @@ export function generateMockWeekEvents(): MockEvent[] {
       location: 'TC Much',
       court: null,
       isHomeGame: null,
+      teamId: null,
       team: null,
     },
   ];

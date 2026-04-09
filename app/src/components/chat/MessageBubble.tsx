@@ -191,48 +191,69 @@ export function MessageBubble({
           )}
 
           {message.content ? (
-            <Text style={[typography.body, { color: textColor }]}>{message.content}</Text>
+            <View>
+              <Text style={[typography.body, { color: textColor }]}>
+                {message.content}
+                {/* Invisible spacer to reserve room for the time label */}
+                <Text style={{ color: 'transparent', fontSize: 11 }}>
+                  {'  ' + formatTime(message.createdAt) + ' '}
+                </Text>
+              </Text>
+              <Text style={[styles.inlineTime, { color: metaColor }]}>
+                {formatTime(message.createdAt)}
+              </Text>
+            </View>
           ) : null}
 
-          {message.mediaUrls && message.mediaUrls.length > 0 && mediaGrid(message.mediaUrls)}
-
-          <View style={styles.metaRow}>
-            {(message.reactions?.length ?? 0) > 0 && (
-              <View style={styles.reactionsRow}>
-                {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => {
-                  const count = message.reactions?.filter((r) => r.type === type).length ?? 0;
-                  if (count === 0) return null;
-                  return (
-                    <Pressable
-                      key={type}
-                      onPress={() => onReaction(message.id, type as ReactionType)}
-                      style={[
-                        styles.reactionChip,
-                        {
-                          backgroundColor: isOwn ? 'rgba(255,255,255,0.2)' : colors.surface,
-                          borderRadius: borderRadius.full,
-                        },
-                      ]}
-                    >
-                      <Text style={{ fontSize: 12 }}>{emoji}</Text>
-                      <Text
-                        style={[
-                          styles.reactionCount,
-                          { color: isOwn ? 'rgba(255,255,255,0.8)' : colors.textSecondary },
-                        ]}
-                      >
-                        {count}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+          {message.mediaUrls && message.mediaUrls.length > 0 && (
+            <>
+              {mediaGrid(message.mediaUrls)}
+              <View style={styles.metaRow}>
+                <View style={{ flex: 1 }} />
+                <Text style={[styles.timeLabel, { color: metaColor }]}>
+                  {formatTime(message.createdAt)}
+                </Text>
               </View>
-            )}
-            <View style={{ flex: 1 }} />
+            </>
+          )}
+
+          {!message.content && (!message.mediaUrls || message.mediaUrls.length === 0) && (
             <Text style={[styles.timeLabel, { color: metaColor }]}>
               {formatTime(message.createdAt)}
             </Text>
-          </View>
+          )}
+
+          {(message.reactions?.length ?? 0) > 0 && (
+            <View style={[styles.reactionsRow, { marginTop: 3 }]}>
+              {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => {
+                const count = message.reactions?.filter((r) => r.type === type).length ?? 0;
+                if (count === 0) return null;
+                return (
+                  <Pressable
+                    key={type}
+                    onPress={() => onReaction(message.id, type as ReactionType)}
+                    style={[
+                      styles.reactionChip,
+                      {
+                        backgroundColor: isOwn ? 'rgba(255,255,255,0.2)' : colors.surface,
+                        borderRadius: borderRadius.full,
+                      },
+                    ]}
+                  >
+                    <Text style={{ fontSize: 12 }}>{emoji}</Text>
+                    <Text
+                      style={[
+                        styles.reactionCount,
+                        { color: isOwn ? 'rgba(255,255,255,0.8)' : colors.textSecondary },
+                      ]}
+                    >
+                      {count}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          )}
         </View>
       </Animated.View>
     </View>
@@ -246,8 +267,9 @@ const styles = StyleSheet.create({
   rowOther: { justifyContent: 'flex-start' },
   bubble: {},
   replyBar: { borderLeftWidth: 3 },
+  inlineTime: { position: 'absolute', bottom: 0, right: 0, fontSize: 11 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 3, gap: 6 },
-  reactionsRow: { flexDirection: 'row', gap: 4 },
+  reactionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   reactionChip: {
     flexDirection: 'row',
     alignItems: 'center',

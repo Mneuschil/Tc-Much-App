@@ -1,17 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
-import { AxiosError } from 'axios';
 import { teamService } from '../services/teamService';
+import { getErrorMessage } from '../../../utils/errorUtils';
 import type { CreateTeamInput, UpdateTeamInput } from '@tennis-club/shared';
-
-interface ApiErrorResponse {
-  error?: { message?: string };
-}
-
-function getErrorMessage(err: Error, fallback: string): string {
-  const axiosErr = err as AxiosError<ApiErrorResponse>;
-  return axiosErr.response?.data?.error?.message ?? fallback;
-}
 
 export function useTeams(type?: string) {
   return useQuery({

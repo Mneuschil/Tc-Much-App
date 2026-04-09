@@ -66,6 +66,6 @@ export function useDeleteFile() {
   return useMutation({
     mutationFn: (fileId: string) => fileService.deleteFile(fileId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['files'] }),
-    onError: () => Alert.alert('Fehler', 'Datei konnte nicht geloescht werden'),
+    onError: () => Alert.alert('Fehler', 'Datei konnte nicht gelöscht werden'),
   });
 }

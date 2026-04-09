@@ -1,4 +1,6 @@
 import { prisma } from '../config/database';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
+import type { Server } from 'socket.io';
 
 type ReactionType = 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING';
 
@@ -41,4 +43,45 @@ export async function getAggregatedReactions(messageId: string, currentUserId: s
   }
 
   return { ...counts, userReactions };
+}
+
+interface ReactionNotifyContext {
+  messageId: string;
+  userId: string;
+  clubId: string;
+  io: Server | null;
+}
+
+export async function addReactionAndNotify(ctx: ReactionNotifyContext, type: ReactionType) {
+  const reaction = await addReaction(ctx.messageId, ctx.userId, type);
+  const aggregated = await getAggregatedReactions(ctx.messageId, ctx.userId);
+
+  if (ctx.io) {
+    ctx.io.to(SOCKET_ROOMS.club(ctx.clubId)).emit('message:reaction', {
+      messageId: ctx.messageId,
+      action: 'added',
+      type,
+      userId: ctx.userId,
+      reactions: aggregated,
+    });
+  }
+
+  return { reaction, reactions: aggregated };
+}
+
+export async function removeReactionAndNotify(ctx: ReactionNotifyContext, type: ReactionType) {
+  await removeReaction(ctx.messageId, ctx.userId, type);
+  const aggregated = await getAggregatedReactions(ctx.messageId, ctx.userId);
+
+  if (ctx.io) {
+    ctx.io.to(SOCKET_ROOMS.club(ctx.clubId)).emit('message:reaction', {
+      messageId: ctx.messageId,
+      action: 'removed',
+      type,
+      userId: ctx.userId,
+      reactions: aggregated,
+    });
+  }
+
+  return { reactions: aggregated };
 }

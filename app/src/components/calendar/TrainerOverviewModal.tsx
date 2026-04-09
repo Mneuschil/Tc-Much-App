@@ -3,35 +3,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import { Badge, Avatar } from '../ui';
-import { useTrainerOverview } from '../../features/training/hooks/useTraining';
+import { useTrainingAttendance } from '../../features/training/hooks/useTraining';
 
-interface OverviewEntry {
+interface AttendanceEntry {
   user: { id: string; firstName: string; lastName: string; avatarUrl: string | null };
   attending: boolean;
 }
 
-interface TrainerOverviewData {
-  total: number;
-  attending: number;
-  notAttending: number;
-  entries: OverviewEntry[];
-}
-
 interface TrainerOverviewModalProps {
   visible: boolean;
+  eventId: string | null;
   onClose: () => void;
 }
 
-export function TrainerOverviewModal({ visible, onClose }: TrainerOverviewModalProps) {
+export function TrainerOverviewModal({ visible, eventId, onClose }: TrainerOverviewModalProps) {
   const { colors, typography, spacing, borderRadius } = useTheme();
-  const { data } = useTrainerOverview();
-  const raw = (data ?? {}) as Partial<TrainerOverviewData>;
-  const overview: TrainerOverviewData = {
-    total: raw.total ?? 0,
-    attending: raw.attending ?? 0,
-    notAttending: raw.notAttending ?? 0,
-    entries: raw.entries ?? [],
-  };
+  const { data } = useTrainingAttendance(eventId ?? '');
+  const entries = (data ?? []) as AttendanceEntry[];
+
+  const attending = entries.filter((e) => e.attending);
+  const notAttending = entries.filter((e) => !e.attending);
 
   return (
     <Modal
@@ -49,7 +40,7 @@ export function TrainerOverviewModal({ visible, onClose }: TrainerOverviewModalP
             padding: spacing.xl,
           }}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Trainer-Uebersicht</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]}>Trainer-Übersicht</Text>
           <Pressable onPress={onClose} hitSlop={12}>
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
@@ -62,7 +53,7 @@ export function TrainerOverviewModal({ visible, onClose }: TrainerOverviewModalP
                 { backgroundColor: colors.successSurface, borderRadius: borderRadius.xl },
               ]}
             >
-              <Text style={[typography.h3, { color: colors.success }]}>{overview.attending}</Text>
+              <Text style={[typography.h3, { color: colors.success }]}>{attending.length}</Text>
               <Text style={[typography.caption, { color: colors.success }]}>Zusagen</Text>
             </View>
             <View
@@ -71,7 +62,7 @@ export function TrainerOverviewModal({ visible, onClose }: TrainerOverviewModalP
                 { backgroundColor: colors.dangerSurface, borderRadius: borderRadius.xl },
               ]}
             >
-              <Text style={[typography.h3, { color: colors.danger }]}>{overview.notAttending}</Text>
+              <Text style={[typography.h3, { color: colors.danger }]}>{notAttending.length}</Text>
               <Text style={[typography.caption, { color: colors.danger }]}>Absagen</Text>
             </View>
             <View
@@ -80,11 +71,11 @@ export function TrainerOverviewModal({ visible, onClose }: TrainerOverviewModalP
                 { backgroundColor: colors.backgroundSecondary, borderRadius: borderRadius.xl },
               ]}
             >
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>{overview.total}</Text>
+              <Text style={[typography.h3, { color: colors.textPrimary }]}>{entries.length}</Text>
               <Text style={[typography.caption, { color: colors.textSecondary }]}>Gesamt</Text>
             </View>
           </View>
-          {overview.entries.map((entry) => (
+          {entries.map((entry) => (
             <View
               key={entry.user.id}
               style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm }}

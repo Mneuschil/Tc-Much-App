@@ -23,11 +23,12 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const MENU_ITEMS = [
+  { title: 'Turniere', icon: 'trophy-outline' as const, route: '/(tabs)/tournaments' },
+  { title: 'Rangliste', icon: 'stats-chart-outline' as const, route: '/ranking' },
   { title: 'Kanäle verwalten', icon: 'chatbubbles-outline' as const, route: '/channels-manage' },
   { title: 'Aufgaben', icon: 'checkbox-outline' as const, route: '/todo' },
   { title: 'Dateien', icon: 'folder-outline' as const, route: '/files' },
   { title: 'Formulare', icon: 'document-text-outline' as const, route: '/forms' },
-  { title: 'Rangliste', icon: 'stats-chart-outline' as const, route: '/ranking' },
   { title: 'Einstellungen', icon: 'settings-outline' as const, route: '/settings' },
 ];
 

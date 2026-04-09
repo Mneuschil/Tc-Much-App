@@ -1,13 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
-import { AxiosError } from 'axios';
 import { chatService } from '../features/chat/services/chatService';
+import { getErrorMessage } from '../utils/errorUtils';
 import api from '../lib/api';
 import type { Channel } from '@tennis-club/shared';
-
-interface ApiErrorResponse {
-  error?: { message?: string };
-}
 
 export function useChannelList() {
   return useQuery<Channel[]>({
@@ -20,11 +16,9 @@ export function useToggleMute() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (channelId: string) =>
-      api.post(`/channels/${channelId}/mute`).then(r => r.data.data),
+      api.post(`/channels/${channelId}/mute`).then((r) => r.data.data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channels'] }),
-    onError: (err: Error) => {
-      const axiosErr = err as AxiosError<ApiErrorResponse>;
-      Alert.alert('Fehler', axiosErr.response?.data?.error?.message ?? 'Stummschaltung fehlgeschlagen');
-    },
+    onError: (err: Error) =>
+      Alert.alert('Fehler', getErrorMessage(err, 'Stummschaltung fehlgeschlagen')),
   });
 }

@@ -5,62 +5,24 @@ import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../theme';
+import {
+  getWeekDays,
+  toDateKey,
+  isSameDay,
+  getCalendarWeek,
+  DAY_LABELS_DE,
+  MONTH_NAMES_DE,
+  getEventColor,
+  type CalendarEvent,
+} from '../../utils/calendarUtils';
 
-interface WeekEvent {
-  id: string;
-  startDate: string;
-  type: string;
-}
+type WeekEvent = Pick<CalendarEvent, 'id' | 'startDate' | 'type'>;
 
 interface WeekCalendarStripProps {
   events: WeekEvent[];
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   children?: ReactNode;
-}
-
-const DAY_LABELS_DE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const MONTH_NAMES_DE = [
-  'Januar',
-  'Februar',
-  'März',
-  'April',
-  'Mai',
-  'Juni',
-  'Juli',
-  'August',
-  'September',
-  'Oktober',
-  'November',
-  'Dezember',
-];
-
-function getWeekDays(baseDate: Date): Date[] {
-  const day = baseDate.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const monday = new Date(baseDate);
-  monday.setDate(baseDate.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d;
-  });
-}
-
-function toDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
 }
 
 export function WeekCalendarStrip({
@@ -88,24 +50,22 @@ export function WeekCalendarStrip({
     return map;
   }, [events]);
 
-  const getDotColor = (type: string): string => {
-    if (type.includes('MATCH')) return colors.danger;
-    if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP') return colors.accent;
-    if (type === 'TRAINING') return colors.accentLight;
-    return colors.textSecondary;
-  };
-
   const gradientColors: [string, string] = isDark
     ? ['rgba(14, 166, 90, 0.15)', 'rgba(2, 51, 32, 0.25)']
     : ['rgba(209, 242, 236, 0.7)', 'rgba(237, 249, 246, 0.5)'];
 
   const content = (
     <View style={styles.innerContainer}>
-      {/* Month header */}
+      {/* Month header + KW */}
       <View style={styles.header}>
-        <Text style={[typography.h3, { color: colors.textPrimary }]}>
-          {MONTH_NAMES_DE[selectedDate.getMonth()]} {selectedDate.getFullYear()}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text style={[typography.h3, { color: colors.textPrimary }]}>
+            {MONTH_NAMES_DE[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+          </Text>
+          <Text style={[typography.caption, { color: colors.textSecondary }]}>
+            KW {getCalendarWeek(selectedDate)}
+          </Text>
+        </View>
         <Pressable
           onPress={() => router.push('/(tabs)/calendar' as never)}
           style={[
@@ -167,7 +127,7 @@ export function WeekCalendarStrip({
                     .map((ev) => (
                       <View
                         key={ev.id}
-                        style={[styles.dot, { backgroundColor: getDotColor(ev.type) }]}
+                        style={[styles.dot, { backgroundColor: getEventColor(ev.type, colors) }]}
                       />
                     ))
                 ) : (

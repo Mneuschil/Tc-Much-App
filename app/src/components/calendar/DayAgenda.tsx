@@ -2,31 +2,14 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../theme';
 import { formatTime } from '../../utils/formatDate';
+import { getEventColor, type CalendarEvent } from '../../utils/calendarUtils';
 
-export interface DayEvent {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-  location: string | null;
-  court: string | null;
-  isHomeGame: boolean | null;
+export type DayEvent = CalendarEvent & {
   team: { id: string; name: string } | null;
-}
+};
 
 interface DayAgendaProps {
   events: DayEvent[];
-}
-
-function getAccentColor(type: string, colors: Record<string, string>): string {
-  if (type === 'LEAGUE_MATCH' || type === 'CUP_MATCH') return colors.danger;
-  if (type === 'RANKING_MATCH') return colors.warning;
-  if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP') return colors.accent;
-  if (type === 'TRAINING') return colors.accentLight;
-  if (type === 'CLUB_EVENT') return colors.info;
-  return colors.textSecondary;
 }
 
 export function DayAgenda({ events }: DayAgendaProps) {
@@ -48,7 +31,7 @@ export function DayAgenda({ events }: DayAgendaProps) {
   return (
     <View>
       {sorted.map((event, index) => {
-        const accent = getAccentColor(event.type, colors);
+        const accent = getEventColor(event.type, colors);
         const time = formatTime(event.startDate);
         const endTime = event.endDate ? formatTime(event.endDate) : null;
 

@@ -10,36 +10,21 @@ import {
   TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 import { Button } from '../../src/components/ui';
 import { HeroHeader } from '../../src/components/home/HeroHeader';
 import { DayAgenda, type DayEvent } from '../../src/components/calendar/DayAgenda';
-import { NewsFeed, type NewsItem } from '../../src/components/home/NewsFeed';
-import { MOCK_NEWS } from '../../src/components/home/mockNews';
 import { RecentResults } from '../../src/components/home/RecentResults';
-import { MOCK_RESULTS } from '../../src/components/home/mockResults';
-import { useAuth } from '../../src/hooks/useAuth';
+import { useAuthStore } from '../../src/stores/authStore';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
 import { useTodos } from '../../src/features/todo/hooks/useTodos';
 import { useNotifications } from '../../src/features/notifications/hooks/useNotifications';
 import { formatDate } from '../../src/utils/formatDate';
+import { toDateKey } from '../../src/utils/calendarUtils';
 import { UserRole } from '@tennis-club/shared';
-import { generateMockWeekEvents } from '../../src/components/calendar/mockEvents';
-
-interface WeekEventRaw {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-  location: string | null;
-  court: string | null;
-  isHomeGame: boolean | null;
-  team: { id: string; name: string } | null;
-}
 
 interface TodoItem {
   id: string;
@@ -48,16 +33,9 @@ interface TodoItem {
   dueDate: string | null;
 }
 
-function toDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
 export default function HomeScreen() {
   const { colors, typography, spacing, borderRadius } = useTheme();
-  const { user, logout } = useAuth();
+  const user = useAuthStore((s) => s.user);
   const { hasAnyRole } = usePermissions();
   const router = useRouter();
 
@@ -67,15 +45,10 @@ export default function HomeScreen() {
   const { data: todosData } = useTodos();
   const { data: notifications } = useNotifications(true);
 
-  const mockEvents = useMemo(() => generateMockWeekEvents(), []);
-  const events = useMemo(() => {
-    const api = (weekEvents ?? []) as WeekEventRaw[];
-    return [...api, ...mockEvents];
-  }, [weekEvents, mockEvents]);
+  const events = useMemo(() => (weekEvents ?? []) as DayEvent[], [weekEvents]);
 
   const todos = ((todosData ?? []) as TodoItem[]).filter((t) => t.status === 'OPEN');
   const unreadCount = (notifications ?? []).length;
-  const newsItems: NewsItem[] = MOCK_NEWS;
 
   const dayEvents = useMemo<DayEvent[]>(() => {
     const key = toDateKey(selectedDate);
@@ -88,7 +61,7 @@ export default function HomeScreen() {
   const [showComposer, setShowComposer] = useState(false);
   const [postText, setPostText] = useState('');
 
-  const displayName = user?.firstName ?? 'Marius';
+  const displayName = user?.firstName ?? '';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -98,7 +71,6 @@ export default function HomeScreen() {
           <RefreshControl refreshing={false} onRefresh={refetch} tintColor={colors.primary} />
         }
       >
-        {/* Hero mit Bild + Kalender */}
         <HeroHeader
           displayName={displayName}
           unreadCount={unreadCount}
@@ -107,22 +79,14 @@ export default function HomeScreen() {
           onDateSelect={setSelectedDate}
         />
 
-        {/* Tagesansicht */}
         <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.lg }}>
           <DayAgenda events={dayEvents} />
         </View>
 
-        {/* Ergebnisse */}
         <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>
-          <RecentResults results={MOCK_RESULTS} />
+          <RecentResults results={[]} />
         </View>
 
-        {/* Neuigkeiten */}
-        <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>
-          <NewsFeed items={newsItems} />
-        </View>
-
-        {/* Offene Todos */}
         {todos.length > 0 && (
           <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.xl }}>
             <View style={styles.sectionHeader}>
@@ -158,7 +122,7 @@ export default function HomeScreen() {
                     <Text
                       style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}
                     >
-                      Fällig: {formatDate(todo.dueDate)}
+                      {formatDate(todo.dueDate)}
                     </Text>
                   )}
                 </View>
@@ -166,21 +130,8 @@ export default function HomeScreen() {
             ))}
           </View>
         )}
-
-        <View style={{ marginTop: 40, paddingHorizontal: spacing.xl }}>
-          <Button
-            title="Abmelden"
-            onPress={async () => {
-              await logout();
-              router.replace('/(auth)/welcome');
-            }}
-            variant="outline"
-            fullWidth
-          />
-        </View>
       </ScrollView>
 
-      {/* FAB */}
       {canCreatePost && (
         <Pressable
           onPress={() => setShowComposer(true)}
@@ -190,26 +141,23 @@ export default function HomeScreen() {
         </Pressable>
       )}
 
-      {/* PostComposer Modal */}
-      <Modal visible={showComposer} animationType="slide" transparent>
-        <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
+      <Modal visible={showComposer} animationType="slide" presentationStyle="pageSheet">
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View
-            style={[
-              styles.modalContent,
-              { backgroundColor: colors.background, borderRadius: borderRadius.xl },
-            ]}
+            style={[styles.modalHeader, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg }]}
           >
-            <View style={styles.modalHeader}>
-              <Text style={[typography.h3, { color: colors.textPrimary }]}>Neuer Beitrag</Text>
-              <Pressable
-                onPress={() => {
-                  setShowComposer(false);
-                  setPostText('');
-                }}
-              >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
-              </Pressable>
-            </View>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>Neuer Beitrag</Text>
+            <Pressable
+              onPress={() => {
+                setShowComposer(false);
+                setPostText('');
+              }}
+              hitSlop={12}
+            >
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </Pressable>
+          </View>
+          <View style={{ paddingHorizontal: spacing.xl, flex: 1 }}>
             <TextInput
               style={[
                 styles.composerInput,
@@ -238,7 +186,7 @@ export default function HomeScreen() {
               disabled={!postText.trim()}
             />
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
@@ -258,14 +206,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 24,
     right: 20,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
-  modalContent: { padding: 20, paddingBottom: 40 },
+  modalContainer: { flex: 1 },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

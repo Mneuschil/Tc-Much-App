@@ -1,14 +1,5 @@
 import { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Platform,
-  Pressable,
-  Image,
-  Dimensions,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,8 +10,9 @@ import { Avatar } from '../../src/components/ui';
 import { getSetsWon } from '../../src/features/match/utils/tennisScoring';
 import { formatRelative } from '../../src/utils/formatDate';
 import { getResultById } from '../../src/components/home/mockResults';
-import type { SingleMatch } from '../../src/components/home/RecentResults';
-import type { TennisSet } from '@tennis-club/shared';
+import { PlayerScoreboard } from '../../src/components/match/PlayerScoreboard';
+import { SingleMatchCard } from '../../src/components/match/SingleMatchCard';
+import { PhotoGrid } from '../../src/components/match/PhotoGrid';
 
 const TYPE_LABELS: Record<string, string> = {
   LEAGUE_MATCH: 'Medenspiel',
@@ -29,12 +21,7 @@ const TYPE_LABELS: Record<string, string> = {
   CLUB_CHAMPIONSHIP: 'Clubmeisterschaft',
 };
 
-// TODO: Replace with real uploaded photos
-const MOCK_PHOTOS = [
-  'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=600&q=80',
-  'https://images.unsplash.com/photo-1531315396756-905d68d21b56?w=600&q=80',
-  'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&q=80',
-];
+const RESULT_PHOTOS: string[] = [];
 
 type Tab = 'ergebnis' | 'bilder';
 
@@ -69,7 +56,159 @@ export default function ResultDetailScreen() {
     ? ['rgba(14, 166, 90, 0.15)', 'rgba(2, 51, 32, 0.25)']
     : ['rgba(209, 242, 236, 0.7)', 'rgba(237, 249, 246, 0.5)'];
 
-  const heroContent = (
+  const tabs: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+    { key: 'ergebnis', label: 'Ergebnis', icon: 'stats-chart-outline' },
+    { key: 'bilder', label: 'Bilder', icon: 'images-outline' },
+  ];
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: result.title,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.textPrimary,
+          headerShadowVisible: false,
+        }}
+      />
+      <SafeAreaView
+        edges={['bottom']}
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* Hero */}
+          <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
+            <View style={{ borderRadius: borderRadius.xl, overflow: 'hidden' }}>
+              <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                {Platform.OS === 'ios' ? (
+                  <BlurView intensity={50} tint={isDark ? 'dark' : 'light'}>
+                    <HeroContent
+                      result={result}
+                      isTeamMatch={isTeamMatch}
+                      p1Won={p1Won}
+                      label={label}
+                      homeWins={homeWins}
+                      awayWins={awayWins}
+                      setsWon={setsWon}
+                    />
+                  </BlurView>
+                ) : (
+                  <View
+                    style={{
+                      backgroundColor: isDark ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.75)',
+                    }}
+                  >
+                    <HeroContent
+                      result={result}
+                      isTeamMatch={isTeamMatch}
+                      p1Won={p1Won}
+                      label={label}
+                      homeWins={homeWins}
+                      awayWins={awayWins}
+                      setsWon={setsWon}
+                    />
+                  </View>
+                )}
+              </LinearGradient>
+            </View>
+          </View>
+
+          {/* Tab bar */}
+          <View style={[styles.tabBar, { marginHorizontal: spacing.xl, marginTop: spacing.xl }]}>
+            {tabs.map((tab) => {
+              const active = activeTab === tab.key;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => setActiveTab(tab.key)}
+                  style={[
+                    styles.tab,
+                    {
+                      backgroundColor: active ? colors.textPrimary : colors.backgroundSecondary,
+                      borderRadius: borderRadius.full,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={tab.icon}
+                    size={15}
+                    color={active ? colors.textInverse : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      typography.buttonSmall,
+                      { color: active ? colors.textInverse : colors.textSecondary, marginLeft: 6 },
+                    ]}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Tab content */}
+          <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.xl }}>
+            {activeTab === 'ergebnis' ? (
+              isTeamMatch ? (
+                <>
+                  <Text
+                    style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.lg }]}
+                  >
+                    Einzelspiele
+                  </Text>
+                  {[...result.matches]
+                    .sort((a, b) => a.position - b.position)
+                    .map((m) => (
+                      <SingleMatchCard key={m.position} match={m} />
+                    ))}
+                </>
+              ) : (
+                <>
+                  <Text
+                    style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.lg }]}
+                  >
+                    Satzergebnisse
+                  </Text>
+                  <PlayerScoreboard
+                    p1={{ firstName: result.player1.firstName, lastName: result.player1.lastName }}
+                    p2={{ firstName: result.player2.firstName, lastName: result.player2.lastName }}
+                    sets={result.sets}
+                    large
+                  />
+                </>
+              )
+            ) : (
+              <PhotoGrid photos={RESULT_PHOTOS} />
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </>
+  );
+}
+
+function HeroContent({
+  result,
+  isTeamMatch,
+  p1Won,
+  label,
+  homeWins,
+  awayWins,
+  setsWon,
+}: {
+  result: ReturnType<typeof getResultById> & object;
+  isTeamMatch: boolean;
+  p1Won: boolean;
+  label: string;
+  homeWins: number;
+  awayWins: number;
+  setsWon: { player1: number; player2: number };
+}) {
+  const { colors, typography, borderRadius, isDark } = useTheme();
+
+  return (
     <View style={styles.heroInner}>
       <View style={styles.badgeRow}>
         <View
@@ -180,283 +319,6 @@ export default function ResultDetailScreen() {
       </View>
     </View>
   );
-
-  const tabs: { key: Tab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-    { key: 'ergebnis', label: 'Ergebnis', icon: 'stats-chart-outline' },
-    { key: 'bilder', label: 'Bilder', icon: 'images-outline' },
-  ];
-
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: result.title,
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.textPrimary,
-          headerShadowVisible: false,
-        }}
-      />
-      <SafeAreaView
-        edges={['bottom']}
-        style={[styles.container, { backgroundColor: colors.background }]}
-      >
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-          {/* Hero */}
-          <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
-            <View style={{ borderRadius: borderRadius.xl, overflow: 'hidden' }}>
-              <LinearGradient colors={gradientColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                {Platform.OS === 'ios' ? (
-                  <BlurView intensity={50} tint={isDark ? 'dark' : 'light'}>
-                    {heroContent}
-                  </BlurView>
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: isDark ? 'rgba(28,28,30,0.85)' : 'rgba(255,255,255,0.75)',
-                    }}
-                  >
-                    {heroContent}
-                  </View>
-                )}
-              </LinearGradient>
-            </View>
-          </View>
-
-          {/* Tab bar */}
-          <View style={[styles.tabBar, { marginHorizontal: spacing.xl, marginTop: spacing.xl }]}>
-            {tabs.map((tab) => {
-              const active = activeTab === tab.key;
-              return (
-                <Pressable
-                  key={tab.key}
-                  onPress={() => setActiveTab(tab.key)}
-                  style={[
-                    styles.tab,
-                    {
-                      backgroundColor: active ? colors.textPrimary : colors.backgroundSecondary,
-                      borderRadius: borderRadius.full,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={tab.icon}
-                    size={15}
-                    color={active ? colors.textInverse : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      typography.buttonSmall,
-                      { color: active ? colors.textInverse : colors.textSecondary, marginLeft: 6 },
-                    ]}
-                  >
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          {/* Tab content */}
-          <View style={{ paddingHorizontal: spacing.xl, marginTop: spacing.xl }}>
-            {activeTab === 'ergebnis' ? (
-              isTeamMatch ? (
-                <>
-                  <Text
-                    style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.lg }]}
-                  >
-                    Einzelspiele
-                  </Text>
-                  {[...result.matches]
-                    .sort((a, b) => a.position - b.position)
-                    .map((m) => (
-                      <SingleMatchCard key={m.position} match={m} />
-                    ))}
-                </>
-              ) : (
-                <>
-                  <Text
-                    style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.lg }]}
-                  >
-                    Satzergebnisse
-                  </Text>
-                  <PlayerScoreboard
-                    p1={{ firstName: result.player1.firstName, lastName: result.player1.lastName }}
-                    p2={{ firstName: result.player2.firstName, lastName: result.player2.lastName }}
-                    sets={result.sets}
-                    large
-                  />
-                </>
-              )
-            ) : (
-              <PhotoGrid photos={MOCK_PHOTOS} />
-            )}
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    </>
-  );
-}
-
-/** Classic tennis scoreboard */
-function PlayerScoreboard({
-  p1,
-  p2,
-  sets,
-  large,
-}: {
-  p1: { firstName: string; lastName: string };
-  p2: { firstName: string; lastName: string };
-  sets: TennisSet[];
-  large?: boolean;
-}) {
-  const { colors, typography, borderRadius, isDark } = useTheme();
-  const setsWon = getSetsWon(sets);
-  const p1Won = setsWon.player1 > setsWon.player2;
-
-  const rowBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
-  const avatarSize = large ? 'md' : 'sm';
-  const nameStyle = large ? typography.bodyMedium : typography.bodySmall;
-  const scoreStyle = large
-    ? { fontSize: 20, fontWeight: '700' as const }
-    : { fontSize: 16, fontWeight: '600' as const };
-
-  return (
-    <View style={{ gap: 4 }}>
-      <View
-        style={[
-          styles.scoreRow,
-          { backgroundColor: rowBg, borderRadius: borderRadius.md, padding: large ? 14 : 10 },
-        ]}
-      >
-        <Avatar firstName={p1.firstName} lastName={p1.lastName} size={avatarSize} />
-        <View style={styles.nameCol}>
-          <Text
-            style={[nameStyle, { color: p1Won ? colors.textPrimary : colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {p1.firstName} {p1.lastName}
-          </Text>
-        </View>
-        {p1Won && (
-          <Ionicons
-            name="tennisball"
-            size={12}
-            color={colors.accentLight}
-            style={{ marginRight: 8 }}
-          />
-        )}
-        {sets.map((s, i) => (
-          <Text
-            key={i}
-            style={[
-              scoreStyle,
-              styles.setCell,
-              {
-                color: s.games1 > s.games2 ? colors.textPrimary : colors.textTertiary,
-                width: large ? 32 : 26,
-              },
-            ]}
-          >
-            {s.games1}
-          </Text>
-        ))}
-      </View>
-      <View
-        style={[
-          styles.scoreRow,
-          { backgroundColor: rowBg, borderRadius: borderRadius.md, padding: large ? 14 : 10 },
-        ]}
-      >
-        <Avatar firstName={p2.firstName} lastName={p2.lastName} size={avatarSize} />
-        <View style={styles.nameCol}>
-          <Text
-            style={[nameStyle, { color: !p1Won ? colors.textPrimary : colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {p2.firstName} {p2.lastName}
-          </Text>
-        </View>
-        {!p1Won && (
-          <Ionicons
-            name="tennisball"
-            size={12}
-            color={colors.accentLight}
-            style={{ marginRight: 8 }}
-          />
-        )}
-        {sets.map((s, i) => (
-          <Text
-            key={i}
-            style={[
-              scoreStyle,
-              styles.setCell,
-              {
-                color: s.games2 > s.games1 ? colors.textPrimary : colors.textTertiary,
-                width: large ? 32 : 26,
-              },
-            ]}
-          >
-            {s.games2}
-          </Text>
-        ))}
-      </View>
-    </View>
-  );
-}
-
-/** Photo grid with Unsplash mock images */
-function PhotoGrid({ photos }: { photos: string[] }) {
-  const { colors, typography, spacing, borderRadius } = useTheme();
-  const imageWidth = (Dimensions.get('window').width - spacing.xl * 2 - spacing.sm) / 2;
-
-  if (photos.length === 0) {
-    return (
-      <View style={styles.emptyPhotos}>
-        <Ionicons name="camera-outline" size={32} color={colors.textTertiary} />
-        <Text
-          style={[
-            typography.bodySmall,
-            { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' },
-          ]}
-        >
-          Noch keine Bilder vorhanden.{'\n'}Lade Fotos vom Spieltag hoch!
-        </Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={[styles.photoGrid, { gap: spacing.sm }]}>
-      {photos.map((uri, i) => (
-        <Image
-          key={i}
-          source={{ uri }}
-          style={{ width: imageWidth, height: imageWidth, borderRadius: borderRadius.lg }}
-        />
-      ))}
-    </View>
-  );
-}
-
-function SingleMatchCard({ match }: { match: SingleMatch }) {
-  const { colors, typography, spacing, borderRadius } = useTheme();
-
-  return (
-    <View
-      style={{
-        backgroundColor: colors.backgroundSecondary,
-        borderRadius: borderRadius.xl,
-        padding: spacing.lg,
-        marginBottom: spacing.sm,
-      }}
-    >
-      <Text style={[typography.caption, { color: colors.textTertiary, marginBottom: spacing.sm }]}>
-        Spiel {match.position}
-      </Text>
-      <PlayerScoreboard p1={match.player1} p2={match.player2} sets={match.sets} />
-    </View>
-  );
 }
 
 const styles = StyleSheet.create({
@@ -491,9 +353,4 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  scoreRow: { flexDirection: 'row', alignItems: 'center' },
-  nameCol: { flex: 1, marginLeft: 10 },
-  setCell: { textAlign: 'center' },
-  photoGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  emptyPhotos: { alignItems: 'center', paddingVertical: 40 },
 });

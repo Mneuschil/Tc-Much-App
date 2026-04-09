@@ -38,7 +38,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#1B4F72"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

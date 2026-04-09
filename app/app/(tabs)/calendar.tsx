@@ -1,59 +1,57 @@
 import { useState, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ScrollView,
+  Pressable,
+  RefreshControl,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, type DateData } from 'react-native-calendars';
+import { Ionicons } from '@expo/vector-icons';
 import type { MarkedDates } from 'react-native-calendars/src/types';
 import { useTheme } from '../../src/theme';
 import { EmptyState, QueryError } from '../../src/components/ui';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useEvents } from '../../src/features/calendar/hooks/useEvents';
 import { formatDate } from '../../src/utils/formatDate';
+import { toDateKey, getEventColor, type CalendarEvent } from '../../src/utils/calendarUtils';
 import { AgendaItem } from '../../src/components/calendar/AgendaItem';
 import { TrainerOverviewModal } from '../../src/components/calendar/TrainerOverviewModal';
+import { CreateEventModal } from '../../src/components/calendar/CreateEventModal';
 
-interface CalendarEvent {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-  location: string | null;
-  isHomeGame: boolean | null;
-  teamId: string | null;
-}
-
-function getDotColor(
-  type: string,
-  colors: { danger: string; accent: string; accentLight: string; textSecondary: string },
-): string {
-  if (type === 'LEAGUE_MATCH' || type === 'CUP_MATCH') return colors.danger;
-  if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP' || type === 'RANKING_MATCH')
-    return colors.accent;
-  if (type === 'CLUB_EVENT') return colors.accentLight;
-  if (type === 'TRAINING') return colors.textSecondary;
-  return colors.textSecondary;
-}
-
-function toDateKey(dateStr: string): string {
-  return new Date(dateStr).toISOString().slice(0, 10);
-}
+const EVENT_FILTER_OPTIONS: { value: string | null; label: string }[] = [
+  { value: 'TRAINING', label: 'Training' },
+  { value: 'LEAGUE_MATCH', label: 'Ligaspiele' },
+  { value: 'CUP_MATCH', label: 'Pokal' },
+  { value: 'CLUB_EVENT', label: 'Vereinsevents' },
+  { value: 'TOURNAMENT', label: 'Turniere' },
+  { value: 'CLUB_CHAMPIONSHIP', label: 'Clubmeisterschaft' },
+  { value: 'RANKING_MATCH', label: 'Rangliste' },
+];
 
 export default function CalendarScreen() {
   const { colors, typography, spacing } = useTheme();
-  const { isTrainer } = usePermissions();
+  const { isTrainer, isBoard } = usePermissions();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [trainerModalVisible, setTrainerModalVisible] = useState(false);
+  const [trainerEventId, setTrainerEventId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useEvents();
-  const apiEvents = (data ?? []) as CalendarEvent[];
-  const allEvents: CalendarEvent[] = apiEvents;
+  const apiEvents = useMemo(() => (data ?? []) as CalendarEvent[], [data]);
+  const allEvents = useMemo(
+    () => (activeFilter ? apiEvents.filter((e) => e.type === activeFilter) : apiEvents),
+    [apiEvents, activeFilter],
+  );
 
   const markedDates = useMemo<MarkedDates>(() => {
     const marks: MarkedDates = {};
     for (const event of allEvents) {
       const key = toDateKey(event.startDate);
-      const dot = { key: event.id, color: getDotColor(event.type, colors) };
+      const dot = { key: event.id, color: getEventColor(event.type, colors) };
       if (marks[key]) {
         const existing = marks[key];
         const dots = existing?.dots ? [...existing.dots, dot] : [dot];
@@ -93,6 +91,41 @@ export default function CalendarScreen() {
       >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Kalender</Text>
       </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: spacing.xl,
+          gap: spacing.sm,
+          paddingBottom: spacing.md,
+        }}
+      >
+        {EVENT_FILTER_OPTIONS.map((opt) => {
+          const isActive = activeFilter === opt.value;
+          return (
+            <Pressable
+              key={opt.value ?? 'all'}
+              onPress={() => setActiveFilter(isActive ? null : opt.value)}
+              style={[
+                styles.filterPill,
+                {
+                  backgroundColor: isActive ? colors.chipActive : colors.backgroundSecondary,
+                  borderRadius: 999,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  typography.caption,
+                  { color: isActive ? colors.textInverse : colors.textPrimary, fontWeight: '600' },
+                ]}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
       <FlatList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
@@ -100,7 +133,7 @@ export default function CalendarScreen() {
           <AgendaItem
             event={item}
             isTrainer={isTrainer}
-            onShowTrainerOverview={() => setTrainerModalVisible(true)}
+            onShowTrainerOverview={() => setTrainerEventId(item.id)}
           />
         )}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -110,6 +143,7 @@ export default function CalendarScreen() {
         ListHeaderComponent={
           <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
             <Calendar
+              firstDay={1}
               markingType="multi-dot"
               markedDates={markedDates}
               onDayPress={handleDayPress}
@@ -172,10 +206,28 @@ export default function CalendarScreen() {
         }
       />
 
+      {/* FAB für Board-Members */}
+      {isBoard && (
+        <Pressable
+          onPress={() => setShowCreateModal(true)}
+          style={[styles.fab, { backgroundColor: colors.buttonPrimary }]}
+        >
+          <Ionicons name="add" size={24} color={colors.buttonPrimaryText} />
+        </Pressable>
+      )}
+
       {/* Trainer Overview Modal */}
       <TrainerOverviewModal
-        visible={trainerModalVisible}
-        onClose={() => setTrainerModalVisible(false)}
+        visible={trainerEventId !== null}
+        eventId={trainerEventId}
+        onClose={() => setTrainerEventId(null)}
+      />
+
+      {/* Create Event Modal */}
+      <CreateEventModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        preselectedDate={selectedDate}
       />
     </SafeAreaView>
   );
@@ -183,4 +235,15 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  filterPill: { paddingHorizontal: 14, paddingVertical: 8 },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

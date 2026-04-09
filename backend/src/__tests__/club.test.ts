@@ -15,7 +15,12 @@ beforeAll(async () => {
   const club = await prisma.club.upsert({
     where: { clubCode: 'CLUBTEST' },
     update: {},
-    create: { name: 'Club Test e.V.', clubCode: 'CLUBTEST', primaryColor: '#023320', secondaryColor: '#0EA65A' },
+    create: {
+      name: 'Club Test e.V.',
+      clubCode: 'CLUBTEST',
+      primaryColor: '#023320',
+      secondaryColor: '#0EA65A',
+    },
   });
   clubId = club.id;
 
@@ -23,28 +28,57 @@ beforeAll(async () => {
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'clubadmin@test.de', passwordHash, firstName: 'Club', lastName: 'Admin', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'clubadmin@test.de',
+      passwordHash,
+      firstName: 'Club',
+      lastName: 'Admin',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
 
   const memberUser = await prisma.user.create({
     data: {
-      email: 'clubmember@test.de', passwordHash, firstName: 'Club', lastName: 'Member', clubId,
+      email: 'clubmember@test.de',
+      passwordHash,
+      firstName: 'Club',
+      lastName: 'Member',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
 
   const sysAdminUser = await prisma.user.create({
     data: {
-      email: 'sysadmin@test.de', passwordHash, firstName: 'Sys', lastName: 'Admin', clubId,
+      email: 'sysadmin@test.de',
+      passwordHash,
+      firstName: 'Sys',
+      lastName: 'Admin',
+      clubId,
       roles: { create: [{ role: 'SYSTEM_ADMIN', clubId }] },
     },
   });
 
-  const adminPayload: TokenPayload = { userId: adminUser.id, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] };
-  const memberPayload: TokenPayload = { userId: memberUser.id, clubId, roles: ['MEMBER'] as UserRole[] };
-  const sysPayload: TokenPayload = { userId: sysAdminUser.id, clubId, roles: ['SYSTEM_ADMIN'] as UserRole[] };
+  const adminPayload: TokenPayload = {
+    userId: adminUser.id,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  };
+  const memberPayload: TokenPayload = {
+    userId: memberUser.id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  };
+  const sysPayload: TokenPayload = {
+    userId: sysAdminUser.id,
+    clubId,
+    roles: ['SYSTEM_ADMIN'] as UserRole[],
+  };
 
   adminToken = generateAccessToken(adminPayload);
   memberToken = generateAccessToken(memberPayload);
@@ -146,9 +180,7 @@ describe('PUT /api/v1/clubs/:clubId', () => {
 // ─── AC-04: POST /clubs/verify-code validates code ─────────────────
 describe('POST /api/v1/clubs/verify-code', () => {
   it('validates clubCode and returns clubId + clubName (AC-04)', async () => {
-    const res = await request(app)
-      .post('/api/v1/clubs/verify-code')
-      .send({ clubCode: 'CLUBTEST' });
+    const res = await request(app).post('/api/v1/clubs/verify-code').send({ clubCode: 'CLUBTEST' });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -205,9 +237,9 @@ describe('Seed Data Verification', () => {
       include: { roles: true },
     });
 
-    const admins = users.filter(u => u.roles.some(r => r.role === 'CLUB_ADMIN'));
-    const boards = users.filter(u => u.roles.some(r => r.role === 'BOARD_MEMBER'));
-    const members = users.filter(u => u.roles.some(r => r.role === 'MEMBER'));
+    const admins = users.filter((u) => u.roles.some((r) => r.role === 'CLUB_ADMIN'));
+    const boards = users.filter((u) => u.roles.some((r) => r.role === 'BOARD_MEMBER'));
+    const members = users.filter((u) => u.roles.some((r) => r.role === 'MEMBER'));
 
     expect(admins.length).toBeGreaterThanOrEqual(1);
     expect(boards.length).toBeGreaterThanOrEqual(1);
@@ -220,25 +252,25 @@ describe('Seed Data Verification', () => {
       where: { clubId: seedClubId, isDefault: true },
     });
 
-    const names = channels.map(c => c.name);
+    const names = channels.map((c) => c.name);
     expect(names).toContain('Allgemein');
     expect(names).toContain('Turniere');
     expect(names).toContain('Jugend');
     expect(names).toContain('Training');
     expect(names).toContain('Vorstand');
 
-    const restricted = channels.filter(c => c.visibility === 'RESTRICTED');
+    const restricted = channels.filter((c) => c.visibility === 'RESTRICTED');
     expect(restricted.length).toBeGreaterThanOrEqual(3);
   });
 
-  // ─── AC-09: 2 Teams with 6 players each ──────────────────────────
-  it('has 2 match teams with 6 players each (AC-09)', async () => {
+  // ─── AC-09: 3 Teams with 6 players each ──────────────────────────
+  it('has 3 match teams with 6 players each (AC-09)', async () => {
     const teams = await prisma.team.findMany({
       where: { clubId: seedClubId, type: 'MATCH_TEAM' },
       include: { _count: { select: { members: true } } },
     });
 
-    expect(teams.length).toBe(2);
+    expect(teams.length).toBe(3);
     for (const team of teams) {
       expect(team._count.members).toBe(6);
     }

@@ -200,7 +200,7 @@ export function CourtDamageForm() {
             <Text
               style={[typography.caption, { color: colors.textTertiary, marginTop: spacing.xs }]}
             >
-              Foto aufnehmen oder auswaehlen
+              Foto aufnehmen oder auswählen
             </Text>
           </Pressable>
         )}

@@ -26,7 +26,9 @@ export async function getTeamById(teamId: string, clubId: string) {
     include: {
       members: {
         include: {
-          user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true, phone: true } },
+          user: {
+            select: { id: true, firstName: true, lastName: true, avatarUrl: true, phone: true },
+          },
         },
         orderBy: { position: 'asc' },
       },
@@ -97,7 +99,12 @@ export async function deleteTeam(teamId: string, clubId: string) {
   return prisma.team.delete({ where: { id: teamId } });
 }
 
-export async function addTeamMember(teamId: string, userId: string, clubId: string, position?: number) {
+export async function addTeamMember(
+  teamId: string,
+  userId: string,
+  clubId: string,
+  position?: number,
+) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
     throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
@@ -138,7 +145,51 @@ export async function removeTeamMember(teamId: string, userId: string, clubId: s
   }
 }
 
-export async function updateMemberPosition(teamId: string, userId: string, clubId: string, position: number) {
+export async function ensureTeamChannel(teamId: string, clubId: string, createdById: string) {
+  const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
+  if (!team) {
+    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+  }
+
+  const existing = await prisma.channel.findFirst({
+    where: { teamId, clubId },
+    select: { id: true, name: true },
+  });
+  if (existing) return existing;
+
+  return prisma.$transaction(async (tx) => {
+    const channel = await tx.channel.create({
+      data: {
+        name: `${team.name} Chat`,
+        visibility: 'RESTRICTED',
+        teamId,
+        clubId,
+        createdById,
+      },
+    });
+
+    const members = await tx.teamMember.findMany({
+      where: { teamId },
+      select: { userId: true },
+    });
+
+    if (members.length > 0) {
+      await tx.channelMember.createMany({
+        data: members.map((m) => ({ channelId: channel.id, userId: m.userId })),
+        skipDuplicates: true,
+      });
+    }
+
+    return { id: channel.id, name: channel.name };
+  });
+}
+
+export async function updateMemberPosition(
+  teamId: string,
+  userId: string,
+  clubId: string,
+  position: number,
+) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
     throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });

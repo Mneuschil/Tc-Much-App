@@ -4,31 +4,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-
-const DAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
-const MONTH_NAMES = [
-  'Januar',
-  'Februar',
-  'März',
-  'April',
-  'Mai',
-  'Juni',
-  'Juli',
-  'August',
-  'September',
-  'Oktober',
-  'November',
-  'Dezember',
-];
+import {
+  getWeekDays,
+  toDateKey,
+  isSameDay,
+  getCalendarWeek,
+  DAY_LABELS_DE,
+  MONTH_NAMES_DE,
+  type CalendarEvent,
+} from '../../utils/calendarUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const heroBg = require('../../../assets/images/hero-bg.jpg') as number;
 
-interface WeekEvent {
-  id: string;
-  startDate: string;
-  type: string;
-}
+type WeekEvent = Pick<CalendarEvent, 'id' | 'startDate' | 'type'>;
 
 interface HeroHeaderProps {
   displayName: string;
@@ -36,31 +25,6 @@ interface HeroHeaderProps {
   events: WeekEvent[];
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
-}
-
-function getWeekDays(base: Date): Date[] {
-  const d = base.getDay();
-  const off = d === 0 ? -6 : 1 - d;
-  const mon = new Date(base);
-  mon.setDate(base.getDate() + off);
-  mon.setHours(0, 0, 0, 0);
-  return Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(mon);
-    day.setDate(mon.getDate() + i);
-    return day;
-  });
-}
-
-function toKey(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function same(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
 }
 
 export function HeroHeader({
@@ -78,7 +42,7 @@ export function HeroHeader({
   const eventsByDate = useMemo(() => {
     const map = new Map<string, WeekEvent[]>();
     for (const ev of events) {
-      const k = toKey(new Date(ev.startDate));
+      const k = toDateKey(new Date(ev.startDate));
       const arr = map.get(k);
       if (arr) {
         arr.push(ev);
@@ -89,14 +53,18 @@ export function HeroHeader({
     return map;
   }, [events]);
 
-  const dotColor = (type: string): string => {
-    if (type.includes('MATCH')) return '#FF453A';
-    if (type === 'TOURNAMENT' || type === 'CLUB_CHAMPIONSHIP') return '#0EA65A';
-    if (type === 'TRAINING') return '#34D058';
-    return 'rgba(255,255,255,0.5)';
+  const HERO_DOT_COLORS: Record<string, string> = {
+    LEAGUE_MATCH: '#FF453A',
+    CUP_MATCH: '#FF453A',
+    RANKING_MATCH: '#FF9500',
+    TOURNAMENT: '#0EA65A',
+    CLUB_CHAMPIONSHIP: '#0EA65A',
+    TRAINING: '#34D058',
+    CLUB_EVENT: 'rgba(255,255,255,0.7)',
   };
+  const dotColor = (type: string): string => HERO_DOT_COLORS[type] ?? 'rgba(255,255,255,0.5)';
 
-  const isToday = same(selectedDate, today);
+  const isToday = isSameDay(selectedDate, today);
 
   const calendarStrip = (
     <View style={styles.calendarSection}>
@@ -104,22 +72,23 @@ export function HeroHeader({
       <View style={styles.metaRow}>
         <Text style={styles.todayLabel}>{isToday ? 'Heute' : ''}</Text>
         <Text style={styles.monthLabel}>
-          {MONTH_NAMES[selectedDate.getMonth()]} {selectedDate.getFullYear()}
+          KW {getCalendarWeek(selectedDate)} · {MONTH_NAMES_DE[selectedDate.getMonth()]}{' '}
+          {selectedDate.getFullYear()}
         </Text>
       </View>
 
       {/* Week strip */}
       <View style={styles.weekRow}>
         {weekDays.map((day, index) => {
-          const isTodayDay = same(day, today);
-          const isSelected = same(day, selectedDate);
-          const key = toKey(day);
+          const isTodayDay = isSameDay(day, today);
+          const isSelected = isSameDay(day, selectedDate);
+          const key = toDateKey(day);
           const dayEvts = eventsByDate.get(key) ?? [];
 
           return (
             <Pressable key={key} onPress={() => onDateSelect(day)} style={styles.dayCol}>
               <Text style={[styles.dayLabel, isSelected && styles.dayLabelActive]}>
-                {DAY_LABELS[index]}
+                {DAY_LABELS_DE[index]}
               </Text>
               <View
                 style={[
@@ -176,7 +145,7 @@ export function HeroHeader({
       >
         {/* Top action row */}
         <View style={styles.topRow}>
-          <Pressable style={styles.glassBtn} onPress={() => router.push('/search' as never)}>
+          <Pressable style={styles.glassBtn} onPress={() => router.push('/channels' as never)}>
             <Ionicons name="search" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
           <View style={styles.topRight}>

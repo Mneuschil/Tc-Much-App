@@ -1,6 +1,7 @@
+import { Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calendarService } from '../services/calendarService';
-import type { CreateEventInput } from '@tennis-club/shared';
+import type { CreateEventInput, UpdateEventInput } from '@tennis-club/shared';
 
 export function useEvents(type?: string, from?: string, to?: string, teamId?: string) {
   return useQuery({
@@ -29,5 +30,24 @@ export function useCreateEvent() {
   return useMutation({
     mutationFn: (input: CreateEventInput) => calendarService.createEvent(input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onError: () => Alert.alert('Fehler', 'Event konnte nicht erstellt werden'),
+  });
+}
+
+export function useUpdateEvent(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateEventInput) => calendarService.updateEvent(eventId, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onError: () => Alert.alert('Fehler', 'Event konnte nicht aktualisiert werden'),
+  });
+}
+
+export function useDeleteEvent(eventId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => calendarService.deleteEvent(eventId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events'] }),
+    onError: () => Alert.alert('Fehler', 'Event konnte nicht gelöscht werden'),
   });
 }

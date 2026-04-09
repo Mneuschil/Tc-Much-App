@@ -1,5 +1,8 @@
 import { prisma } from '../config/database';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
 import * as pushService from './push.service';
+import * as lineupService from './lineup.service';
+import type { Server } from 'socket.io';
 
 export async function checkTeamMembership(eventId: string, userId: string, clubId: string) {
   const event = await prisma.event.findFirst({ where: { id: eventId, clubId } });
@@ -18,9 +21,14 @@ export async function checkTeamMembership(eventId: string, userId: string, clubI
         where: { userId },
         select: { role: true },
       });
-      const isPrivileged = roles.some(r => ['CLUB_ADMIN', 'BOARD_MEMBER', 'SYSTEM_ADMIN'].includes(r.role));
+      const isPrivileged = roles.some((r) =>
+        ['CLUB_ADMIN', 'BOARD_MEMBER', 'SYSTEM_ADMIN'].includes(r.role),
+      );
       if (!isPrivileged) {
-        throw Object.assign(new Error('Nur Team-Mitglieder koennen Verfuegbarkeit setzen'), { statusCode: 403, code: 'NOT_TEAM_MEMBER' });
+        throw Object.assign(new Error('Nur Team-Mitglieder koennen Verfuegbarkeit setzen'), {
+          statusCode: 403,
+          code: 'NOT_TEAM_MEMBER',
+        });
       }
     }
   }
@@ -37,7 +45,12 @@ export async function getAvailabilityForEvent(eventId: string) {
   });
 }
 
-export async function setAvailability(eventId: string, userId: string, status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE', comment?: string) {
+export async function setAvailability(
+  eventId: string,
+  userId: string,
+  status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE',
+  comment?: string,
+) {
   return prisma.availability.upsert({
     where: { eventId_userId: { eventId, userId } },
     create: { eventId, userId, status, comment },
@@ -61,9 +74,9 @@ export async function getAvailabilitySummary(eventId: string) {
     },
   });
 
-  const available = availabilities.filter(a => a.status === 'AVAILABLE');
-  const notAvailable = availabilities.filter(a => a.status === 'NOT_AVAILABLE');
-  const respondedIds = new Set(availabilities.map(a => a.userId));
+  const available = availabilities.filter((a) => a.status === 'AVAILABLE');
+  const notAvailable = availabilities.filter((a) => a.status === 'NOT_AVAILABLE');
+  const respondedIds = new Set(availabilities.map((a) => a.userId));
 
   // Get team members if team event
   let nonResponders: { id: string; firstName: string; lastName: string }[] = [];
@@ -74,17 +87,15 @@ export async function getAvailabilitySummary(eventId: string) {
         user: { select: { id: true, firstName: true, lastName: true } },
       },
     });
-    nonResponders = teamMembers
-      .filter(m => !respondedIds.has(m.userId))
-      .map(m => m.user);
+    nonResponders = teamMembers.filter((m) => !respondedIds.has(m.userId)).map((m) => m.user);
   }
 
   return {
     available: available.length,
     notAvailable: notAvailable.length,
     noResponse: nonResponders.length,
-    availableUsers: available.map(a => a.user),
-    notAvailableUsers: notAvailable.map(a => a.user),
+    availableUsers: available.map((a) => a.user),
+    notAvailableUsers: notAvailable.map((a) => a.user),
     nonResponders,
   };
 }
@@ -107,14 +118,18 @@ export async function sendReminder(eventId: string, clubId: string) {
   });
 
   // If any availability record has remindersLeft <= 0, max reminders reached
-  if (existingReminders.some(a => a.remindersLeft <= 0)) {
-    throw Object.assign(new Error('Maximale Anzahl Erinnerungen (2) erreicht'), { statusCode: 400, code: 'MAX_REMINDERS_REACHED' });
+  if (existingReminders.some((a) => a.remindersLeft <= 0)) {
+    throw Object.assign(new Error('Maximale Anzahl Erinnerungen (2) erreicht'), {
+      statusCode: 400,
+      code: 'MAX_REMINDERS_REACHED',
+    });
   }
 
   // Get non-responders
   const respondedIds = new Set(
-    (await prisma.availability.findMany({ where: { eventId }, select: { userId: true } }))
-      .map(a => a.userId),
+    (await prisma.availability.findMany({ where: { eventId }, select: { userId: true } })).map(
+      (a) => a.userId,
+    ),
   );
 
   const teamMembers = await prisma.teamMember.findMany({
@@ -122,9 +137,7 @@ export async function sendReminder(eventId: string, clubId: string) {
     select: { userId: true },
   });
 
-  const nonResponderIds = teamMembers
-    .map(m => m.userId)
-    .filter(id => !respondedIds.has(id));
+  const nonResponderIds = teamMembers.map((m) => m.userId).filter((id) => !respondedIds.has(id));
 
   // Always decrement remindersLeft to track reminder count (even if no new non-responders)
   await prisma.availability.updateMany({
@@ -137,7 +150,7 @@ export async function sendReminder(eventId: string, clubId: string) {
     await prisma.availability.upsert({
       where: { eventId_userId: { eventId, userId } },
       create: { eventId, userId, status: 'NOT_AVAILABLE', remindersLeft: 1 },
-      update: {},  // already decremented above
+      update: {}, // already decremented above
     });
   }
 
@@ -153,4 +166,26 @@ export async function sendReminder(eventId: string, clubId: string) {
   });
 
   return { sent: nonResponderIds.length };
+}
+
+export async function setAvailabilityAndNotify(
+  eventId: string,
+  userId: string,
+  clubId: string,
+  status: 'AVAILABLE' | 'NOT_AVAILABLE' | 'MAYBE',
+  comment: string | undefined,
+  io: Server | null,
+) {
+  await checkTeamMembership(eventId, userId, clubId);
+  const availability = await setAvailability(eventId, userId, status, comment);
+
+  if (io) {
+    io.to(SOCKET_ROOMS.club(clubId)).emit('availability:updated', availability);
+  }
+
+  lineupService.handleAvailabilityChange(eventId, userId, status).catch(() => {
+    /* swallow */
+  });
+
+  return availability;
 }

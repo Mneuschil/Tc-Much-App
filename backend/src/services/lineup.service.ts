@@ -1,6 +1,9 @@
 import { prisma } from '../config/database';
 import type { SetLineupInput } from '@tennis-club/shared';
+import { SOCKET_ROOMS } from '@tennis-club/shared';
+import type { Server } from 'socket.io';
 import * as pushService from './push.service';
+import { logAudit } from '../utils/audit';
 
 const DEFAULT_TEAM_SIZE = 6;
 
@@ -32,7 +35,7 @@ export async function suggestLineup(eventId: string) {
     where: { eventId, status: 'AVAILABLE' },
     select: { userId: true },
   });
-  const availableIds = new Set(available.map(a => a.userId));
+  const availableIds = new Set(available.map((a) => a.userId));
 
   const teamMembers = await prisma.teamMember.findMany({
     where: { teamId: event.teamId },
@@ -42,7 +45,7 @@ export async function suggestLineup(eventId: string) {
     orderBy: { position: 'asc' },
   });
 
-  const availableMembers = teamMembers.filter(m => availableIds.has(m.userId));
+  const availableMembers = teamMembers.filter((m) => availableIds.has(m.userId));
 
   const starters = availableMembers.slice(0, teamSize).map((m, i) => ({
     userId: m.userId,
@@ -61,7 +64,11 @@ export async function suggestLineup(eventId: string) {
   return { starters, substitutes, teamSize };
 }
 
-export async function saveLineup(eventId: string, teamId: string, lineup: { userId: string; position: number }[]) {
+export async function saveLineup(
+  eventId: string,
+  teamId: string,
+  lineup: { userId: string; position: number }[],
+) {
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { teamId: true } });
   if (!event?.teamId) {
     throw Object.assign(new Error('Event hat kein zugehoeriges Team'), { statusCode: 400 });
@@ -69,35 +76,40 @@ export async function saveLineup(eventId: string, teamId: string, lineup: { user
 
   await prisma.matchLineup.deleteMany({ where: { eventId } });
 
-  const created = [];
-  for (const entry of lineup) {
-    const ml = await prisma.matchLineup.create({
-      data: { eventId, teamId, userId: entry.userId, position: entry.position },
-      include: {
-        user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-      },
-    });
-    created.push(ml);
-  }
+  await prisma.matchLineup.createMany({
+    data: lineup.map((entry) => ({
+      eventId,
+      teamId,
+      userId: entry.userId,
+      position: entry.position,
+    })),
+  });
 
-  return created;
+  return prisma.matchLineup.findMany({
+    where: { eventId },
+    include: {
+      user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+    },
+    orderBy: { position: 'asc' },
+  });
 }
 
 export async function setLineup(input: SetLineupInput) {
   await prisma.matchLineup.deleteMany({ where: { eventId: input.eventId } });
 
-  const lineups = input.lineup.map((entry) =>
-    prisma.matchLineup.create({
-      data: {
-        eventId: input.eventId,
-        teamId: input.teamId,
-        userId: entry.userId,
-        position: entry.position,
-      },
-    }),
-  );
+  await prisma.matchLineup.createMany({
+    data: input.lineup.map((entry) => ({
+      eventId: input.eventId,
+      teamId: input.teamId,
+      userId: entry.userId,
+      position: entry.position,
+    })),
+  });
 
-  return Promise.all(lineups);
+  return prisma.matchLineup.findMany({
+    where: { eventId: input.eventId },
+    orderBy: { position: 'asc' },
+  });
 }
 
 export async function confirmLineup(eventId: string) {
@@ -116,11 +128,15 @@ export async function confirmLineup(eventId: string) {
   });
 
   const dateStr = event?.startDate
-    ? new Date(event.startDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    ? new Date(event.startDate).toLocaleDateString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
     : 'TBD';
   const opponent = event?.title ?? 'unbekannt';
 
-  const notifications = lineup.map(l =>
+  const notifications = lineup.map((l) =>
     pushService.sendToUsers([l.userId], {
       title: 'Aufstellung bestaetigt',
       body: `Du spielst am ${dateStr} auf Position ${l.position} gegen ${opponent}!`,
@@ -163,7 +179,7 @@ export async function handleAvailabilityChange(eventId: string, userId: string, 
 
   if (captains.length > 0) {
     await pushService.sendToUsers(
-      captains.map(c => c.userId),
+      captains.map((c) => c.userId),
       {
         title: 'Absage: Aufgestellter Spieler',
         body: `${user?.firstName} ${user?.lastName} hat fuer "${event.title}" abgesagt und war aufgestellt!`,
@@ -195,16 +211,31 @@ export async function autoGenerateLineup(eventId: string, teamId: string) {
 
   await prisma.matchLineup.deleteMany({ where: { eventId } });
 
-  const lineups = teamMembers.map((member, index) =>
-    prisma.matchLineup.create({
-      data: {
-        eventId,
-        teamId,
-        userId: member.userId,
-        position: index + 1,
-      },
-    }),
-  );
+  await prisma.matchLineup.createMany({
+    data: teamMembers.map((member, index) => ({
+      eventId,
+      teamId,
+      userId: member.userId,
+      position: index + 1,
+    })),
+  });
 
-  return Promise.all(lineups);
+  return prisma.matchLineup.findMany({
+    where: { eventId },
+    orderBy: { position: 'asc' },
+  });
+}
+
+export async function setLineupAndNotify(
+  input: SetLineupInput,
+  userId: string,
+  clubId: string,
+  io: Server | null,
+) {
+  const lineup = await setLineup(input);
+  if (io) {
+    io.to(SOCKET_ROOMS.club(clubId)).emit('match:lineup', { eventId: input.eventId });
+  }
+  logAudit('LINEUP_SET', userId, clubId, { eventId: input.eventId });
+  return lineup;
 }

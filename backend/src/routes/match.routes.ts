@@ -2,11 +2,10 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireBoard } from '../middleware/roles';
 import { validate } from '../middleware/validate';
-import { setLineupSchema, SOCKET_ROOMS } from '@tennis-club/shared';
+import { setLineupSchema } from '@tennis-club/shared';
 import * as matchResultService from '../services/matchResult.service';
 import * as lineupService from '../services/lineup.service';
-import { success, error } from '../utils/apiResponse';
-import { logAudit } from '../utils/audit';
+import { success } from '../utils/apiResponse';
 
 const router = Router();
 
@@ -27,17 +26,13 @@ router.get('/:matchId', async (req: Request, res: Response, next: NextFunction) 
 // POST /:matchId/result – Player A submits result (AC-01)
 router.post('/:matchId/result', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await matchResultService.submitResult(
+    const result = await matchResultService.submitResultAndNotify(
       req.params.matchId as string,
       { sets: req.body.sets, winnerId: req.body.winnerId },
       req.user!.userId,
+      req.user!.clubId,
+      req.app.get('io') ?? null,
     );
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:submitted', result);
-    }
-
     success(res, result, 201);
   } catch (err) {
     next(err);
@@ -47,21 +42,12 @@ router.post('/:matchId/result', async (req: Request, res: Response, next: NextFu
 // POST /:matchId/result/confirm – Player B confirms (AC-04)
 router.post('/:matchId/result/confirm', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // Find the SUBMITTED result for this event
-    const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-    const pending = results.find((r) => r.status === 'SUBMITTED');
-    if (!pending) {
-      error(res, 'Kein offenes Ergebnis gefunden', 400, 'NO_PENDING_RESULT');
-      return;
-    }
-
-    const result = await matchResultService.confirmResult(pending.id, req.user!.userId);
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:confirmed', result);
-    }
-
+    const result = await matchResultService.confirmPendingResult(
+      req.params.matchId as string,
+      req.user!.userId,
+      req.user!.clubId,
+      req.app.get('io') ?? null,
+    );
     success(res, result);
   } catch (err) {
     next(err);
@@ -71,24 +57,13 @@ router.post('/:matchId/result/confirm', async (req: Request, res: Response, next
 // POST /:matchId/result/reject – Player B rejects → DISPUTED (AC-05)
 router.post('/:matchId/result/reject', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-    const pending = results.find((r) => r.status === 'SUBMITTED');
-    if (!pending) {
-      error(res, 'Kein offenes Ergebnis gefunden', 400, 'NO_PENDING_RESULT');
-      return;
-    }
-
-    const result = await matchResultService.rejectResult(
-      pending.id,
+    const result = await matchResultService.rejectPendingResult(
+      req.params.matchId as string,
       req.user!.userId,
       req.body.rejectionReason || req.body.reason || 'Abgelehnt',
+      req.user!.clubId,
+      req.app.get('io') ?? null,
     );
-
-    const io = req.app.get('io');
-    if (io) {
-      io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('result:disputed', result);
-    }
-
     success(res, result);
   } catch (err) {
     next(err);
@@ -101,15 +76,8 @@ router.post(
   requireBoard,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const results = await matchResultService.getResultsForEvent(req.params.matchId as string);
-      const disputed = results.find((r) => r.status === 'DISPUTED');
-      if (!disputed) {
-        error(res, 'Kein strittiges Ergebnis gefunden', 400, 'NO_DISPUTED_RESULT');
-        return;
-      }
-
-      const result = await matchResultService.resolveDispute(
-        disputed.id,
+      const result = await matchResultService.resolveEventDispute(
+        req.params.matchId as string,
         req.user!.userId,
         req.body.sets,
         req.body.winnerId,
@@ -149,18 +117,12 @@ router.put(
   validate(setLineupSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const lineup = await lineupService.setLineup(req.body);
-
-      const io = req.app.get('io');
-      if (io) {
-        io.to(SOCKET_ROOMS.club(req.user!.clubId)).emit('match:lineup', {
-          eventId: req.body.eventId,
-        });
-      }
-
-      logAudit('LINEUP_SET', req.user!.userId, req.user!.clubId, {
-        eventId: req.body.eventId,
-      });
+      const lineup = await lineupService.setLineupAndNotify(
+        req.body,
+        req.user!.userId,
+        req.user!.clubId,
+        req.app.get('io') ?? null,
+      );
       success(res, lineup);
     } catch (err) {
       next(err);

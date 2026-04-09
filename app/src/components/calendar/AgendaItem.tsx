@@ -6,6 +6,7 @@ import { differenceInHours } from 'date-fns';
 import { useTheme } from '../../theme';
 import { useSetTrainingAttendance } from '../../features/training/hooks/useTraining';
 import { formatDate, formatTime } from '../../utils/formatDate';
+import type { CalendarEvent } from '../../utils/calendarUtils';
 
 const EVENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   LEAGUE_MATCH: 'tennisball',
@@ -17,17 +18,9 @@ const EVENT_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   TOURNAMENT: 'trophy-outline',
 };
 
-export interface AgendaItemEvent {
-  id: string;
-  title: string;
-  type: string;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-  location: string | null;
-  isHomeGame: boolean | null;
-  teamId: string | null;
-}
+export type AgendaItemEvent = CalendarEvent & {
+  myAttendance?: boolean | null;
+};
 
 interface AgendaItemProps {
   event: AgendaItemEvent;
@@ -35,11 +28,19 @@ interface AgendaItemProps {
   onShowTrainerOverview: () => void;
 }
 
+function toStatus(attending: boolean | null | undefined): 'AVAILABLE' | 'NOT_AVAILABLE' | null {
+  if (attending === true) return 'AVAILABLE';
+  if (attending === false) return 'NOT_AVAILABLE';
+  return null;
+}
+
 export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaItemProps) {
   const { colors, typography, spacing, borderRadius } = useTheme();
   const router = useRouter();
   const setTrainingAttendance = useSetTrainingAttendance(event.id);
-  const [myAttendance, setMyAttendance] = useState<'AVAILABLE' | 'NOT_AVAILABLE' | null>(null);
+  const [myAttendance, setMyAttendance] = useState<'AVAILABLE' | 'NOT_AVAILABLE' | null>(() =>
+    toStatus(event.myAttendance),
+  );
 
   const isTraining = event.type === 'TRAINING';
   const hoursUntil = differenceInHours(new Date(event.startDate), new Date());
@@ -168,7 +169,7 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
           )}
           {isTrainer && (
             <Pressable onPress={onShowTrainerOverview} style={{ marginTop: spacing.sm }}>
-              <Text style={[typography.bodySmall, { color: colors.accentLight }]}>Uebersicht</Text>
+              <Text style={[typography.bodySmall, { color: colors.accentLight }]}>Übersicht</Text>
             </Pressable>
           )}
         </View>

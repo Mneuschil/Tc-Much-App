@@ -1,3 +1,4 @@
+import path from 'path';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -39,6 +40,9 @@ if (env.NODE_ENV !== 'test') {
 app.get('/api/v1/health', (_req, res) => {
   success(res, { status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve uploaded files statically (Nginx handles this in production)
+app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR)));
 
 app.use('/api/v1', routes);
 
