@@ -19,13 +19,15 @@ router.use(requireAuth);
 // GET / – Alle Events (filter by type, from, to, teamId)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const events = await eventService.getEventsForClub(req.user!.clubId, {
+    const result = await eventService.getEventsForClub(req.user!.clubId, {
       type: req.query.type as string,
       from: req.query.from as string,
       to: req.query.to as string,
       teamId: req.query.teamId as string,
+      page: req.query.page ? Number(req.query.page) : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : undefined,
     });
-    success(res, events);
+    res.json({ success: true, data: result.events, pagination: result.pagination });
   } catch (err) {
     next(err);
   }

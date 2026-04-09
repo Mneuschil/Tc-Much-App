@@ -8,29 +8,48 @@ import type { Server } from 'socket.io';
 
 export async function getEventsForClub(
   clubId: string,
-  opts?: { type?: string; from?: string; to?: string; teamId?: string },
+  opts?: {
+    type?: string;
+    from?: string;
+    to?: string;
+    teamId?: string;
+    page?: number;
+    limit?: number;
+  },
 ) {
-  return prisma.event.findMany({
-    where: {
-      clubId,
-      ...(opts?.type ? { type: opts.type as CreateEventInput['type'] } : {}),
-      ...(opts?.teamId ? { teamId: opts.teamId } : {}),
-      ...(opts?.from || opts?.to
-        ? {
-            startDate: {
-              ...(opts?.from ? { gte: new Date(opts.from) } : {}),
-              ...(opts?.to ? { lte: new Date(opts.to) } : {}),
-            },
-          }
-        : {}),
-    },
-    include: {
-      team: { select: { id: true, name: true } },
-      createdBy: { select: { id: true, firstName: true, lastName: true } },
-      _count: { select: { availabilities: true } },
-    },
-    orderBy: { startDate: 'asc' },
-  });
+  const page = opts?.page ?? 1;
+  const limit = opts?.limit ?? 50;
+
+  const where = {
+    clubId,
+    ...(opts?.type ? { type: opts.type as CreateEventInput['type'] } : {}),
+    ...(opts?.teamId ? { teamId: opts.teamId } : {}),
+    ...(opts?.from || opts?.to
+      ? {
+          startDate: {
+            ...(opts?.from ? { gte: new Date(opts.from) } : {}),
+            ...(opts?.to ? { lte: new Date(opts.to) } : {}),
+          },
+        }
+      : {}),
+  };
+
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where,
+      include: {
+        team: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, firstName: true, lastName: true } },
+        _count: { select: { availabilities: true } },
+      },
+      orderBy: { startDate: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.event.count({ where }),
+  ]);
+
+  return { events, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 }
 
 export async function getEventById(eventId: string, clubId: string) {

@@ -124,7 +124,11 @@ export async function startDraw(tournamentId: string, clubId: string) {
   }
 
   // Generate bracket
-  const bracket = await bracketService.generateBracket(tournamentId, tournament.registrations);
+  const bracket = await bracketService.generateBracket(
+    tournamentId,
+    tournament.registrations,
+    tournament.roundDeadlineDays,
+  );
 
   // Update tournament status
   await prisma.tournament.update({

@@ -38,17 +38,21 @@ function getSeedPositions(bracketSize: number): number[] {
 
   const result: number[] = [];
   for (const pos of smaller) {
-    result.push(pos * 2);              // Seed goes to top of their match
+    result.push(pos * 2); // Seed goes to top of their match
     result.push(bracketSize - 1 - pos * 2); // Mirror seed goes to bottom
   }
 
   return result;
 }
 
-export async function generateBracket(tournamentId: string, registrations: Registration[]) {
+export async function generateBracket(
+  tournamentId: string,
+  registrations: Registration[],
+  roundDeadlineDays = 14,
+) {
   // Separate seeded and unseeded players
-  const seeded = registrations.filter(r => r.seed !== null).sort((a, b) => a.seed! - b.seed!);
-  const unseeded = shuffle(registrations.filter(r => r.seed === null));
+  const seeded = registrations.filter((r) => r.seed !== null).sort((a, b) => a.seed! - b.seed!);
+  const unseeded = shuffle(registrations.filter((r) => r.seed === null));
 
   const totalPlayers = registrations.length;
   const bracketSize = nextPowerOf2(totalPlayers);
@@ -81,8 +85,8 @@ export async function generateBracket(tournamentId: string, registrations: Regis
 
   // Place unseeded players in remaining non-BYE empty slots
   const fillableSlots = slots
-    .map((s, i) => s === null && !byeSet.has(i) ? i : -1)
-    .filter(i => i >= 0);
+    .map((s, i) => (s === null && !byeSet.has(i) ? i : -1))
+    .filter((i) => i >= 0);
   const shuffledFillable = shuffle(fillableSlots);
   for (let i = 0; i < unseeded.length && i < shuffledFillable.length; i++) {
     slots[shuffledFillable[i]] = unseeded[i].userId;
@@ -95,6 +99,9 @@ export async function generateBracket(tournamentId: string, registrations: Regis
   let matchesPerRound = bracketSize / 2;
 
   for (let round = 1; round <= totalRounds; round++) {
+    const roundDeadline = new Date();
+    roundDeadline.setDate(roundDeadline.getDate() + roundDeadlineDays * round);
+
     for (let pos = 1; pos <= matchesPerRound; pos++) {
       if (round === 1) {
         const idx1 = (pos - 1) * 2;
@@ -103,8 +110,8 @@ export async function generateBracket(tournamentId: string, registrations: Regis
         const p2 = slots[idx2];
 
         const isBye = p1 === null || p2 === null;
-        const winnerId = isBye ? (p1 || p2) : null;
-        const status = isBye ? 'WALKOVER' as const : 'SCHEDULED' as const;
+        const winnerId = isBye ? p1 || p2 : null;
+        const status = isBye ? ('WALKOVER' as const) : ('SCHEDULED' as const);
 
         await prisma.tournamentMatch.create({
           data: {
@@ -116,6 +123,7 @@ export async function generateBracket(tournamentId: string, registrations: Regis
             winnerId,
             status,
             score: isBye ? 'BYE' : null,
+            deadline: roundDeadline,
           },
         });
       } else {
@@ -126,6 +134,7 @@ export async function generateBracket(tournamentId: string, registrations: Regis
             round,
             position: pos,
             status: 'SCHEDULED',
+            deadline: roundDeadline,
           },
         });
       }
@@ -147,7 +156,12 @@ export async function generateBracket(tournamentId: string, registrations: Regis
   return getBracket(tournamentId);
 }
 
-async function placeInNextRound(tournamentId: string, currentPosition: number, currentRound: number, playerId: string) {
+async function placeInNextRound(
+  tournamentId: string,
+  currentPosition: number,
+  currentRound: number,
+  playerId: string,
+) {
   const nextRound = currentRound + 1;
   const nextPosition = Math.ceil(currentPosition / 2);
 
@@ -169,7 +183,8 @@ async function placeInNextRound(tournamentId: string, currentPosition: number, c
 export async function advanceWinner(matchId: string, winnerId: string, score: string) {
   const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
   if (!match) throw Object.assign(new Error('Match nicht gefunden'), { statusCode: 404 });
-  if (match.status === 'COMPLETED') throw Object.assign(new Error('Match bereits abgeschlossen'), { statusCode: 400 });
+  if (match.status === 'COMPLETED')
+    throw Object.assign(new Error('Match bereits abgeschlossen'), { statusCode: 400 });
 
   // Update current match
   await prisma.tournamentMatch.update({
@@ -213,7 +228,7 @@ export async function getBracket(tournamentId: string) {
 
   return Object.entries(rounds).map(([roundNumber, roundMatches]) => ({
     roundNumber: parseInt(roundNumber, 10),
-    matches: roundMatches.map(m => ({
+    matches: roundMatches.map((m) => ({
       id: m.id,
       position: m.position,
       player1: m.player1,

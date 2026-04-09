@@ -20,6 +20,20 @@ export async function getTeamsForClub(clubId: string, type?: string) {
   });
 }
 
+export async function getMyTeams(userId: string, clubId: string) {
+  return prisma.team.findMany({
+    where: {
+      clubId,
+      members: { some: { userId } },
+    },
+    include: {
+      _count: { select: { members: true } },
+      channels: { select: { id: true, name: true } },
+    },
+    orderBy: { name: 'asc' },
+  });
+}
+
 export async function getTeamById(teamId: string, clubId: string) {
   return prisma.team.findFirst({
     where: { id: teamId, clubId },

@@ -149,13 +149,13 @@ export async function createMessage(
   return aggregateReactions(message, authorId);
 }
 
-export async function deleteMessage(messageId: string, userId: string) {
+export async function deleteMessage(messageId: string, userId: string, isAdmin = false) {
   const message = await prisma.message.findUnique({ where: { id: messageId } });
   if (!message) {
     throw Object.assign(new Error('Nachricht nicht gefunden'), { statusCode: 404 });
   }
-  if (message.authorId !== userId) {
-    throw Object.assign(new Error('Keine Berechtigung diese Nachricht zu loeschen'), {
+  if (message.authorId !== userId && !isAdmin) {
+    throw Object.assign(new Error('Keine Berechtigung diese Nachricht zu löschen'), {
       statusCode: 403,
       code: 'FORBIDDEN',
     });
@@ -228,8 +228,13 @@ export async function createMessageAndNotify(
   return message;
 }
 
-export async function deleteMessageAndNotify(messageId: string, userId: string, io: Server | null) {
-  const deleted = await deleteMessage(messageId, userId);
+export async function deleteMessageAndNotify(
+  messageId: string,
+  userId: string,
+  io: Server | null,
+  isAdmin = false,
+) {
+  const deleted = await deleteMessage(messageId, userId, isAdmin);
 
   if (io) {
     io.to(SOCKET_ROOMS.channel(deleted.channelId)).emit('message:deleted', {

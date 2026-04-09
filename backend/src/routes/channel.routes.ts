@@ -170,16 +170,18 @@ router.post(
   },
 );
 
-// DELETE /messages/:messageId – Eigene Nachricht loeschen
+// DELETE /messages/:messageId – Eigene Nachricht oder ADMIN löschen
 router.delete('/messages/:messageId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const io = req.app.get('io') as Server | null;
+    const isAdmin = req.user!.roles.some((r) => ['CLUB_ADMIN', 'SYSTEM_ADMIN'].includes(r));
     await messageService.deleteMessageAndNotify(
       req.params.messageId as string,
       req.user!.userId,
       io,
+      isAdmin,
     );
-    success(res, { message: 'Nachricht geloescht' });
+    success(res, { message: 'Nachricht gelöscht' });
   } catch (err) {
     next(err);
   }

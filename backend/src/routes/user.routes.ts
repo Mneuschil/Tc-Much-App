@@ -4,6 +4,7 @@ import { requireAdmin, requireBoard } from '../middleware/roles';
 import { validate } from '../middleware/validate';
 import { updateProfileSchema, updateRolesSchema } from '@tennis-club/shared';
 import * as userService from '../services/user.service';
+import * as teamService from '../services/team.service';
 import { UserError } from '../services/user.service';
 import { success, error } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
@@ -27,6 +28,16 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
     success(res, profile);
   } catch (err) {
     handleUserError(err, res, next);
+  }
+});
+
+// GET /me/teams – eigene Teams
+router.get('/me/teams', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const teams = await teamService.getMyTeams(req.user!.userId, req.user!.clubId);
+    success(res, teams);
+  } catch (err) {
+    next(err);
   }
 });
 

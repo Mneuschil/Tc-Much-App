@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import type { CreateClubInput, UpdateClubInput } from '@tennis-club/shared';
+import { seedDefaultChannels } from './channel.service';
 
 export class ClubError extends Error {
   code: string;
@@ -12,13 +13,13 @@ export class ClubError extends Error {
   }
 }
 
-export async function createClub(input: CreateClubInput) {
+export async function createClub(input: CreateClubInput, createdById: string) {
   const existing = await prisma.club.findUnique({ where: { clubCode: input.clubCode } });
   if (existing) {
     throw new ClubError('Club-Code existiert bereits', 'CLUB_CODE_EXISTS', 409);
   }
 
-  return prisma.club.create({
+  const club = await prisma.club.create({
     data: {
       name: input.name,
       clubCode: input.clubCode,
@@ -29,6 +30,9 @@ export async function createClub(input: CreateClubInput) {
       logo: input.logo,
     },
   });
+
+  await seedDefaultChannels(club.id, createdById);
+  return club;
 }
 
 export async function getClubById(clubId: string) {

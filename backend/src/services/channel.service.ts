@@ -20,6 +20,7 @@ export async function getChannelsForClub(clubId: string, userId: string) {
     where: {
       clubId,
       parentChannelId: null,
+      isArchived: false,
       ...(isPrivileged
         ? {}
         : {
@@ -142,11 +143,17 @@ export async function deleteChannel(channelId: string, clubId: string, userId: s
     });
   }
 
-  // Delete subchannels first
-  await prisma.channel.deleteMany({ where: { parentChannelId: channelId } });
-  const deleted = await prisma.channel.delete({ where: { id: channelId } });
-  logAudit('CHANNEL_DELETED', userId, clubId, { channelId });
-  return deleted;
+  // Archive subchannels first, then archive channel (Soft Delete)
+  await prisma.channel.updateMany({
+    where: { parentChannelId: channelId },
+    data: { isArchived: true },
+  });
+  const archived = await prisma.channel.update({
+    where: { id: channelId },
+    data: { isArchived: true },
+  });
+  logAudit('CHANNEL_ARCHIVED', userId, clubId, { channelId });
+  return archived;
 }
 
 export async function toggleMute(channelId: string, userId: string, clubId: string) {

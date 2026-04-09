@@ -2,7 +2,12 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireAnyRole, requireAdmin } from '../middleware/roles';
 import { validate } from '../middleware/validate';
-import { createClubSchema, updateClubSchema, verifyClubCodeSchema, UserRole } from '@tennis-club/shared';
+import {
+  createClubSchema,
+  updateClubSchema,
+  verifyClubCodeSchema,
+  UserRole,
+} from '@tennis-club/shared';
 import * as clubService from '../services/club.service';
 import { ClubError } from '../services/club.service';
 import { success, error } from '../utils/apiResponse';
@@ -25,7 +30,7 @@ router.post(
   validate(createClubSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const club = await clubService.createClub(req.body);
+      const club = await clubService.createClub(req.body, req.user!.userId);
       success(res, club, 201);
     } catch (err) {
       handleClubError(err, res, next);
@@ -48,18 +53,14 @@ router.post(
 );
 
 // GET /:clubId – Club-Details
-router.get(
-  '/:clubId',
-  requireAuth,
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const club = await clubService.getClubById(req.params.clubId as string);
-      success(res, club);
-    } catch (err) {
-      handleClubError(err, res, next);
-    }
-  },
-);
+router.get('/:clubId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const club = await clubService.getClubById(req.params.clubId as string);
+    success(res, club);
+  } catch (err) {
+    handleClubError(err, res, next);
+  }
+});
 
 // PUT /:clubId – Club aktualisieren (nur CLUB_ADMIN des eigenen Clubs)
 router.put(

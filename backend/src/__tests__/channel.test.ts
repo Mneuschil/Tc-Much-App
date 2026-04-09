@@ -19,30 +19,56 @@ let restrictedChannelId: string;
 beforeAll(async () => {
   const passwordHash = await hashPassword('password123');
 
-  const club = await prisma.club.create({ data: { name: 'Channel Test Club', clubCode: CLUB_CODE } });
+  const club = await prisma.club.create({
+    data: { name: 'Channel Test Club', clubCode: CLUB_CODE },
+  });
   clubId = club.id;
 
-  const otherClub = await prisma.club.create({ data: { name: 'Other Channel Club', clubCode: 'CHANOTH' } });
+  const otherClub = await prisma.club.create({
+    data: { name: 'Other Channel Club', clubCode: 'CHANOTH' },
+  });
   otherClubId = otherClub.id;
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'chanadmin@test.de', passwordHash, firstName: 'Admin', lastName: 'Chan', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'chanadmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'Chan',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   adminUserId = adminUser.id;
 
   const boardUser = await prisma.user.create({
     data: {
-      email: 'chanboard@test.de', passwordHash, firstName: 'Board', lastName: 'Chan', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'chanboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'Chan',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
 
   const memberUser = await prisma.user.create({
     data: {
-      email: 'chanmember@test.de', passwordHash, firstName: 'Member', lastName: 'Chan', clubId,
+      email: 'chanmember@test.de',
+      passwordHash,
+      firstName: 'Member',
+      lastName: 'Chan',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -50,15 +76,35 @@ beforeAll(async () => {
 
   const otherUser = await prisma.user.create({
     data: {
-      email: 'chanother@test.de', passwordHash, firstName: 'Other', lastName: 'Chan', clubId: otherClubId,
+      email: 'chanother@test.de',
+      passwordHash,
+      firstName: 'Other',
+      lastName: 'Chan',
+      clubId: otherClubId,
       roles: { create: [{ role: 'MEMBER', clubId: otherClubId }] },
     },
   });
 
-  adminToken = generateAccessToken({ userId: adminUser.id, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUser.id, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
-  memberToken = generateAccessToken({ userId: memberUser.id, clubId, roles: ['MEMBER'] as UserRole[] });
-  otherClubToken = generateAccessToken({ userId: otherUser.id, clubId: otherClubId, roles: ['MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUser.id,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUser.id,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
+  memberToken = generateAccessToken({
+    userId: memberUser.id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
+  otherClubToken = generateAccessToken({
+    userId: otherUser.id,
+    clubId: otherClubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
 
   // Create test channels
   const pubChannel = await prisma.channel.create({
@@ -78,12 +124,20 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma.channelMute.deleteMany({ where: { channel: { clubId: { in: [clubId, otherClubId] } } } });
-  await prisma.channelMember.deleteMany({ where: { channel: { clubId: { in: [clubId, otherClubId] } } } });
-  await prisma.message.deleteMany({ where: { channel: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.channelMute.deleteMany({
+    where: { channel: { clubId: { in: [clubId, otherClubId] } } },
+  });
+  await prisma.channelMember.deleteMany({
+    where: { channel: { clubId: { in: [clubId, otherClubId] } } },
+  });
+  await prisma.message.deleteMany({
+    where: { channel: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.channel.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
   await prisma.userRoleAssignment.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
-  await prisma.refreshToken.deleteMany({ where: { user: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.refreshToken.deleteMany({
+    where: { user: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.user.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
   await prisma.club.deleteMany({ where: { clubCode: { in: [CLUB_CODE, 'CHANOTH'] } } });
   await prisma.$disconnect();
@@ -179,7 +233,13 @@ describe('Subchannels', () => {
   it('rejects nested subchannel (max 1 level) (AC-06)', async () => {
     // Create a subchannel first
     const sub = await prisma.channel.create({
-      data: { name: 'Level 1 Sub', visibility: 'PUBLIC', clubId, createdById: adminUserId, parentChannelId: publicChannelId },
+      data: {
+        name: 'Level 1 Sub',
+        visibility: 'PUBLIC',
+        clubId,
+        createdById: adminUserId,
+        parentChannelId: publicChannelId,
+      },
     });
 
     const res = await request(app)
@@ -208,7 +268,10 @@ describe('PUT /api/v1/channels/:channelId', () => {
     expect(res.body.data.description).toBe('New description');
 
     // Reset name
-    await prisma.channel.update({ where: { id: publicChannelId }, data: { name: 'Public Test', description: null } });
+    await prisma.channel.update({
+      where: { id: publicChannelId },
+      data: { name: 'Public Test', description: null },
+    });
   });
 
   it('rejects MEMBER from updating', async () => {
@@ -234,8 +297,9 @@ describe('DELETE /api/v1/channels/:channelId', () => {
 
     expect(res.status).toBe(200);
 
-    const deleted = await prisma.channel.findUnique({ where: { id: ch.id } });
-    expect(deleted).toBeNull();
+    const archived = await prisma.channel.findUnique({ where: { id: ch.id } });
+    expect(archived).not.toBeNull();
+    expect(archived!.isArchived).toBe(true);
   });
 
   it('rejects BOARD_MEMBER from deleting', async () => {

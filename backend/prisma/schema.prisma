@@ -279,6 +279,7 @@ model Channel {
   description      String?
   visibility       ChannelVisibility @default(PUBLIC)
   isDefault        Boolean           @default(false)
+  isArchived       Boolean           @default(false)
   parentChannelId  String?
   teamId           String?
   clubId           String
@@ -586,8 +587,9 @@ model Tournament {
   description     String?
   startDate       DateTime
   endDate         DateTime?
-  maxParticipants Int?
-  clubId          String
+  maxParticipants   Int?
+  roundDeadlineDays Int              @default(14)
+  clubId            String
   createdById     String
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
@@ -628,6 +630,7 @@ model TournamentMatch {
   score         String?
   status        TournamentMatchStatus @default(SCHEDULED)
   scheduledDate DateTime?
+  deadline      DateTime?
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 
