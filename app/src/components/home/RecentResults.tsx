@@ -92,6 +92,8 @@ function ResultCard({ result }: { result: RecentResult }) {
   return (
     <Pressable
       onPress={() => router.push(`/result/${result.id}` as never)}
+      accessibilityLabel={`${label}: ${result.team1 ?? result.player1.lastName} gegen ${result.team2 ?? result.player2.lastName}`}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
         {

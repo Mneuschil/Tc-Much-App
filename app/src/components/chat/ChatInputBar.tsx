@@ -63,7 +63,12 @@ export function ChatInputBar({
           >
             {replyTo.content}
           </Text>
-          <Pressable onPress={onCancelReply} hitSlop={10}>
+          <Pressable
+            onPress={onCancelReply}
+            hitSlop={10}
+            accessibilityLabel="Antwort abbrechen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={16} color={colors.textSecondary} />
           </Pressable>
         </View>
@@ -89,11 +94,15 @@ export function ChatInputBar({
             placeholderTextColor={colors.textTertiary}
             multiline
             maxLength={5000}
+            accessibilityLabel="Nachricht eingeben"
           />
         </View>
         <Pressable
           onPress={onSend}
           disabled={!canSend}
+          accessibilityLabel="Nachricht senden"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSend }}
           style={[
             styles.sendBtn,
             {

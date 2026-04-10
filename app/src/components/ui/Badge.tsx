@@ -2,7 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../theme';
 
-type BadgeVariant = 'success' | 'danger' | 'warning' | 'accent' | 'neutral' | 'dark' | 'info' | 'mint';
+type BadgeVariant =
+  | 'success'
+  | 'danger'
+  | 'warning'
+  | 'accent'
+  | 'neutral'
+  | 'dark'
+  | 'info'
+  | 'mint';
 type BadgeSize = 'sm' | 'md';
 
 interface BadgeProps {
@@ -29,20 +37,22 @@ export function Badge({ label, variant = 'neutral', size = 'md' }: BadgeProps) {
   const isSmall = size === 'sm';
 
   return (
-    <View style={[
-      styles.badge,
-      {
-        backgroundColor: bg,
-        borderRadius: radii.pill,
-        paddingHorizontal: isSmall ? spacing.s : spacing.m,
-        paddingVertical: isSmall ? 2 : spacing.xs,
-      },
-    ]}>
-      <Text style={[{ color: text, fontSize: isSmall ? 11 : 12, fontWeight: '600' }]}>{label}</Text>
+    <View
+      style={[
+        styles.badge,
+        {
+          backgroundColor: bg,
+          borderRadius: radii.pill,
+          paddingHorizontal: isSmall ? spacing.s : spacing.m,
+          paddingVertical: isSmall ? 2 : spacing.xs,
+        },
+      ]}
+    >
+      <Text style={[{ color: text, fontSize: isSmall ? 12 : 13, fontWeight: '600' }]}>{label}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  badge: { alignSelf: 'flex-start' },
+  badge: { alignSelf: 'flex-start', minWidth: 20, minHeight: 20 },
 });

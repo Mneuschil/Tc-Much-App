@@ -89,6 +89,9 @@ export function AvailabilitySection({
             <Pressable
               key={opt.status}
               onPress={() => onSetStatus(opt.status)}
+              accessibilityLabel={opt.label}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
               style={[
                 styles.button,
                 {

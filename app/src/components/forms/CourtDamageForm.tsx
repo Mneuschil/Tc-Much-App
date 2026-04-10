@@ -152,6 +152,7 @@ export function CourtDamageForm() {
           multiline
           placeholder="Beschreibe den Schaden..."
           placeholderTextColor={colors.textTertiary}
+          accessibilityLabel="Schadensbeschreibung"
           style={[
             styles.textArea,
             {
@@ -177,9 +178,12 @@ export function CourtDamageForm() {
             <Image
               source={{ uri: photoUri }}
               style={[styles.preview, { borderRadius: radii.md }]}
+              accessibilityElementsHidden
             />
             <Pressable
               onPress={() => setPhotoUri(null)}
+              accessibilityLabel="Foto entfernen"
+              accessibilityRole="button"
               style={[
                 styles.removeBtn,
                 { backgroundColor: colors.dangerSurface, borderRadius: radii.pill },
@@ -191,6 +195,8 @@ export function CourtDamageForm() {
         ) : (
           <Pressable
             onPress={pickImage}
+            accessibilityLabel="Foto aufnehmen oder auswählen"
+            accessibilityRole="button"
             style={[
               styles.photoPlaceholder,
               { borderRadius: radii.md, borderColor: colors.textTertiary },
@@ -233,6 +239,9 @@ export function CourtDamageForm() {
               <Pressable
                 key={opt.value}
                 onPress={() => setUrgency(opt.value)}
+                accessibilityLabel={`Dringlichkeit: ${opt.label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
                 style={[
                   styles.urgencyBtn,
                   {

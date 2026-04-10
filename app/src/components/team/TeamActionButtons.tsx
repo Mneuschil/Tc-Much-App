@@ -33,6 +33,9 @@ export function TeamActionButtons({ tabs, activeTab, onChange }: TeamActionButto
           <Pressable
             key={tab}
             onPress={() => onChange(tab)}
+            accessibilityLabel={tab}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
             style={({ pressed }) => [
               styles.button,
               {

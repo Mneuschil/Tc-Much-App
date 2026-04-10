@@ -68,6 +68,8 @@ export function WeekCalendarStrip({
         </View>
         <Pressable
           onPress={() => router.push('/(tabs)/calendar' as never)}
+          accessibilityLabel="Vollständigen Kalender öffnen"
+          accessibilityRole="button"
           style={[
             styles.calendarButton,
             { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' },
@@ -86,7 +88,14 @@ export function WeekCalendarStrip({
           const dayEvents = eventsByDate.get(dateKey) ?? [];
 
           return (
-            <Pressable key={dateKey} onPress={() => onDateSelect(day)} style={styles.dayColumn}>
+            <Pressable
+              key={dateKey}
+              onPress={() => onDateSelect(day)}
+              style={styles.dayColumn}
+              accessibilityLabel={`${DAY_LABELS_DE[index]} ${day.getDate()}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+            >
               <Text
                 style={[
                   typography.caption,

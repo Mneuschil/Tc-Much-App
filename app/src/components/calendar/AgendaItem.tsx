@@ -58,6 +58,8 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
   return (
     <Pressable
       onPress={() => router.push(`/match/${event.id}` as never)}
+      accessibilityLabel={`${event.title}, ${formatDate(event.startDate)}`}
+      accessibilityRole="button"
       style={({ pressed }) => [
         {
           backgroundColor: colors.backgroundSecondary,
@@ -118,6 +120,9 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
             <Pressable
               onPress={() => handleAttendance('AVAILABLE')}
               disabled={deadlineExpired}
+              accessibilityLabel="Zusagen"
+              accessibilityRole="button"
+              accessibilityState={{ selected: myAttendance === 'AVAILABLE' }}
               style={[
                 styles.attendBtn,
                 {
@@ -140,6 +145,9 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
             <Pressable
               onPress={() => handleAttendance('NOT_AVAILABLE')}
               disabled={deadlineExpired}
+              accessibilityLabel="Absagen"
+              accessibilityRole="button"
+              accessibilityState={{ selected: myAttendance === 'NOT_AVAILABLE' }}
               style={[
                 styles.attendBtn,
                 {
@@ -168,7 +176,12 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
             </Text>
           )}
           {isTrainer && (
-            <Pressable onPress={onShowTrainerOverview} style={{ marginTop: spacing.sm }}>
+            <Pressable
+              onPress={onShowTrainerOverview}
+              style={{ marginTop: spacing.sm }}
+              accessibilityLabel="Trainer-Übersicht anzeigen"
+              accessibilityRole="button"
+            >
               <Text style={[typography.bodySmall, { color: colors.accentLight }]}>Übersicht</Text>
             </Pressable>
           )}

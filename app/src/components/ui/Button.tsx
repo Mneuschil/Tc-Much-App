@@ -1,8 +1,23 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, ActivityIndicator, Animated, type ViewStyle, type TextStyle } from 'react-native';
+import {
+  Pressable,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Animated,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 import { useTheme } from '../../theme';
 
-type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'destructive' | 'outline' | 'ghost' | 'dark';
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'accent'
+  | 'destructive'
+  | 'outline'
+  | 'ghost'
+  | 'dark';
 
 interface ButtonProps {
   title: string;
@@ -13,7 +28,14 @@ interface ButtonProps {
   fullWidth?: boolean;
 }
 
-export function Button({ title, onPress, variant = 'primary', disabled = false, loading = false, fullWidth = false }: ButtonProps) {
+export function Button({
+  title,
+  onPress,
+  variant = 'primary',
+  disabled = false,
+  loading = false,
+  fullWidth = false,
+}: ButtonProps) {
   const { colors, radii } = useTheme();
   const scale = React.useRef(new Animated.Value(1)).current;
 
@@ -66,6 +88,9 @@ export function Button({ title, onPress, variant = 'primary', disabled = false, 
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={isDisabled}
+        accessibilityLabel={title}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isDisabled, busy: loading }}
         style={[
           styles.base,
           { borderRadius: radii.md },

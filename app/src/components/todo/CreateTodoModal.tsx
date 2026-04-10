@@ -99,7 +99,12 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
           }}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Neues Todo</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -125,6 +130,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             onChangeText={setTitle}
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
+            accessibilityLabel="Titel"
           />
 
           <Text
@@ -152,6 +158,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             multiline
             numberOfLines={3}
             textAlignVertical="top"
+            accessibilityLabel="Beschreibung"
           />
 
           <Text
@@ -167,6 +174,9 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               <Pressable
                 key={s}
                 onPress={() => setScope(s)}
+                accessibilityLabel={s}
+                accessibilityRole="button"
+                accessibilityState={{ selected: scope === s }}
                 style={[
                   styles.scopePill,
                   {
@@ -200,6 +210,12 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
           </Text>
           <Pressable
             onPress={() => setShowPicker(true)}
+            accessibilityLabel={
+              selectedMember
+                ? `Zugewiesen an: ${selectedMember.firstName} ${selectedMember.lastName}`
+                : 'Mitglied auswählen'
+            }
+            accessibilityRole="button"
             style={[
               styles.input,
               {
@@ -248,6 +264,8 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
                       setAssigneeId(m.id);
                       setShowPicker(false);
                     }}
+                    accessibilityLabel={`${m.firstName} ${m.lastName} zuweisen`}
+                    accessibilityRole="button"
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
@@ -285,6 +303,10 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
           </Text>
           <Pressable
             onPress={() => setShowDatePicker(true)}
+            accessibilityLabel={
+              dueDate ? `Fällig am: ${formatDisplayDate(dueDate)}` : 'Fälligkeitsdatum auswählen'
+            }
+            accessibilityRole="button"
             style={[
               styles.input,
               {
@@ -310,7 +332,12 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               {dueDate ? formatDisplayDate(dueDate) : 'Datum auswählen'}
             </Text>
             {dueDate && (
-              <Pressable onPress={() => setDueDate(null)} hitSlop={8}>
+              <Pressable
+                onPress={() => setDueDate(null)}
+                hitSlop={8}
+                accessibilityLabel="Fälligkeitsdatum entfernen"
+                accessibilityRole="button"
+              >
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
             )}
@@ -337,6 +364,8 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               {Platform.OS === 'ios' && (
                 <Pressable
                   onPress={() => setShowDatePicker(false)}
+                  accessibilityLabel="Datum bestätigen"
+                  accessibilityRole="button"
                   style={[
                     styles.createBtn,
                     {
@@ -357,6 +386,8 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
           <Pressable
             onPress={handleCreate}
             disabled={!title.trim() || !assigneeId || createTodo.isPending}
+            accessibilityLabel="Aufgabe erstellen"
+            accessibilityRole="button"
             style={[
               styles.createBtn,
               {

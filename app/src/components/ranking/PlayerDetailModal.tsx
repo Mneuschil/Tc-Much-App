@@ -70,7 +70,12 @@ export function PlayerDetailModal({
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', padding: spacing.lg }}>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -169,6 +174,8 @@ export function PlayerDetailModal({
               {challengeable && (
                 <Pressable
                   onPress={() => onChallenge(player)}
+                  accessibilityLabel={`${player.user.firstName} ${player.user.lastName} herausfordern`}
+                  accessibilityRole="button"
                   style={[
                     styles.confirmBtn,
                     {

@@ -133,6 +133,8 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
             setCurrentFolderId(undefined);
             setCurrentFolderName(null);
           }}
+          accessibilityLabel="Zurück zum übergeordneten Ordner"
+          accessibilityRole="button"
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',
@@ -221,6 +223,8 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
 
       <Pressable
         onPress={handleFAB}
+        accessibilityLabel="Datei oder Ordner hinzufügen"
+        accessibilityRole="button"
         style={({ pressed }) => [
           styles.fab,
           {

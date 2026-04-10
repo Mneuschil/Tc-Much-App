@@ -72,7 +72,12 @@ export function EditTeamModal({
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Team bearbeiten</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={26} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -100,6 +105,7 @@ export function EditTeamModal({
               onChangeText={setName}
               placeholder="Teamname"
               placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="Teamname"
             />
           </View>
 
@@ -125,6 +131,7 @@ export function EditTeamModal({
               onChangeText={setLeague}
               placeholder="z.B. Bezirksliga, Kreisliga..."
               placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="Liga"
             />
           </View>
 
@@ -150,12 +157,15 @@ export function EditTeamModal({
               onChangeText={setSeason}
               placeholder="z.B. 2026"
               placeholderTextColor={colors.textTertiary}
+              accessibilityLabel="Saison"
             />
           </View>
 
           <Pressable
             onPress={handleSave}
             disabled={!name.trim() || isPending}
+            accessibilityLabel="Team speichern"
+            accessibilityRole="button"
             style={({ pressed }) => [
               styles.saveBtn,
               {
@@ -178,6 +188,8 @@ export function EditTeamModal({
           {canDelete && onDelete && (
             <Pressable
               onPress={handleDelete}
+              accessibilityLabel="Team löschen"
+              accessibilityRole="button"
               style={({ pressed }) => [styles.deleteBtn, { opacity: pressed ? 0.7 : 1 }]}
             >
               <Ionicons name="trash-outline" size={18} color={colors.danger} />

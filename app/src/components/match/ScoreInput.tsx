@@ -41,6 +41,7 @@ export function ScoreInput({ sets, onUpdateSet, onAddSet, readOnly }: ScoreInput
                 keyboardType="number-pad"
                 editable={!readOnly}
                 maxLength={1}
+                accessibilityLabel={`Satz ${i + 1} Spieler 1 Spiele`}
               />
               <Text style={[typography.h3, { color: colors.textTertiary }]}>:</Text>
               <TextInput
@@ -57,6 +58,7 @@ export function ScoreInput({ sets, onUpdateSet, onAddSet, readOnly }: ScoreInput
                 keyboardType="number-pad"
                 editable={!readOnly}
                 maxLength={1}
+                accessibilityLabel={`Satz ${i + 1} Spieler 2 Spiele`}
               />
             </View>
             {needsTiebreak && (
@@ -83,6 +85,7 @@ export function ScoreInput({ sets, onUpdateSet, onAddSet, readOnly }: ScoreInput
                   keyboardType="number-pad"
                   editable={!readOnly}
                   maxLength={2}
+                  accessibilityLabel={`Satz ${i + 1} Tiebreak Spieler 1`}
                 />
                 <Text style={[typography.caption, { color: colors.textTertiary }]}>:</Text>
                 <TextInput
@@ -99,6 +102,7 @@ export function ScoreInput({ sets, onUpdateSet, onAddSet, readOnly }: ScoreInput
                   keyboardType="number-pad"
                   editable={!readOnly}
                   maxLength={2}
+                  accessibilityLabel={`Satz ${i + 1} Tiebreak Spieler 2`}
                 />
               </View>
             )}
@@ -108,6 +112,8 @@ export function ScoreInput({ sets, onUpdateSet, onAddSet, readOnly }: ScoreInput
       {!readOnly && (
         <Pressable
           onPress={onAddSet}
+          accessibilityLabel="Satz hinzufügen"
+          accessibilityRole="button"
           style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
         >
           <Ionicons name="add-circle-outline" size={20} color={colors.accentLight} />

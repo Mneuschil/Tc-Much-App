@@ -82,6 +82,8 @@ export function LineupEditor({
         <Pressable
           onPress={() => moveItem(list, index, -1, onChange)}
           disabled={index === 0}
+          accessibilityLabel={`${item.user.firstName} nach oben`}
+          accessibilityRole="button"
           style={{ padding: 6, opacity: index === 0 ? 0.3 : 1 }}
         >
           <Ionicons name="chevron-up" size={20} color={colors.textTertiary} />
@@ -89,6 +91,8 @@ export function LineupEditor({
         <Pressable
           onPress={() => moveItem(list, index, 1, onChange)}
           disabled={index === list.length - 1}
+          accessibilityLabel={`${item.user.firstName} nach unten`}
+          accessibilityRole="button"
           style={{ padding: 6, opacity: index === list.length - 1 ? 0.3 : 1 }}
         >
           <Ionicons name="chevron-down" size={20} color={colors.textTertiary} />
@@ -116,6 +120,8 @@ export function LineupEditor({
         <Pressable
           onPress={onAutoGenerate}
           disabled={isLoading}
+          accessibilityLabel="Aufstellungsvorschlag laden"
+          accessibilityRole="button"
           style={[
             styles.primaryBtn,
             { backgroundColor: colors.surface, borderRadius: borderRadius.lg, flex: 1 },
@@ -128,6 +134,8 @@ export function LineupEditor({
         <Pressable
           onPress={onConfirm}
           disabled={isLoading}
+          accessibilityLabel="Aufstellung bestätigen"
+          accessibilityRole="button"
           style={[
             styles.primaryBtn,
             { backgroundColor: colors.chipActive, borderRadius: borderRadius.lg, flex: 1 },

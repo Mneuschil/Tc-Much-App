@@ -8,7 +8,7 @@ export const lightColors = {
 
   // Text
   textPrimary: '#1A1A1A',
-  textSecondary: '#8E8E93',
+  textSecondary: '#636366',
   textTertiary: '#C4C4C6',
   textInverse: '#FFFFFF',
 
@@ -62,7 +62,7 @@ export const darkColors = {
 
   // Text
   textPrimary: '#F5F5F7',
-  textSecondary: '#8E8E93',
+  textSecondary: '#98989D',
   textTertiary: '#48484A',
   textInverse: '#0A0A0A',
 

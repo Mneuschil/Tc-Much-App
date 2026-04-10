@@ -32,6 +32,8 @@ export function QueryError({ message, onRetry }: QueryErrorProps) {
       {onRetry && (
         <Pressable
           onPress={onRetry}
+          accessibilityLabel="Erneut versuchen"
+          accessibilityRole="button"
           style={[
             styles.retryButton,
             {

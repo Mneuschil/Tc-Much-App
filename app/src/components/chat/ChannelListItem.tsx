@@ -38,6 +38,9 @@ export function ChannelListItem({ item, onPress }: ChannelListItemProps) {
   return (
     <Pressable
       onPress={() => onPress(item.id)}
+      accessibilityLabel={`Channel ${item.name}`}
+      accessibilityRole="button"
+      accessibilityHint="Öffnet den Channel"
       style={({ pressed }) => [
         styles.row,
         { opacity: pressed ? 0.7 : 1, paddingVertical: spacing.md, paddingHorizontal: spacing.xl },

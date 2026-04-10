@@ -18,7 +18,7 @@ export default function TabLayout() {
         tabBarShowLabel: true,
         tabBarActiveTintColor: colors.accent,
         tabBarInactiveTintColor: colors.textTertiary,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+        tabBarLabelStyle: { fontSize: 13, fontWeight: '600' },
         tabBarStyle: {
           backgroundColor: colors.background,
           borderTopWidth: 0.5,

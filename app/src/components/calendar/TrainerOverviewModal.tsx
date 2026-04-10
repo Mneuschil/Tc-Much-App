@@ -41,7 +41,12 @@ export function TrainerOverviewModal({ visible, eventId, onClose }: TrainerOverv
           }}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Trainer-Übersicht</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>

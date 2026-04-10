@@ -102,6 +102,8 @@ export function KaderSheet({
                 setSearch('');
               }}
               hitSlop={12}
+              accessibilityLabel="Zurück zur Mitgliederliste"
+              accessibilityRole="button"
             >
               <Ionicons name="arrow-back" size={26} color={colors.textPrimary} />
             </Pressable>
@@ -114,7 +116,12 @@ export function KaderSheet({
           >
             {mode === 'add' ? 'Mitglied hinzufügen' : 'Mitglieder'}
           </Text>
-          <Pressable onPress={handleClose} hitSlop={12}>
+          <Pressable
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={26} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -135,6 +142,8 @@ export function KaderSheet({
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => handleAddSelect(item.id)}
+                  accessibilityLabel={`${item.firstName} ${item.lastName} hinzufügen`}
+                  accessibilityRole="button"
                   style={({ pressed }) => [
                     styles.memberRow,
                     {
@@ -179,6 +188,8 @@ export function KaderSheet({
             {canManage && (
               <Pressable
                 onPress={() => setMode('add')}
+                accessibilityLabel="Mitglied hinzufügen"
+                accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.addButton,
                   {
@@ -238,7 +249,12 @@ export function KaderSheet({
                     )}
                   </View>
                   {canManage && (
-                    <Pressable onPress={() => confirmRemove(item)} hitSlop={8}>
+                    <Pressable
+                      onPress={() => confirmRemove(item)}
+                      hitSlop={8}
+                      accessibilityLabel={`${item.user.firstName} ${item.user.lastName} entfernen`}
+                      accessibilityRole="button"
+                    >
                       <Ionicons name="trash-outline" size={20} color={colors.danger} />
                     </Pressable>
                   )}

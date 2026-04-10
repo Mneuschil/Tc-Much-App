@@ -42,6 +42,8 @@ export function DayAgenda({ events }: DayAgendaProps) {
             )}
             <Pressable
               onPress={() => router.push(`/match/${event.id}` as never)}
+              accessibilityLabel={`${event.title}, ${time}`}
+              accessibilityRole="button"
               style={({ pressed }) => [styles.row, { opacity: pressed ? 0.6 : 1 }]}
             >
               {/* Accent bar */}

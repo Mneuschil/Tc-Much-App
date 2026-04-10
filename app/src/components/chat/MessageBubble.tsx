@@ -97,11 +97,17 @@ export function MessageBubble({
   const mediaGrid = (urls: string[]) => {
     if (urls.length === 1) {
       return (
-        <Pressable onPress={() => onMediaPress(urls[0])} style={{ marginTop: spacing.xs }}>
+        <Pressable
+          onPress={() => onMediaPress(urls[0])}
+          style={{ marginTop: spacing.xs }}
+          accessibilityLabel="Bild ansehen"
+          accessibilityRole="button"
+        >
           <Image
             source={{ uri: urls[0] }}
             style={[styles.singleMedia, { borderRadius: borderRadius.md }]}
             resizeMode="cover"
+            accessibilityElementsHidden
           />
         </Pressable>
       );
@@ -111,11 +117,18 @@ export function MessageBubble({
     return (
       <View style={[styles.mediaGrid, { gap: 3, marginTop: spacing.xs }]}>
         {visible.map((url, idx) => (
-          <Pressable key={idx} onPress={() => onMediaPress(url)} style={styles.mediaItem}>
+          <Pressable
+            key={idx}
+            onPress={() => onMediaPress(url)}
+            style={styles.mediaItem}
+            accessibilityLabel={`Bild ${idx + 1} ansehen`}
+            accessibilityRole="button"
+          >
             <Image
               source={{ uri: url }}
               style={[styles.gridImage, { borderRadius: borderRadius.sm }]}
               resizeMode="cover"
+              accessibilityElementsHidden
             />
             {idx === 3 && extra > 0 && (
               <View style={[styles.mediaOverlay, { borderRadius: borderRadius.sm }]}>
@@ -232,6 +245,8 @@ export function MessageBubble({
                   <Pressable
                     key={type}
                     onPress={() => onReaction(message.id, type as ReactionType)}
+                    accessibilityLabel={`Reaktion ${emoji}`}
+                    accessibilityRole="button"
                     style={[
                       styles.reactionChip,
                       {

@@ -63,6 +63,8 @@ function NewsCard({ item }: { item: NewsItem }) {
   return (
     <Pressable
       onPress={openDetail}
+      accessibilityLabel={`Nachricht: ${item.title}`}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
         {
@@ -80,6 +82,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             styles.image,
             { borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl },
           ]}
+          accessibilityElementsHidden
         />
       )}
       <View style={styles.cardBody}>
@@ -106,6 +109,8 @@ function NewsCard({ item }: { item: NewsItem }) {
       >
         <Pressable
           onPress={handleLike}
+          accessibilityLabel={liked ? 'Gefällt mir entfernen' : 'Gefällt mir'}
+          accessibilityRole="button"
           style={[styles.action, { backgroundColor: actionColor, borderRadius: borderRadius.md }]}
         >
           <Ionicons
@@ -125,6 +130,8 @@ function NewsCard({ item }: { item: NewsItem }) {
 
         <Pressable
           onPress={openDetail}
+          accessibilityLabel={`${item.comments.length} Kommentare`}
+          accessibilityRole="button"
           style={[styles.action, { backgroundColor: actionColor, borderRadius: borderRadius.md }]}
         >
           <Ionicons name="chatbubble-outline" size={15} color={colors.textSecondary} />
@@ -135,6 +142,8 @@ function NewsCard({ item }: { item: NewsItem }) {
 
         <Pressable
           onPress={handleShare}
+          accessibilityLabel="Teilen"
+          accessibilityRole="button"
           style={[styles.action, { backgroundColor: actionColor, borderRadius: borderRadius.md }]}
         >
           <Ionicons name="paper-plane-outline" size={15} color={colors.textSecondary} />

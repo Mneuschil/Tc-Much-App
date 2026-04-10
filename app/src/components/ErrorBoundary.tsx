@@ -32,7 +32,12 @@ export class ErrorBoundary extends Component<Props, State> {
         <View style={styles.container}>
           <Text style={styles.title}>Etwas ist schiefgelaufen</Text>
           <Text style={styles.message}>Die App ist auf einen unerwarteten Fehler gestossen.</Text>
-          <TouchableOpacity style={styles.button} onPress={this.handleRetry}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={this.handleRetry}
+            accessibilityLabel="Erneut versuchen"
+            accessibilityRole="button"
+          >
             <Text style={styles.buttonText}>Erneut versuchen</Text>
           </TouchableOpacity>
         </View>

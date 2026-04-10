@@ -124,6 +124,8 @@ export function ResultsSection({
           <ScoreInput sets={sets} onUpdateSet={updateSet} onAddSet={addSet} readOnly={false} />
           <Pressable
             onPress={handleSubmit}
+            accessibilityLabel="Ergebnis absenden"
+            accessibilityRole="button"
             style={[
               styles.btn,
               {
@@ -149,6 +151,8 @@ export function ResultsSection({
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
             <Pressable
               onPress={onConfirm}
+              accessibilityLabel="Ergebnis bestätigen"
+              accessibilityRole="button"
               style={[
                 styles.btn,
                 { backgroundColor: colors.success, borderRadius: borderRadius.lg, flex: 1 },
@@ -158,6 +162,8 @@ export function ResultsSection({
             </Pressable>
             <Pressable
               onPress={() => onReject({ reason: 'Ergebnis stimmt nicht' })}
+              accessibilityLabel="Ergebnis ablehnen"
+              accessibilityRole="button"
               style={[
                 styles.btn,
                 { backgroundColor: colors.danger, borderRadius: borderRadius.lg, flex: 1 },

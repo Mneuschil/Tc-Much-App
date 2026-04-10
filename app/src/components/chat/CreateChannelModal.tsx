@@ -47,7 +47,12 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { padding: spacing.xl }]}>
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Neuer Channel</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -73,6 +78,7 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
             onChangeText={setName}
             placeholder="Kanalname"
             placeholderTextColor={colors.textTertiary}
+            accessibilityLabel="Kanalname"
           />
 
           <Text
@@ -99,6 +105,7 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
             placeholderTextColor={colors.textTertiary}
             multiline
             textAlignVertical="top"
+            accessibilityLabel="Beschreibung"
           />
 
           <Text

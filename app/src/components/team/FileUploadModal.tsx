@@ -63,7 +63,12 @@ export function FileUploadModal({
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Datei hochladen</Text>
-          <Pressable onPress={handleClose} hitSlop={12}>
+          <Pressable
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={26} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -80,6 +85,7 @@ export function FileUploadModal({
                 source={{ uri: filePreview.uri }}
                 style={[styles.previewImage, { borderRadius: borderRadius.md }]}
                 resizeMode="cover"
+                accessibilityElementsHidden
               />
             </View>
           )}
@@ -122,11 +128,15 @@ export function FileUploadModal({
             placeholder="Datei benennen..."
             placeholderTextColor={colors.textTertiary}
             autoFocus
+            accessibilityLabel="Dateiname"
           />
 
           <Pressable
             onPress={handleUpload}
             disabled={isPending}
+            accessibilityLabel={isPending ? 'Wird hochgeladen' : 'Datei hochladen'}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isPending }}
             style={({ pressed }) => [
               styles.uploadBtn,
               {

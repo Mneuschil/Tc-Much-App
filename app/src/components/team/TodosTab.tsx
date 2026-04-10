@@ -62,6 +62,9 @@ export function TodosTab({ teamId }: TodosTabProps) {
           return (
             <Pressable
               onLongPress={() => handleDelete(item)}
+              accessibilityLabel={`Aufgabe: ${item.title}${isDone ? ', erledigt' : ''}`}
+              accessibilityRole="button"
+              accessibilityHint="Lang drücken zum Löschen"
               style={[
                 styles.todoCard,
                 {
@@ -73,7 +76,13 @@ export function TodosTab({ teamId }: TodosTabProps) {
               ]}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Pressable onPress={() => handleToggle(item)} hitSlop={8}>
+                <Pressable
+                  onPress={() => handleToggle(item)}
+                  hitSlop={8}
+                  accessibilityLabel={isDone ? 'Als offen markieren' : 'Als erledigt markieren'}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isDone }}
+                >
                   <Ionicons
                     name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
                     size={22}
@@ -133,6 +142,8 @@ export function TodosTab({ teamId }: TodosTabProps) {
       {canCreateTodo && (
         <Pressable
           onPress={() => setCreateOpen(true)}
+          accessibilityLabel="Neue Aufgabe erstellen"
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.fab,
             {

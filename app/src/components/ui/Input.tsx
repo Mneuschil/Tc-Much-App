@@ -8,9 +8,17 @@ interface InputProps {
   onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
   error?: string;
+  accessibilityLabel?: string;
 }
 
-export function Input({ placeholder, value, onChangeText, secureTextEntry, error }: InputProps) {
+export function Input({
+  placeholder,
+  value,
+  onChangeText,
+  secureTextEntry,
+  error,
+  accessibilityLabel,
+}: InputProps) {
   const { colors, radii, spacing } = useTheme();
   const [focused, setFocused] = useState(false);
 
@@ -22,6 +30,7 @@ export function Input({ placeholder, value, onChangeText, secureTextEntry, error
         value={value}
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
+        accessibilityLabel={accessibilityLabel ?? placeholder}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={[

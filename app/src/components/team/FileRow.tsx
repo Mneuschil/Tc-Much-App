@@ -48,6 +48,9 @@ export function FileRow({ file, onPress, onDelete }: FileRowProps) {
     <Pressable
       onPress={() => onPress(file)}
       onLongPress={onDelete ? handleLongPress : undefined}
+      accessibilityLabel={`Datei ${file.name}`}
+      accessibilityRole="button"
+      accessibilityHint="Tippen zum Öffnen, lang drücken zum Löschen"
       style={({ pressed }) => [
         styles.row,
         {

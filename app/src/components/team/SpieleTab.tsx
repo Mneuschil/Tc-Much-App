@@ -71,7 +71,11 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
         nextMatch ? (
           <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
             <CardElevated>
-              <Pressable onPress={() => navigateToMatch(nextMatch.id)}>
+              <Pressable
+                onPress={() => navigateToMatch(nextMatch.id)}
+                accessibilityLabel={`Nächstes Spiel: ${nextMatch.title}`}
+                accessibilityRole="button"
+              >
                 <Text
                   style={[
                     typography.labelSmall,
@@ -91,6 +95,9 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
                 {nextMatch.location && (
                   <Pressable
                     onPress={() => openMaps(nextMatch.location!)}
+                    accessibilityLabel={`Spielort: ${nextMatch.location}`}
+                    accessibilityRole="link"
+                    accessibilityHint="Öffnet die Karten-App"
                     style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
                   >
                     <Ionicons name="location-outline" size={14} color={colors.accentLight} />
@@ -130,6 +137,8 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
       renderItem={({ item }) => (
         <Pressable
           onPress={() => navigateToMatch(item.id)}
+          accessibilityLabel={`Spiel: ${item.title}`}
+          accessibilityRole="button"
           style={({ pressed }) => [
             {
               paddingHorizontal: spacing.xl,

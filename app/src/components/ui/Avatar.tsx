@@ -31,10 +31,29 @@ export function Avatar({ imageUrl, name, firstName, lastName, size = 'md' }: Ava
   return (
     <View style={{ width: dimension, height: dimension }}>
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={{ width: dimension, height: dimension, borderRadius: radii.pill }} />
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: dimension, height: dimension, borderRadius: radii.pill }}
+          accessibilityLabel={`Profilbild von ${displayName}`}
+          accessibilityRole="image"
+        />
       ) : (
-        <View style={[styles.fallback, { width: dimension, height: dimension, borderRadius: radii.pill, backgroundColor: colors.accent }]}>
-          <Text style={{ fontSize: FONT_SIZES[size], fontWeight: '600', color: colors.textInverse }}>{initials}</Text>
+        <View
+          style={[
+            styles.fallback,
+            {
+              width: dimension,
+              height: dimension,
+              borderRadius: radii.pill,
+              backgroundColor: colors.accent,
+            },
+          ]}
+        >
+          <Text
+            style={{ fontSize: FONT_SIZES[size], fontWeight: '600', color: colors.textInverse }}
+          >
+            {initials}
+          </Text>
         </View>
       )}
     </View>

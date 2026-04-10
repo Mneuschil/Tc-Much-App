@@ -49,7 +49,11 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
           }}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Partner waehlen</Text>
-          <Pressable onPress={onClose}>
+          <Pressable
+            onPress={onClose}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -60,6 +64,8 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
           renderItem={({ item }) => (
             <Pressable
               onPress={() => onSelect(item.id)}
+              accessibilityLabel={`${item.firstName} ${item.lastName} als Partner wählen`}
+              accessibilityRole="button"
               style={({ pressed }) => [
                 styles.participantRow,
                 {

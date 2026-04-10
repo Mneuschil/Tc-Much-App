@@ -13,13 +13,24 @@ export function SearchInput({ placeholder = 'Suchen...', value, onChangeText }: 
   const { colors, radii, spacing } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.backgroundSecondary, borderRadius: radii.pill, paddingHorizontal: spacing.xl }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.backgroundSecondary,
+          borderRadius: radii.pill,
+          paddingHorizontal: spacing.xl,
+        },
+      ]}
+    >
       <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.icon} />
       <TextInput
         placeholder={placeholder}
         placeholderTextColor={colors.textTertiary}
         value={value}
         onChangeText={onChangeText}
+        accessibilityLabel={placeholder}
+        accessibilityRole="search"
         style={[styles.input, { color: colors.textPrimary }]}
       />
     </View>

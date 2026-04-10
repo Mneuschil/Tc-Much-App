@@ -21,6 +21,8 @@ export function FolderRow({ folder, onPress }: FolderRowProps) {
   return (
     <Pressable
       onPress={() => onPress(folder)}
+      accessibilityLabel={`Ordner ${folder.name}`}
+      accessibilityRole="button"
       style={({ pressed }) => [
         styles.row,
         {

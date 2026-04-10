@@ -14,6 +14,9 @@ export function FilterPill({ label, isActive, onPress }: FilterPillProps) {
   return (
     <Pressable
       onPress={onPress}
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
       style={[
         styles.pill,
         {
@@ -23,7 +26,12 @@ export function FilterPill({ label, isActive, onPress }: FilterPillProps) {
         },
       ]}
     >
-      <Text style={[styles.label, { color: isActive ? colors.buttonPrimaryText : colors.textSecondary }]}>
+      <Text
+        style={[
+          styles.label,
+          { color: isActive ? colors.buttonPrimaryText : colors.textSecondary },
+        ]}
+      >
         {label}
       </Text>
     </Pressable>

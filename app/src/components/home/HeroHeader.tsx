@@ -86,7 +86,14 @@ export function HeroHeader({
           const dayEvts = eventsByDate.get(key) ?? [];
 
           return (
-            <Pressable key={key} onPress={() => onDateSelect(day)} style={styles.dayCol}>
+            <Pressable
+              key={key}
+              onPress={() => onDateSelect(day)}
+              style={styles.dayCol}
+              accessibilityLabel={`${DAY_LABELS_DE[index]} ${day.getDate()}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+            >
               <Text style={[styles.dayLabel, isSelected && styles.dayLabelActive]}>
                 {DAY_LABELS_DE[index]}
               </Text>
@@ -145,13 +152,24 @@ export function HeroHeader({
       >
         {/* Top action row */}
         <View style={styles.topRow}>
-          <Pressable style={styles.glassBtn} onPress={() => router.push('/channels' as never)}>
+          <Pressable
+            style={styles.glassBtn}
+            onPress={() => router.push('/channels' as never)}
+            accessibilityLabel="Suchen"
+            accessibilityRole="button"
+          >
             <Ionicons name="search" size={18} color="rgba(255,255,255,0.9)" />
           </Pressable>
           <View style={styles.topRight}>
             <Pressable
               style={styles.glassBtn}
               onPress={() => router.push('/notifications' as never)}
+              accessibilityLabel={
+                unreadCount > 0
+                  ? `${unreadCount} ungelesene Benachrichtigungen`
+                  : 'Benachrichtigungen'
+              }
+              accessibilityRole="button"
             >
               <Ionicons name="notifications-outline" size={18} color="rgba(255,255,255,0.9)" />
               {unreadCount > 0 && (
@@ -163,6 +181,8 @@ export function HeroHeader({
             <Pressable
               style={styles.glassBtn}
               onPress={() => router.push('/(tabs)/calendar' as never)}
+              accessibilityLabel="Kalender öffnen"
+              accessibilityRole="button"
             >
               <Ionicons name="calendar-outline" size={18} color="rgba(255,255,255,0.9)" />
             </Pressable>

@@ -132,7 +132,12 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
           }}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Neues Event</Text>
-          <Pressable onPress={onClose} hitSlop={12}>
+          <Pressable
+            onPress={onClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -159,6 +164,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             onChangeText={setTitle}
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
+            accessibilityLabel="Titel"
           />
 
           {/* Typ */}
@@ -180,6 +186,9 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               <Pressable
                 key={et.value}
                 onPress={() => setType(et.value)}
+                accessibilityLabel={et.label}
+                accessibilityRole="button"
+                accessibilityState={{ selected: type === et.value }}
                 style={[
                   styles.typePill,
                   {
@@ -230,6 +239,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             multiline
             numberOfLines={3}
             textAlignVertical="top"
+            accessibilityLabel="Beschreibung"
           />
 
           {/* Startdatum */}
@@ -246,6 +256,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               setStartPickerMode('date');
               setShowStartPicker(true);
             }}
+            accessibilityLabel={`Startdatum: ${formatDisplayDateTime(startDate)}`}
+            accessibilityRole="button"
             style={[
               styles.input,
               {
@@ -287,6 +299,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               {Platform.OS === 'ios' && (
                 <Pressable
                   onPress={() => setShowStartPicker(false)}
+                  accessibilityLabel="Startdatum bestätigen"
+                  accessibilityRole="button"
                   style={[
                     styles.doneBtn,
                     {
@@ -318,6 +332,10 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               if (!endDate) setEndDate(new Date(startDate.getTime() + 90 * 60000));
               setShowEndPicker(true);
             }}
+            accessibilityLabel={
+              endDate ? `Enddatum: ${formatDisplayDateTime(endDate)}` : 'Enddatum hinzufügen'
+            }
+            accessibilityRole="button"
             style={[
               styles.input,
               {
@@ -349,6 +367,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                   setShowEndPicker(false);
                 }}
                 hitSlop={8}
+                accessibilityLabel="Enddatum entfernen"
+                accessibilityRole="button"
               >
                 <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
               </Pressable>
@@ -376,6 +396,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               {Platform.OS === 'ios' && (
                 <Pressable
                   onPress={() => setShowEndPicker(false)}
+                  accessibilityLabel="Enddatum bestätigen"
+                  accessibilityRole="button"
                   style={[
                     styles.doneBtn,
                     {
@@ -417,6 +439,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 onChangeText={setLocation}
                 placeholder="z.B. TC Much"
                 placeholderTextColor={colors.textTertiary}
+                accessibilityLabel="Ort"
               />
             </View>
             <View style={{ flex: 1 }}>
@@ -441,6 +464,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 onChangeText={setCourt}
                 placeholder="z.B. 1"
                 placeholderTextColor={colors.textTertiary}
+                accessibilityLabel="Platznummer"
               />
             </View>
           </View>
@@ -449,6 +473,9 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
           <Pressable
             onPress={handleCreate}
             disabled={!canSubmit}
+            accessibilityLabel="Event erstellen"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !canSubmit }}
             style={[
               styles.doneBtn,
               {

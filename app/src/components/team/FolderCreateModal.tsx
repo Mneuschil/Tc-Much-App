@@ -45,7 +45,12 @@ export function FolderCreateModal({
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
           <Text style={[typography.h2, { color: colors.textPrimary }]}>Neuer Ordner</Text>
-          <Pressable onPress={handleClose} hitSlop={12}>
+          <Pressable
+            onPress={handleClose}
+            hitSlop={12}
+            accessibilityLabel="Modal schließen"
+            accessibilityRole="button"
+          >
             <Ionicons name="close" size={26} color={colors.textPrimary} />
           </Pressable>
         </View>
@@ -72,10 +77,13 @@ export function FolderCreateModal({
             placeholder="z.B. Spielberichte, Fotos, Dokumente..."
             placeholderTextColor={colors.textTertiary}
             autoFocus
+            accessibilityLabel="Ordnername"
           />
           <Pressable
             onPress={handleCreate}
             disabled={!folderName.trim() || isPending}
+            accessibilityLabel="Ordner erstellen"
+            accessibilityRole="button"
             style={({ pressed }) => [
               styles.createBtn,
               {

@@ -11,11 +11,27 @@ export function ImageViewerModal({ imageUrl, onClose }: ImageViewerModalProps) {
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable onPress={onClose} style={styles.closeButton}>
+      <Pressable
+        style={styles.overlay}
+        onPress={onClose}
+        accessibilityLabel="Bildansicht schließen"
+        accessibilityRole="button"
+      >
+        <Pressable
+          onPress={onClose}
+          style={styles.closeButton}
+          accessibilityLabel="Schließen"
+          accessibilityRole="button"
+        >
           <Ionicons name="close-circle" size={36} color="#FFFFFF" />
         </Pressable>
-        <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.image}
+          resizeMode="contain"
+          accessibilityLabel="Vergrößertes Bild"
+          accessibilityRole="image"
+        />
       </Pressable>
     </Modal>
   );

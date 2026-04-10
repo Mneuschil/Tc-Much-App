@@ -81,9 +81,12 @@ export function MediaUploadForm() {
             <Image
               source={{ uri: mediaUri }}
               style={[styles.preview, { borderRadius: radii.md }]}
+              accessibilityElementsHidden
             />
             <Pressable
               onPress={() => setMediaUri(null)}
+              accessibilityLabel="Medium entfernen"
+              accessibilityRole="button"
               style={[
                 styles.removeBtn,
                 { backgroundColor: colors.dangerSurface, borderRadius: radii.pill },
@@ -95,6 +98,8 @@ export function MediaUploadForm() {
         ) : (
           <Pressable
             onPress={pickMedia}
+            accessibilityLabel="Medium auswählen"
+            accessibilityRole="button"
             style={[
               styles.placeholder,
               { borderRadius: radii.md, borderColor: colors.textTertiary },

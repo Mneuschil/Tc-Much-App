@@ -56,6 +56,8 @@ export function TeamHeader({ team, channelId, onMembersPress }: TeamHeaderProps)
 
       <Pressable
         onPress={onMembersPress}
+        accessibilityLabel={`${members.length} Mitglieder anzeigen`}
+        accessibilityRole="button"
         style={({ pressed }) => [
           {
             flexDirection: 'row',
