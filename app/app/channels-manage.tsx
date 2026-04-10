@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, Switch, StyleSheet } from 'react-native';
+import { View, Text, Switch, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../src/theme';
 import { Badge } from '../src/components/ui/Badge';
@@ -13,7 +14,16 @@ export default function ChannelsManageScreen() {
   const toggleMute = useToggleMute();
 
   const renderChannel = ({ item }: { item: Channel & { isMuted?: boolean } }) => (
-    <View style={[styles.row, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.separator, paddingVertical: spacing.lg }]}>
+    <View
+      style={[
+        styles.row,
+        {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: colors.separator,
+          paddingVertical: spacing.lg,
+        },
+      ]}
+    >
       <View style={{ flex: 1 }}>
         <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
         <View style={{ marginTop: spacing.xs }}>
@@ -34,10 +44,12 @@ export default function ChannelsManageScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}>
+      <View
+        style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}
+      >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Kanäle</Text>
       </View>
-      <FlatList
+      <FlashList
         data={channels ?? []}
         keyExtractor={(item) => item.id}
         renderItem={renderChannel}

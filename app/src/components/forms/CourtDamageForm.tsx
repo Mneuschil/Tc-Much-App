@@ -5,12 +5,12 @@ import {
   TextInput,
   ScrollView,
   Pressable,
-  Image,
   StyleSheet,
   Platform,
   ActionSheetIOS,
   Alert,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../theme';
@@ -178,6 +178,9 @@ export function CourtDamageForm() {
             <Image
               source={{ uri: photoUri }}
               style={[styles.preview, { borderRadius: radii.md }]}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
               accessibilityElementsHidden
             />
             <Pressable
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  preview: { width: '100%', height: 200, resizeMode: 'cover' },
+  preview: { width: '100%', height: 200 },
   removeBtn: {
     position: 'absolute',
     top: 8,

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, SectionList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,7 +90,20 @@ export default function TeamsScreen() {
     return { name: 'briefcase', accent: false };
   };
 
-  const renderTeam = ({ item }: { item: TeamItem }) => {
+  type TeamsListItem =
+    | { type: 'header'; title: string; subtitle: string }
+    | { type: 'item'; data: TeamItem };
+
+  const flatData = useMemo(() => {
+    const result: TeamsListItem[] = [];
+    sections.forEach((section) => {
+      result.push({ type: 'header', title: section.title, subtitle: section.subtitle });
+      section.data.forEach((item) => result.push({ type: 'item', data: item }));
+    });
+    return result;
+  }, [sections]);
+
+  const renderTeam = (item: TeamItem) => {
     const icon = getTeamIcon(item.type);
     const nextMatch = nextMatchByTeam.get(item.id);
     return (
@@ -153,30 +167,33 @@ export default function TeamsScreen() {
       >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Teams</Text>
       </View>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTeam}
-        renderSectionHeader={({ section }) => (
-          <View
-            style={{
-              paddingHorizontal: spacing.xl,
-              paddingTop: spacing.lg,
-              paddingBottom: spacing.md,
-              backgroundColor: colors.background,
-            }}
-          >
-            <Text style={[typography.h3, { color: colors.textPrimary }]}>{section.title}</Text>
-            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-              {section.subtitle}
-            </Text>
-          </View>
-        )}
+      <FlashList
+        data={flatData}
+        getItemType={(item) => item.type}
+        keyExtractor={(item) => (item.type === 'header' ? `header-${item.title}` : item.data.id)}
         contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
-        stickySectionHeadersEnabled={false}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
         }
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return (
+              <View
+                style={{
+                  paddingTop: spacing.lg,
+                  paddingBottom: spacing.md,
+                  backgroundColor: colors.background,
+                }}
+              >
+                <Text style={[typography.h3, { color: colors.textPrimary }]}>{item.title}</Text>
+                <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
+                  {item.subtitle}
+                </Text>
+              </View>
+            );
+          }
+          return renderTeam(item.data);
+        }}
         ListEmptyComponent={
           !isLoading ? (
             isError ? (

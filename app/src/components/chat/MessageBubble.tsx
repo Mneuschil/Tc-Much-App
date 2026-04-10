@@ -1,5 +1,6 @@
 import { useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Image, Animated, PanResponder } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Animated, PanResponder } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 import { Avatar } from '../ui';
@@ -106,7 +107,9 @@ export function MessageBubble({
           <Image
             source={{ uri: urls[0] }}
             style={[styles.singleMedia, { borderRadius: borderRadius.md }]}
-            resizeMode="cover"
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
             accessibilityElementsHidden
           />
         </Pressable>
@@ -127,7 +130,10 @@ export function MessageBubble({
             <Image
               source={{ uri: url }}
               style={[styles.gridImage, { borderRadius: borderRadius.sm }]}
-              resizeMode="cover"
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
+              recyclingKey={`media-${idx}`}
               accessibilityElementsHidden
             />
             {idx === 3 && extra > 0 && (

@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -79,7 +80,7 @@ export default function TournamentsScreen() {
       >
         <Text style={[typography.h1, { color: colors.textPrimary }]}>Turniere</Text>
       </View>
-      <FlatList
+      <FlashList
         data={(tournaments ?? []) as Tournament[]}
         keyExtractor={(item) => item.id}
         renderItem={renderTournament}

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl, Modal } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -259,7 +260,7 @@ export default function RankingScreen() {
         edges={['bottom']}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <FlatList
+        <FlashList
           data={rankings}
           keyExtractor={(item) => item.id}
           renderItem={renderRanking}
@@ -277,9 +278,6 @@ export default function RankingScreen() {
               )
             ) : null
           }
-          removeClippedSubviews
-          maxToRenderPerBatch={10}
-          windowSize={5}
         />
       </SafeAreaView>
 

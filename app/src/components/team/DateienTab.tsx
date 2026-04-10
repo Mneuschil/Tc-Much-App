@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Pressable,
   Linking,
   ActionSheetIOS,
@@ -11,6 +10,7 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -157,7 +157,7 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
         </Pressable>
       )}
 
-      <FlatList
+      <FlashList
         data={files}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: 100 }}

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -57,7 +58,7 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
-        <FlatList
+        <FlashList
           data={members}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: spacing.xl }}

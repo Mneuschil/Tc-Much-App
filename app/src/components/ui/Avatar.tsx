@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { useTheme } from '../../theme';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
@@ -34,6 +35,9 @@ export function Avatar({ imageUrl, name, firstName, lastName, size = 'md' }: Ava
         <Image
           source={{ uri: imageUrl }}
           style={{ width: dimension, height: dimension, borderRadius: radii.pill }}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
           accessibilityLabel={`Profilbild von ${displayName}`}
           accessibilityRole="image"
         />

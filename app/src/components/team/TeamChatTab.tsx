@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../../theme';
 import { EmptyState, QueryError, LoadingSkeleton } from '../ui';
 import { MessageBubble, ChatInputBar } from '../chat';
@@ -90,10 +91,14 @@ export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) 
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList<ChatMessage>
+      <FlashList<ChatMessage>
         data={messages}
-        inverted
+        maintainVisibleContentPosition={{
+          startRenderingFromBottom: true,
+          autoscrollToBottomThreshold: 50,
+        }}
         keyExtractor={(item) => item.id}
+        getItemType={(item) => (dateHeaders.has(item.id) ? 'message-with-date' : 'message')}
         renderItem={({ item }) => (
           <>
             <MessageBubble
@@ -149,9 +154,6 @@ export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) 
             )
           ) : null
         }
-        removeClippedSubviews
-        maxToRenderPerBatch={10}
-        windowSize={5}
       />
 
       <ChatInputBar

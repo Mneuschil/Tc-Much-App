@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   Pressable,
   TextInput,
   KeyboardAvoidingView,
   Platform,
   Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -91,7 +91,15 @@ export default function NewsDetailScreen() {
         >
           <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
             {/* Hero image */}
-            {news.imageUrl && <Image source={{ uri: news.imageUrl }} style={styles.heroImage} />}
+            {news.imageUrl && (
+              <Image
+                source={{ uri: news.imageUrl }}
+                style={styles.heroImage}
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
+              />
+            )}
 
             <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.xl }}>
               {/* Title */}

@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,7 +51,7 @@ export default function ChannelsScreen() {
         <SearchInput placeholder="Channel suchen..." value={search} onChangeText={setSearch} />
       </View>
 
-      <FlatList
+      <FlashList
         data={channels}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <ChannelListItem item={item} onPress={handleChannelPress} />}
@@ -71,9 +72,6 @@ export default function ChannelsScreen() {
             )
           ) : null
         }
-        removeClippedSubviews
-        maxToRenderPerBatch={10}
-        windowSize={5}
       />
 
       {canCreateChannel && (

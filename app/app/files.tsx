@@ -3,15 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   Pressable,
   RefreshControl,
   Linking,
   ActionSheetIOS,
   Platform,
   Alert,
-  Image,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -154,7 +154,7 @@ export default function FilesScreen() {
         edges={['bottom']}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <FlatList
+        <FlashList
           data={files}
           keyExtractor={(item) => item.id}
           renderItem={renderFile}
@@ -193,7 +193,9 @@ export default function FilesScreen() {
             <Image
               source={{ uri: viewerImage }}
               style={{ width: '90%', height: '70%' }}
-              resizeMode="contain"
+              contentFit="contain"
+              transition={200}
+              cachePolicy="memory-disk"
             />
             <Pressable
               onPress={() => setViewerImage(null)}

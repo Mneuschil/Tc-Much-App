@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, Alert } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { TeamMemberWithUser } from '@tennis-club/shared';
@@ -135,7 +136,7 @@ export function KaderSheet({
                 onChangeText={setSearch}
               />
             </View>
-            <FlatList
+            <FlashList
               data={availableMembers}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: spacing.xxxl }}
@@ -209,7 +210,7 @@ export function KaderSheet({
                 </Text>
               </Pressable>
             )}
-            <FlatList
+            <FlashList
               data={sortedMembers}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: spacing.xxxl }}

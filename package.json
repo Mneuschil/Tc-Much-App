@@ -51,5 +51,9 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1"
+  },
+  "dependencies": {
+    "@shopify/flash-list": "2.0.2",
+    "expo-image": "~3.0.11"
   }
 }

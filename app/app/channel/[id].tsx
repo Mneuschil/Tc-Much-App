@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   RefreshControl,
   Pressable,
-  Image,
   Modal,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,9 +114,12 @@ export default function ChannelDetailScreen() {
           style={{ flex: 1 }}
           keyboardVerticalOffset={100}
         >
-          <FlatList<ChatMessage>
-            inverted
+          <FlashList<ChatMessage>
             data={messages}
+            maintainVisibleContentPosition={{
+              startRenderingFromBottom: true,
+              autoscrollToBottomThreshold: 50,
+            }}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <>
@@ -146,6 +149,7 @@ export default function ChannelDetailScreen() {
                 />
               </>
             )}
+            getItemType={(item) => (item.author?.id === currentUserId ? 'own' : 'other')}
             contentContainerStyle={{
               paddingHorizontal: spacing.lg,
               paddingTop: spacing.md,
@@ -173,9 +177,6 @@ export default function ChannelDetailScreen() {
                 )
               ) : null
             }
-            removeClippedSubviews
-            maxToRenderPerBatch={10}
-            windowSize={5}
           />
 
           <ChatInputBar
@@ -201,7 +202,13 @@ export default function ChannelDetailScreen() {
             <Ionicons name="close-circle" size={32} color={colors.buttonPrimaryText} />
           </Pressable>
           {viewerImage && (
-            <Image source={{ uri: viewerImage }} style={styles.viewerImage} resizeMode="contain" />
+            <Image
+              source={{ uri: viewerImage }}
+              style={styles.viewerImage}
+              contentFit="contain"
+              transition={200}
+              cachePolicy="memory-disk"
+            />
           )}
         </Pressable>
       </Modal>

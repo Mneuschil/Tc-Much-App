@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -147,7 +148,7 @@ export default function NotificationsScreen() {
         edges={['bottom']}
         style={[styles.container, { backgroundColor: colors.background }]}
       >
-        <FlatList
+        <FlashList
           data={notifications}
           keyExtractor={(item) => item.id}
           renderItem={renderNotification}
@@ -164,9 +165,6 @@ export default function NotificationsScreen() {
               )
             ) : null
           }
-          removeClippedSubviews
-          maxToRenderPerBatch={10}
-          windowSize={5}
         />
       </SafeAreaView>
     </>

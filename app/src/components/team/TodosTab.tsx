@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Alert, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -47,7 +48,7 @@ export function TodosTab({ teamId }: TodosTabProps) {
 
   return (
     <View style={{ flex: 1 }}>
-      <FlatList
+      <FlashList
         data={todoList}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}

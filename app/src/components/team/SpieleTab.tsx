@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, SectionList, Pressable, Linking, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -53,122 +54,161 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
     return { upcoming: up, past: pa, nextMatch: up[0] as EventData | undefined };
   }, [allEvents]);
 
-  const sections = [
-    ...(upcoming.length > 0 ? [{ title: 'Kommende', data: upcoming }] : []),
-    ...(past.length > 0 ? [{ title: 'Vergangene', data: past }] : []),
-  ];
+  type SpieleListItem = { type: 'header'; title: string } | { type: 'item'; data: EventData };
+
+  const sections = useMemo(
+    () => [
+      ...(upcoming.length > 0 ? [{ title: 'Kommende', data: upcoming }] : []),
+      ...(past.length > 0 ? [{ title: 'Vergangene', data: past }] : []),
+    ],
+    [upcoming, past],
+  );
+
+  const flatData = useMemo(() => {
+    const result: SpieleListItem[] = [];
+    sections.forEach((section) => {
+      result.push({ type: 'header', title: section.title });
+      section.data.forEach((item) => result.push({ type: 'item', data: item }));
+    });
+    return result;
+  }, [sections]);
+
+  const stickyIndices = useMemo(() => {
+    const indices: number[] = [];
+    let idx = 0;
+    sections.forEach((section) => {
+      indices.push(idx);
+      idx += 1 + section.data.length;
+    });
+    return indices;
+  }, [sections]);
 
   const navigateToMatch = (matchId: string) => {
     router.push({ pathname: '/match/[id]', params: { id: matchId } });
   };
 
   return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(item) => item.id}
-      contentContainerStyle={{ paddingBottom: 100 }}
-      ListHeaderComponent={
-        nextMatch ? (
-          <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
-            <CardElevated>
-              <Pressable
-                onPress={() => navigateToMatch(nextMatch.id)}
-                accessibilityLabel={`Nächstes Spiel: ${nextMatch.title}`}
-                accessibilityRole="button"
-              >
-                <Text
-                  style={[
-                    typography.labelSmall,
-                    { color: colors.textSecondary, marginBottom: spacing.xs },
-                  ]}
+    <View style={{ flex: 1 }}>
+      <FlashList
+        data={flatData}
+        getItemType={(item) => item.type}
+        stickyHeaderIndices={stickyIndices}
+        keyExtractor={(item) => (item.type === 'header' ? `header-${item.title}` : item.data.id)}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        ListHeaderComponent={
+          nextMatch ? (
+            <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.lg }}>
+              <CardElevated>
+                <Pressable
+                  onPress={() => navigateToMatch(nextMatch.id)}
+                  accessibilityLabel={`Nächstes Spiel: ${nextMatch.title}`}
+                  accessibilityRole="button"
                 >
-                  NÄCHSTES SPIEL
-                </Text>
-                <Text style={[typography.h2, { color: colors.textPrimary }]}>
-                  {nextMatch.title}
-                </Text>
-                <Text
-                  style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}
-                >
-                  {formatRelative(nextMatch.startDate)}
-                </Text>
-                {nextMatch.location && (
-                  <Pressable
-                    onPress={() => openMaps(nextMatch.location!)}
-                    accessibilityLabel={`Spielort: ${nextMatch.location}`}
-                    accessibilityRole="link"
-                    accessibilityHint="Öffnet die Karten-App"
-                    style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
+                  <Text
+                    style={[
+                      typography.labelSmall,
+                      { color: colors.textSecondary, marginBottom: spacing.xs },
+                    ]}
                   >
-                    <Ionicons name="location-outline" size={14} color={colors.accentLight} />
-                    <Text
-                      style={[typography.bodySmall, { color: colors.accentLight, marginLeft: 4 }]}
+                    NÄCHSTES SPIEL
+                  </Text>
+                  <Text style={[typography.h2, { color: colors.textPrimary }]}>
+                    {nextMatch.title}
+                  </Text>
+                  <Text
+                    style={[
+                      typography.body,
+                      { color: colors.textSecondary, marginTop: spacing.xs },
+                    ]}
+                  >
+                    {formatRelative(nextMatch.startDate)}
+                  </Text>
+                  {nextMatch.location && (
+                    <Pressable
+                      onPress={() => openMaps(nextMatch.location!)}
+                      accessibilityLabel={`Spielort: ${nextMatch.location}`}
+                      accessibilityRole="link"
+                      accessibilityHint="Öffnet die Karten-App"
+                      style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}
                     >
-                      {nextMatch.location}
-                    </Text>
-                  </Pressable>
-                )}
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
-                  {nextMatch.isHomeGame !== null && (
-                    <Badge
-                      label={nextMatch.isHomeGame ? 'Heim' : 'Auswärts'}
-                      variant={nextMatch.isHomeGame ? 'success' : 'neutral'}
-                      size="sm"
-                    />
+                      <Ionicons name="location-outline" size={14} color={colors.accentLight} />
+                      <Text
+                        style={[typography.bodySmall, { color: colors.accentLight, marginLeft: 4 }]}
+                      >
+                        {nextMatch.location}
+                      </Text>
+                    </Pressable>
                   )}
-                </View>
-              </Pressable>
-            </CardElevated>
-          </View>
-        ) : null
-      }
-      renderSectionHeader={({ section }) => (
-        <View
-          style={{
-            paddingHorizontal: spacing.xl,
-            paddingTop: spacing.lg,
-            paddingBottom: spacing.sm,
-            backgroundColor: colors.background,
-          }}
-        >
-          <Text style={[typography.h4, { color: colors.textPrimary }]}>{section.title}</Text>
-        </View>
-      )}
-      renderItem={({ item }) => (
-        <Pressable
-          onPress={() => navigateToMatch(item.id)}
-          accessibilityLabel={`Spiel: ${item.title}`}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            {
-              paddingHorizontal: spacing.xl,
-              paddingVertical: spacing.md,
-              borderBottomWidth: StyleSheet.hairlineWidth,
-              borderBottomColor: colors.separator,
-              opacity: pressed ? 0.7 : 1,
-            },
-          ]}
-        >
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>
-            {item.title}
-          </Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-            <Text style={[typography.caption, { color: colors.textSecondary }]}>
-              {formatDate(item.startDate)} · {formatTime(item.startDate)}
-            </Text>
-            {item.isHomeGame !== null && (
-              <Badge
-                label={item.isHomeGame ? 'H' : 'A'}
-                variant={item.isHomeGame ? 'success' : 'neutral'}
-                size="sm"
-              />
-            )}
-          </View>
-        </Pressable>
-      )}
-      ListEmptyComponent={
-        <EmptyState title="Keine Spiele" description="Keine Mannschaftsspiele geplant" />
-      }
-    />
+                  <View style={{ flexDirection: 'row', gap: 8, marginTop: spacing.md }}>
+                    {nextMatch.isHomeGame !== null && (
+                      <Badge
+                        label={nextMatch.isHomeGame ? 'Heim' : 'Auswärts'}
+                        variant={nextMatch.isHomeGame ? 'success' : 'neutral'}
+                        size="sm"
+                      />
+                    )}
+                  </View>
+                </Pressable>
+              </CardElevated>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) => {
+          if (item.type === 'header') {
+            return (
+              <View
+                style={{
+                  paddingHorizontal: spacing.xl,
+                  paddingTop: spacing.lg,
+                  paddingBottom: spacing.sm,
+                  backgroundColor: colors.background,
+                }}
+              >
+                <Text style={[typography.h4, { color: colors.textPrimary }]}>{item.title}</Text>
+              </View>
+            );
+          }
+          const event = item.data;
+          return (
+            <Pressable
+              onPress={() => navigateToMatch(event.id)}
+              accessibilityLabel={`Spiel: ${event.title}`}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                {
+                  paddingHorizontal: spacing.xl,
+                  paddingVertical: spacing.md,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: colors.separator,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Text
+                style={[typography.bodyMedium, { color: colors.textPrimary }]}
+                numberOfLines={1}
+              >
+                {event.title}
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                  {formatDate(event.startDate)} · {formatTime(event.startDate)}
+                </Text>
+                {event.isHomeGame !== null && (
+                  <Badge
+                    label={event.isHomeGame ? 'H' : 'A'}
+                    variant={event.isHomeGame ? 'success' : 'neutral'}
+                    size="sm"
+                  />
+                )}
+              </View>
+            </Pressable>
+          );
+        }}
+        ListEmptyComponent={
+          <EmptyState title="Keine Spiele" description="Keine Mannschaftsspiele geplant" />
+        }
+      />
+    </View>
   );
 }

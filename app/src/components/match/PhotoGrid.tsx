@@ -1,4 +1,5 @@
-import { View, Text, Image, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, Dimensions, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
 
@@ -33,6 +34,9 @@ export function PhotoGrid({ photos }: PhotoGridProps) {
           key={i}
           source={{ uri }}
           style={{ width: imageWidth, height: imageWidth, borderRadius: borderRadius.lg }}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
         />
       ))}
     </View>

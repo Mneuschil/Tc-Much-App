@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -84,7 +85,9 @@ export function FileUploadModal({
               <Image
                 source={{ uri: filePreview.uri }}
                 style={[styles.previewImage, { borderRadius: borderRadius.md }]}
-                resizeMode="cover"
+                contentFit="cover"
+                transition={200}
+                cachePolicy="memory-disk"
                 accessibilityElementsHidden
               />
             </View>

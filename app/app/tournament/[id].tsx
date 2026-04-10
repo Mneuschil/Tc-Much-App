@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
@@ -228,7 +229,7 @@ function ParticipantsTab({ registrations }: { registrations: RegistrationWithUse
   }
 
   return (
-    <FlatList
+    <FlashList
       data={registrations}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../theme';
@@ -81,6 +82,9 @@ export function MediaUploadForm() {
             <Image
               source={{ uri: mediaUri }}
               style={[styles.preview, { borderRadius: radii.md }]}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
               accessibilityElementsHidden
             />
             <Pressable
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  preview: { width: '100%', height: 200, resizeMode: 'cover' },
+  preview: { width: '100%', height: 200 },
   removeBtn: {
     position: 'absolute',
     top: 8,

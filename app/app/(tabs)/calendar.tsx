@@ -1,13 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ScrollView,
-  Pressable,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, type DateData } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
@@ -126,7 +119,7 @@ export default function CalendarScreen() {
           );
         })}
       </ScrollView>
-      <FlatList
+      <FlashList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -206,7 +199,7 @@ export default function CalendarScreen() {
         }
       />
 
-      {/* FAB für Board-Members */}
+      {/* FAB fuer Board-Members */}
       {isBoard && (
         <Pressable
           onPress={() => setShowCreateModal(true)}

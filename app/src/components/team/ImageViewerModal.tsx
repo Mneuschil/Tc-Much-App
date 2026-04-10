@@ -1,4 +1,5 @@
-import { Modal, Pressable, Image, StyleSheet } from 'react-native';
+import { Modal, Pressable, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 interface ImageViewerModalProps {
@@ -28,7 +29,9 @@ export function ImageViewerModal({ imageUrl, onClose }: ImageViewerModalProps) {
         <Image
           source={{ uri: imageUrl }}
           style={styles.image}
-          resizeMode="contain"
+          contentFit="contain"
+          transition={200}
+          cachePolicy="memory-disk"
           accessibilityLabel="Vergrößertes Bild"
           accessibilityRole="image"
         />

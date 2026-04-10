@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { View, Text, StyleSheet, Pressable, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -136,7 +137,14 @@ export function HeroHeader({
   );
 
   return (
-    <ImageBackground source={heroBg} style={styles.hero} resizeMode="cover">
+    <View style={styles.hero}>
+      <Image
+        source={heroBg}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        transition={200}
+        cachePolicy="memory-disk"
+      />
       {/* Single continuous gradient: transparent → dark hint → green */}
       <LinearGradient
         colors={[
@@ -192,7 +200,7 @@ export function HeroHeader({
         {/* Calendar strip — sits in the green zone */}
         {calendarStrip}
       </LinearGradient>
-    </ImageBackground>
+    </View>
   );
 }
 

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Share } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Share } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../theme';
@@ -82,6 +83,9 @@ function NewsCard({ item }: { item: NewsItem }) {
             styles.image,
             { borderTopLeftRadius: borderRadius.xl, borderTopRightRadius: borderRadius.xl },
           ]}
+          contentFit="cover"
+          transition={200}
+          cachePolicy="memory-disk"
           accessibilityElementsHidden
         />
       )}
