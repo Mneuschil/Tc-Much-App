@@ -1,10 +1,17 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useState, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, InteractionManager } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
-import { Badge, Button, Avatar, FilterPill, EmptyState } from '../../src/components/ui';
+import {
+  Badge,
+  Button,
+  Avatar,
+  FilterPill,
+  EmptyState,
+  LoadingSkeleton,
+} from '../../src/components/ui';
 import { BracketView } from '../../src/components/tournament/BracketView';
 import { PartnerPickerModal } from '../../src/components/tournament/PartnerPickerModal';
 import {
@@ -42,6 +49,15 @@ export default function TournamentDetailScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('Info');
   const [showPartnerPicker, setShowPartnerPicker] = useState(false);
 
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
   const { data: tournament } = useTournamentDetail(id!);
   const { data: bracket } = useBracket(id!);
   const { data: registrations } = useRegistrations(id!);
@@ -59,7 +75,7 @@ export default function TournamentDetailScreen() {
     );
   };
 
-  if (!tournament) {
+  if (!ready || !tournament) {
     return (
       <>
         <Stack.Screen
@@ -75,7 +91,11 @@ export default function TournamentDetailScreen() {
           edges={['bottom']}
           style={[styles.container, { backgroundColor: colors.background }]}
         >
-          <EmptyState title="Laden..." description="" />
+          <View style={{ padding: spacing.xl, gap: spacing.md }}>
+            <LoadingSkeleton width="100%" height={40} borderRadius={12} />
+            <LoadingSkeleton width="100%" height={120} borderRadius={16} />
+            <LoadingSkeleton width="50%" height={20} />
+          </View>
         </SafeAreaView>
       </>
     );

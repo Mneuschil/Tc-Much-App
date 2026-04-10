@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Pressable,
   Modal,
+  InteractionManager,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
@@ -15,7 +16,7 @@ import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { QueryError } from '../../src/components/ui';
+import { QueryError, LoadingSkeleton } from '../../src/components/ui';
 import { MessageBubble, ChatInputBar } from '../../src/components/chat';
 import type { ChatMessage } from '../../src/components/chat';
 import { useAuthStore } from '../../src/stores/authStore';
@@ -50,6 +51,15 @@ export default function ChannelDetailScreen() {
   const [newMessage, setNewMessage] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; content: string } | null>(null);
   const [viewerImage, setViewerImage] = useState<string | null>(null);
+
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
 
   const { data: channelData } = useChannel(id!);
   const { data: messagesData, isLoading, isError, refetch, fetchNextPage } = useMessages(id!);
@@ -128,6 +138,33 @@ export default function ChannelDetailScreen() {
     ),
     [dateHeaders, currentUserId, handleReaction, colors, borderRadius, typography],
   );
+
+  if (!ready) {
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            headerShown: true,
+            title: channel?.name ?? 'Channel',
+            headerStyle: { backgroundColor: isDark ? colors.background : colors.accent },
+            headerTintColor: isDark ? colors.textPrimary : colors.buttonPrimaryText,
+            headerShadowVisible: false,
+          }}
+        />
+        <SafeAreaView
+          edges={['bottom']}
+          style={[styles.container, { backgroundColor: colors.background }]}
+        >
+          <View style={{ padding: spacing.lg, gap: spacing.md }}>
+            <LoadingSkeleton width="70%" height={16} />
+            <LoadingSkeleton width="100%" height={48} borderRadius={12} />
+            <LoadingSkeleton width="40%" height={16} />
+            <LoadingSkeleton width="100%" height={48} borderRadius={12} />
+          </View>
+        </SafeAreaView>
+      </>
+    );
+  }
 
   return (
     <>

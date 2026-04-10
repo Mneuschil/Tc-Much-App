@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, Modal, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -44,14 +44,18 @@ export default function AdminMembersScreen() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<UserRole[]>([]);
 
+  const filtered = useMemo(
+    () =>
+      (members ?? []).filter((m) =>
+        `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [members, search],
+  );
+
   if (!isAdmin) {
     router.replace('/(tabs)/more');
     return null;
   }
-
-  const filtered = (members ?? []).filter((m) =>
-    `${m.firstName} ${m.lastName}`.toLowerCase().includes(search.toLowerCase()),
-  );
 
   const openRoleModal = (user: User) => {
     setSelectedUser(user);

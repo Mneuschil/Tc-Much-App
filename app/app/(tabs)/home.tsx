@@ -47,7 +47,10 @@ export default function HomeScreen() {
 
   const events = useMemo(() => (weekEvents ?? []) as DayEvent[], [weekEvents]);
 
-  const todos = ((todosData ?? []) as TodoItem[]).filter((t) => t.status === 'OPEN');
+  const todos = useMemo(
+    () => ((todosData ?? []) as TodoItem[]).filter((t) => t.status === 'OPEN'),
+    [todosData],
+  );
   const unreadCount = (notifications ?? []).length;
 
   const dayEvents = useMemo<DayEvent[]>(() => {

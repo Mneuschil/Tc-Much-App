@@ -1,10 +1,18 @@
-import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { useState, useMemo, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  Alert,
+  InteractionManager,
+} from 'react-native';
 import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { EmptyState, QueryError } from '../../src/components/ui';
+import { EmptyState, QueryError, LoadingSkeleton } from '../../src/components/ui';
 import { useAuth } from '../../src/hooks/useAuth';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useEvent, useDeleteEvent } from '../../src/features/calendar/hooks/useEvents';
@@ -77,6 +85,15 @@ export default function MatchDetailScreen() {
   const { isBoard, isTeamCaptain, isAdmin } = usePermissions();
   const canManageLineup = isBoard || isTeamCaptain;
 
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
   const { data: eventData, isError: isEventError, refetch: refetchEvent } = useEvent(id!);
   const deleteEvent = useDeleteEvent(id!);
   const { data: availData } = useAvailability(id!);
@@ -130,12 +147,20 @@ export default function MatchDetailScreen() {
     setLineupInit(true);
   };
 
-  if (!event) {
+  if (!ready || !event) {
     return (
       <>
         <Stack.Screen options={{ headerShown: true, title: 'Match' }} />
         <SafeAreaView edges={['bottom']} style={styles.container}>
-          {isEventError ? <QueryError onRetry={refetchEvent} /> : null}
+          {isEventError ? (
+            <QueryError onRetry={refetchEvent} />
+          ) : (
+            <View style={{ padding: spacing.xl, gap: spacing.md }}>
+              <LoadingSkeleton width="100%" height={120} borderRadius={16} />
+              <LoadingSkeleton width="60%" height={20} />
+              <LoadingSkeleton width="100%" height={80} borderRadius={16} />
+            </View>
+          )}
         </SafeAreaView>
       </>
     );

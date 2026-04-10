@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -10,6 +10,10 @@ import { ChannelListItem, CreateChannelModal } from '../../src/components/chat';
 import type { ChannelItem } from '../../src/components/chat';
 import { useChannels } from '../../src/features/chat/hooks/useChannels';
 import { usePermissions } from '../../src/hooks/usePermissions';
+
+const ListSeparator = React.memo(function ListSeparator({ color }: { color: string }) {
+  return <View style={[styles.separator, { backgroundColor: color }]} />;
+});
 
 export default function ChannelsScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -38,7 +42,7 @@ export default function ChannelsScreen() {
   );
 
   const separator = useCallback(
-    () => <View style={[styles.separator, { backgroundColor: colors.separator }]} />,
+    () => <ListSeparator color={colors.separator} />,
     [colors.separator],
   );
 
