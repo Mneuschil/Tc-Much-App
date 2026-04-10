@@ -145,13 +145,15 @@ afterAll(async () => {
 
 // AC-01: GET /channels returns visible channels
 describe('GET /api/v1/channels', () => {
-  it('returns PUBLIC + assigned RESTRICTED channels for MEMBER (AC-01, AC-03)', async () => {
+  it('returns PUBLIC + assigned RESTRICTED channels with pagination (AC-01, AC-03, H-03)', async () => {
     const res = await request(app)
       .get('/api/v1/channels')
       .set('Authorization', `Bearer ${memberToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+    expect(res.body.pagination).toBeDefined();
+    expect(res.body.pagination.page).toBe(1);
 
     const names = res.body.data.map((c: { name: string }) => c.name);
     expect(names).toContain('Public Test');

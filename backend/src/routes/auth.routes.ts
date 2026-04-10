@@ -29,7 +29,7 @@ router.post(
       if (err instanceof AuthError) return handleAuthError(err, res);
       next(err);
     }
-  }
+  },
 );
 
 // POST /login – Anmeldung mit E-Mail + Passwort
@@ -46,7 +46,7 @@ router.post(
       if (err instanceof AuthError) return handleAuthError(err, res);
       next(err);
     }
-  }
+  },
 );
 
 // POST /refresh – Access Token erneuern
@@ -62,11 +62,11 @@ router.post(
       if (err instanceof AuthError) return handleAuthError(err, res);
       next(err);
     }
-  }
+  },
 );
 
 // POST /logout – Refresh Token invalidieren
-router.post('/logout', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/logout', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { refreshToken } = req.body ?? {};
     if (refreshToken) {

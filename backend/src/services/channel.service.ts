@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import type { Prisma } from '@prisma/client';
 import type {
   CreateChannelInput,
   CreateMessageInput,
@@ -6,7 +7,7 @@ import type {
 } from '@tennis-club/shared';
 import { logAudit } from '../utils/audit';
 
-export async function getChannelsForClub(clubId: string, userId: string) {
+export async function getChannelsForClub(clubId: string, userId: string, page = 1, limit = 50) {
   // Check if user is admin/board (should see all channels)
   const userRoles = await prisma.userRoleAssignment.findMany({
     where: { userId },
@@ -16,17 +17,19 @@ export async function getChannelsForClub(clubId: string, userId: string) {
     ['CLUB_ADMIN', 'SYSTEM_ADMIN', 'BOARD_MEMBER'].includes(r.role),
   );
 
-  const channels = await prisma.channel.findMany({
-    where: {
-      clubId,
-      parentChannelId: null,
-      isArchived: false,
-      ...(isPrivileged
-        ? {}
-        : {
-            OR: [{ visibility: 'PUBLIC' }, { members: { some: { userId } } }],
-          }),
-    },
+  const where: Prisma.ChannelWhereInput = {
+    clubId,
+    parentChannelId: null,
+    isArchived: false,
+    ...(isPrivileged
+      ? {}
+      : {
+          OR: [{ visibility: 'PUBLIC' as const }, { members: { some: { userId } } }],
+        }),
+  };
+
+  const channelsQuery = prisma.channel.findMany({
+    where,
     include: {
       subchannels: true,
       team: { select: { id: true, name: true } },
@@ -40,12 +43,19 @@ export async function getChannelsForClub(clubId: string, userId: string) {
       },
     },
     orderBy: { createdAt: 'asc' },
+    skip: (page - 1) * limit,
+    take: limit,
   });
+  const countQuery = prisma.channel.count({ where });
 
-  return channels.map(({ messages, ...channel }) => ({
+  const [channels, total] = await Promise.all([channelsQuery, countQuery]);
+
+  const mapped = channels.map(({ messages, ...channel }) => ({
     ...channel,
     lastMessage: messages[0] ?? null,
   }));
+
+  return { channels: mapped, total };
 }
 
 export async function getChannelById(channelId: string, clubId: string) {

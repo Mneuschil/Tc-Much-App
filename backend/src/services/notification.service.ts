@@ -4,15 +4,23 @@ import type { Prisma } from '@prisma/client';
 
 // Spec section 15: 7 types, all enabled by default, real-time push, in-app notification center
 
-export async function getNotifications(userId: string, unreadOnly = false) {
-  return prisma.notification.findMany({
-    where: {
-      userId,
-      ...(unreadOnly ? { isRead: false } : {}),
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 100,
-  });
+export async function getNotifications(userId: string, unreadOnly = false, page = 1, limit = 30) {
+  const where = {
+    userId,
+    ...(unreadOnly ? { isRead: false } : {}),
+  };
+
+  const [notifications, total] = await Promise.all([
+    prisma.notification.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.notification.count({ where }),
+  ]);
+
+  return { notifications, total };
 }
 
 export async function createNotification(

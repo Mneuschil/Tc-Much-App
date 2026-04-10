@@ -3,18 +3,25 @@ import { requireAuth } from '../middleware/auth';
 import { validate } from '../middleware/validate';
 import { updateNotificationPreferenceSchema } from '@tennis-club/shared';
 import * as notificationService from '../services/notification.service';
-import { success } from '../utils/apiResponse';
+import { success, paginated } from '../utils/apiResponse';
 
 const router = Router();
 
 router.use(requireAuth);
 
-// GET / – Alle Benachrichtigungen des Users
+// GET / – Benachrichtigungen des Users (paginiert)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const unreadOnly = req.query.unread === 'true';
-    const notifications = await notificationService.getNotifications(req.user!.userId, unreadOnly);
-    success(res, notifications);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 30));
+    const { notifications, total } = await notificationService.getNotifications(
+      req.user!.userId,
+      unreadOnly,
+      page,
+      limit,
+    );
+    paginated(res, notifications, total, page, limit);
   } catch (err) {
     next(err);
   }
@@ -51,17 +58,21 @@ router.get('/preferences', async (req: Request, res: Response, next: NextFunctio
 });
 
 // PUT /preferences – Benachrichtigungs-Einstellungen aendern
-router.put('/preferences', validate(updateNotificationPreferenceSchema), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const preference = await notificationService.updatePreference(
-      req.user!.userId,
-      req.body.type,
-      req.body.enabled,
-    );
-    success(res, preference);
-  } catch (err) {
-    next(err);
-  }
-});
+router.put(
+  '/preferences',
+  validate(updateNotificationPreferenceSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const preference = await notificationService.updatePreference(
+        req.user!.userId,
+        req.body.type,
+        req.body.enabled,
+      );
+      success(res, preference);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

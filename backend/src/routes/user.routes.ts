@@ -6,7 +6,7 @@ import { updateProfileSchema, updateRolesSchema } from '@tennis-club/shared';
 import * as userService from '../services/user.service';
 import * as teamService from '../services/team.service';
 import { UserError } from '../services/user.service';
-import { success, error } from '../utils/apiResponse';
+import { success, error, paginated } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
@@ -58,11 +58,15 @@ router.put(
 // GET / – Club-Mitglieder auflisten (CLUB_ADMIN/BOARD_MEMBER)
 router.get('/', requireBoard, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const members = await userService.getClubMembers(
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const { users, total } = await userService.getClubMembers(
       req.user!.clubId,
       req.query.role as string | undefined,
+      page,
+      limit,
     );
-    success(res, members);
+    paginated(res, users, total, page, limit);
   } catch (err) {
     handleUserError(err, res, next);
   }

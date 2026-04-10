@@ -21,46 +21,111 @@ beforeAll(async () => {
   const club = await prisma.club.create({ data: { name: 'User Test Club', clubCode: CLUB_CODE } });
   clubId = club.id;
 
-  const otherClub = await prisma.club.create({ data: { name: 'Other Club', clubCode: 'OTHERCLB' } });
+  const otherClub = await prisma.club.create({
+    data: { name: 'Other Club', clubCode: 'OTHERCLB' },
+  });
   otherClubId = otherClub.id;
 
   const adminUser = await prisma.user.create({
-    data: { email: 'useradmin@test.de', passwordHash, firstName: 'Admin', lastName: 'User', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] } },
+    data: {
+      email: 'useradmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'User',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
+    },
   });
   adminUserId = adminUser.id;
 
   const boardUser = await prisma.user.create({
-    data: { email: 'userboard@test.de', passwordHash, firstName: 'Board', lastName: 'User', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] } },
+    data: {
+      email: 'userboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'User',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
+    },
   });
 
   const memberUser = await prisma.user.create({
-    data: { email: 'usermember@test.de', passwordHash, firstName: 'Member', lastName: 'User', clubId,
-      roles: { create: [{ role: 'MEMBER', clubId }] } },
+    data: {
+      email: 'usermember@test.de',
+      passwordHash,
+      firstName: 'Member',
+      lastName: 'User',
+      clubId,
+      roles: { create: [{ role: 'MEMBER', clubId }] },
+    },
   });
   memberUserId = memberUser.id;
 
   const trainerUser = await prisma.user.create({
-    data: { email: 'usertrainer@test.de', passwordHash, firstName: 'Trainer', lastName: 'User', clubId,
-      roles: { create: [{ role: 'TRAINER', clubId }, { role: 'MEMBER', clubId }] } },
+    data: {
+      email: 'usertrainer@test.de',
+      passwordHash,
+      firstName: 'Trainer',
+      lastName: 'User',
+      clubId,
+      roles: {
+        create: [
+          { role: 'TRAINER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
+    },
   });
 
   const otherUser = await prisma.user.create({
-    data: { email: 'other@otherclub.de', passwordHash, firstName: 'Other', lastName: 'Club', clubId: otherClubId,
-      roles: { create: [{ role: 'MEMBER', clubId: otherClubId }] } },
+    data: {
+      email: 'other@otherclub.de',
+      passwordHash,
+      firstName: 'Other',
+      lastName: 'Club',
+      clubId: otherClubId,
+      roles: { create: [{ role: 'MEMBER', clubId: otherClubId }] },
+    },
   });
   otherClubUserId = otherUser.id;
 
-  adminToken = generateAccessToken({ userId: adminUser.id, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUser.id, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
-  memberToken = generateAccessToken({ userId: memberUser.id, clubId, roles: ['MEMBER'] as UserRole[] });
-  otherClubToken = generateAccessToken({ userId: otherUser.id, clubId: otherClubId, roles: ['MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUser.id,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUser.id,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
+  memberToken = generateAccessToken({
+    userId: memberUser.id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
+  otherClubToken = generateAccessToken({
+    userId: otherUser.id,
+    clubId: otherClubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
 });
 
 afterAll(async () => {
   await prisma.userRoleAssignment.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
-  await prisma.refreshToken.deleteMany({ where: { user: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.refreshToken.deleteMany({
+    where: { user: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.user.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
   await prisma.club.deleteMany({ where: { clubCode: { in: [CLUB_CODE, 'OTHERCLB'] } } });
   await prisma.$disconnect();
@@ -97,17 +162,31 @@ describe('PUT /api/v1/users/me', () => {
 
 // AC-03: GET /users (CLUB_ADMIN/BOARD_MEMBER only)
 describe('GET /api/v1/users', () => {
-  it('lists club members for BOARD_MEMBER (AC-03)', async () => {
+  it('lists club members for BOARD_MEMBER with pagination (AC-03, H-01)', async () => {
     const res = await request(app)
       .get('/api/v1/users')
       .set('Authorization', `Bearer ${boardToken}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBeGreaterThanOrEqual(4);
+    expect(res.body.pagination).toBeDefined();
+    expect(res.body.pagination.page).toBe(1);
+    expect(res.body.pagination.total).toBeGreaterThanOrEqual(4);
     // All users should belong to same club
     for (const user of res.body.data) {
       expect(user.clubId).toBe(clubId);
     }
+  });
+
+  it('respects page and limit query params (H-01)', async () => {
+    const res = await request(app)
+      .get('/api/v1/users?page=1&limit=2')
+      .set('Authorization', `Bearer ${boardToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeLessThanOrEqual(2);
+    expect(res.body.pagination.limit).toBe(2);
+    expect(res.body.pagination.totalPages).toBeGreaterThanOrEqual(2);
   });
 
   it('rejects MEMBER from listing users', async () => {
@@ -119,7 +198,7 @@ describe('GET /api/v1/users', () => {
   });
 
   // AC-04: Filter by role
-  it('filters by role (AC-04)', async () => {
+  it('filters by role with pagination (AC-04)', async () => {
     const res = await request(app)
       .get('/api/v1/users?role=TRAINER')
       .set('Authorization', `Bearer ${adminToken}`);
@@ -127,6 +206,7 @@ describe('GET /api/v1/users', () => {
     expect(res.status).toBe(200);
     expect(res.body.data.length).toBe(1);
     expect(res.body.data[0].roles).toContain('TRAINER');
+    expect(res.body.pagination.total).toBe(1);
   });
 });
 

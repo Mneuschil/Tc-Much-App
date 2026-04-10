@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import type { Prisma } from '@prisma/client';
 
 interface Registration {
   userId: string;
@@ -95,8 +96,9 @@ export async function generateBracket(
   // Delete existing matches
   await prisma.tournamentMatch.deleteMany({ where: { tournamentId } });
 
-  // Create all round matches (empty placeholders)
+  // Create all round matches in batch (H-04: replace N+1 loop with createMany)
   let matchesPerRound = bracketSize / 2;
+  const matchData: Prisma.TournamentMatchCreateManyInput[] = [];
 
   for (let round = 1; round <= totalRounds; round++) {
     const roundDeadline = new Date();
@@ -111,36 +113,33 @@ export async function generateBracket(
 
         const isBye = p1 === null || p2 === null;
         const winnerId = isBye ? p1 || p2 : null;
-        const status = isBye ? ('WALKOVER' as const) : ('SCHEDULED' as const);
+        const status = isBye ? 'WALKOVER' : 'SCHEDULED';
 
-        await prisma.tournamentMatch.create({
-          data: {
-            tournamentId,
-            round,
-            position: pos,
-            player1Id: p1,
-            player2Id: p2,
-            winnerId,
-            status,
-            score: isBye ? 'BYE' : null,
-            deadline: roundDeadline,
-          },
+        matchData.push({
+          tournamentId,
+          round,
+          position: pos,
+          player1Id: p1,
+          player2Id: p2,
+          winnerId,
+          status,
+          score: isBye ? 'BYE' : null,
+          deadline: roundDeadline,
         });
       } else {
-        // Future round placeholder
-        await prisma.tournamentMatch.create({
-          data: {
-            tournamentId,
-            round,
-            position: pos,
-            status: 'SCHEDULED',
-            deadline: roundDeadline,
-          },
+        matchData.push({
+          tournamentId,
+          round,
+          position: pos,
+          status: 'SCHEDULED',
+          deadline: roundDeadline,
         });
       }
     }
     matchesPerRound = matchesPerRound / 2;
   }
+
+  await prisma.tournamentMatch.createMany({ data: matchData });
 
   // Advance BYE winners into round 2
   const round1Byes = await prisma.tournamentMatch.findMany({

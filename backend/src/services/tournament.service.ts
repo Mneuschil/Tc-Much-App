@@ -163,6 +163,21 @@ export async function reportResult(
     throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
   }
 
+  // H-06: Validate winnerId is actually a player in the match
+  const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
+  if (!match) {
+    throw Object.assign(new Error('Match nicht gefunden'), { statusCode: 404 });
+  }
+  if (match.winnerId) {
+    throw Object.assign(new Error('Match bereits abgeschlossen'), { statusCode: 400 });
+  }
+  if (winnerId !== match.player1Id && winnerId !== match.player2Id) {
+    throw Object.assign(new Error('Winner muss ein Spieler des Matches sein'), {
+      statusCode: 400,
+      code: 'INVALID_WINNER',
+    });
+  }
+
   const result = await bracketService.advanceWinner(matchId, winnerId, score);
 
   // Check if tournament is complete (final match decided)

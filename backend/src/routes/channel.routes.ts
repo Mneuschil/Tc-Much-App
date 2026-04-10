@@ -11,18 +11,25 @@ import {
 import * as channelService from '../services/channel.service';
 import * as messageService from '../services/message.service';
 import * as reactionService from '../services/reaction.service';
-import { success } from '../utils/apiResponse';
+import { success, paginated } from '../utils/apiResponse';
 import type { Server } from 'socket.io';
 
 const router = Router();
 
 router.use(requireAuth);
 
-// GET / – Alle Channels des Vereins (gefiltert nach Zugriff)
+// GET / – Channels des Vereins (gefiltert nach Zugriff, paginiert)
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const channels = await channelService.getChannelsForClub(req.user!.clubId, req.user!.userId);
-    success(res, channels);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const { channels, total } = await channelService.getChannelsForClub(
+      req.user!.clubId,
+      req.user!.userId,
+      page,
+      limit,
+    );
+    paginated(res, channels, total, page, limit);
   } catch (err) {
     next(err);
   }

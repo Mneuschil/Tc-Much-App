@@ -54,17 +54,25 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
   return formatUser(user);
 }
 
-export async function getClubMembers(clubId: string, roleFilter?: string) {
-  const users = await prisma.user.findMany({
-    where: {
-      clubId,
-      isActive: true,
-      ...(roleFilter ? { roles: { some: { role: roleFilter as UserRole } } } : {}),
-    },
-    select: USER_SELECT,
-    orderBy: { lastName: 'asc' },
-  });
-  return users.map(formatUser);
+export async function getClubMembers(clubId: string, roleFilter?: string, page = 1, limit = 50) {
+  const where = {
+    clubId,
+    isActive: true,
+    ...(roleFilter ? { roles: { some: { role: roleFilter as UserRole } } } : {}),
+  };
+
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: USER_SELECT,
+      orderBy: { lastName: 'asc' },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.user.count({ where }),
+  ]);
+
+  return { users: users.map(formatUser), total };
 }
 
 export async function getUserById(userId: string, requestingClubId: string) {
@@ -96,7 +104,7 @@ export async function updateUserRoles(
 
   // Prevent CLUB_ADMIN from removing own CLUB_ADMIN role
   if (targetUserId === requestingUserId) {
-    const hadAdmin = targetUser.roles.some(r => r.role === 'CLUB_ADMIN');
+    const hadAdmin = targetUser.roles.some((r) => r.role === 'CLUB_ADMIN');
     const stillHasAdmin = newRoles.includes('CLUB_ADMIN' as UserRole);
     if (hadAdmin && !stillHasAdmin) {
       throw new UserError(
@@ -110,7 +118,7 @@ export async function updateUserRoles(
   // Replace all roles
   await prisma.userRoleAssignment.deleteMany({ where: { userId: targetUserId } });
   await prisma.userRoleAssignment.createMany({
-    data: newRoles.map(role => ({ userId: targetUserId, clubId, role })),
+    data: newRoles.map((role) => ({ userId: targetUserId, clubId, role })),
   });
 
   return getProfile(targetUserId);

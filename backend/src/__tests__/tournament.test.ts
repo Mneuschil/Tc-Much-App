@@ -18,21 +18,41 @@ let tournamentId: string;
 beforeAll(async () => {
   const passwordHash = await hashPassword('password123');
 
-  const club = await prisma.club.create({ data: { name: 'Tournament Test Club', clubCode: CLUB_CODE } });
+  const club = await prisma.club.create({
+    data: { name: 'Tournament Test Club', clubCode: CLUB_CODE },
+  });
   clubId = club.id;
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'tournadmin@test.de', passwordHash, firstName: 'Admin', lastName: 'Turnier', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'tournadmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'Turnier',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   adminUserId = adminUser.id;
 
   const boardUser = await prisma.user.create({
     data: {
-      email: 'tournboard@test.de', passwordHash, firstName: 'Board', lastName: 'Turnier', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'tournboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'Turnier',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   boardUserId = boardUser.id;
@@ -41,16 +61,30 @@ beforeAll(async () => {
   for (let i = 1; i <= 8; i++) {
     const p = await prisma.user.create({
       data: {
-        email: `tournp${i}@test.de`, passwordHash, firstName: `Player${i}`, lastName: 'T', clubId,
+        email: `tournp${i}@test.de`,
+        passwordHash,
+        firstName: `Player${i}`,
+        lastName: 'T',
+        clubId,
         roles: { create: [{ role: 'MEMBER', clubId }] },
       },
     });
     playerIds.push(p.id);
-    playerTokens.push(generateAccessToken({ userId: p.id, clubId, roles: ['MEMBER'] as UserRole[] }));
+    playerTokens.push(
+      generateAccessToken({ userId: p.id, clubId, roles: ['MEMBER'] as UserRole[] }),
+    );
   }
 
-  adminToken = generateAccessToken({ userId: adminUserId, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUserId, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUserId,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUserId,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
 });
 
 afterAll(async () => {
@@ -201,11 +235,13 @@ describe('POST /api/v1/tournaments/:id/draw', () => {
 
     // Seeds distributed: seed 1 should be at position 1 (top), seed 2 at position 4 (bottom)
     // Verify seeds are separated
-    const seed1Match = bracket[0].matches.find((m: { player1: { id: string } | null; player2: { id: string } | null }) =>
-      m.player1?.id === playerIds[0] || m.player2?.id === playerIds[0]
+    const seed1Match = bracket[0].matches.find(
+      (m: { player1: { id: string } | null; player2: { id: string } | null }) =>
+        m.player1?.id === playerIds[0] || m.player2?.id === playerIds[0],
     );
-    const seed2Match = bracket[0].matches.find((m: { player1: { id: string } | null; player2: { id: string } | null }) =>
-      m.player1?.id === playerIds[1] || m.player2?.id === playerIds[1]
+    const seed2Match = bracket[0].matches.find(
+      (m: { player1: { id: string } | null; player2: { id: string } | null }) =>
+        m.player1?.id === playerIds[1] || m.player2?.id === playerIds[1],
     );
     expect(seed1Match).toBeDefined();
     expect(seed2Match).toBeDefined();
@@ -265,14 +301,27 @@ describe('POST /api/v1/tournaments/:id/result', () => {
       .set('Authorization', `Bearer ${boardToken}`);
 
     const round1 = bracket.body.data.find((r: { roundNumber: number }) => r.roundNumber === 1);
-    const scheduledMatch = round1.matches.find((m: { status: string; player1: unknown; player2: unknown }) =>
-      m.status === 'SCHEDULED' && m.player1 && m.player2
+    const scheduledMatch = round1.matches.find(
+      (m: { status: string; player1: unknown; player2: unknown }) =>
+        m.status === 'SCHEDULED' && m.player1 && m.player2,
     );
 
     if (!scheduledMatch) {
       // All round 1 matches are BYEs, skip
       return;
     }
+
+    // H-06: Reject winnerId that is not a player in the match
+    const invalidWinnerRes = await request(app)
+      .post(`/api/v1/tournaments/${tournamentId}/result`)
+      .set('Authorization', `Bearer ${boardToken}`)
+      .send({
+        matchId: scheduledMatch.id,
+        winnerId: playerIds[7], // not in this match
+        score: '6:3 6:4',
+      });
+
+    expect(invalidWinnerRes.status).toBe(400);
 
     const winnerId = scheduledMatch.player1.id;
     const res = await request(app)
@@ -291,9 +340,12 @@ describe('POST /api/v1/tournaments/:id/result', () => {
       .get(`/api/v1/tournaments/${tournamentId}/bracket`)
       .set('Authorization', `Bearer ${boardToken}`);
 
-    const round2 = updatedBracket.body.data.find((r: { roundNumber: number }) => r.roundNumber === 2);
-    const round2Players = round2.matches.flatMap((m: { player1: { id: string } | null; player2: { id: string } | null }) =>
-      [m.player1?.id, m.player2?.id].filter(Boolean)
+    const round2 = updatedBracket.body.data.find(
+      (r: { roundNumber: number }) => r.roundNumber === 2,
+    );
+    const round2Players = round2.matches.flatMap(
+      (m: { player1: { id: string } | null; player2: { id: string } | null }) =>
+        [m.player1?.id, m.player2?.id].filter(Boolean),
     );
     expect(round2Players).toContain(winnerId);
   });
@@ -316,8 +368,13 @@ describe('Bracket algorithm edge cases', () => {
   it('handles 4 players (perfect bracket)', async () => {
     const t = await prisma.tournament.create({
       data: {
-        name: 'Test 4er', type: 'KNOCKOUT', category: 'SINGLES',
-        startDate: new Date(), clubId, createdById: adminUserId, status: 'REGISTRATION_OPEN',
+        name: 'Test 4er',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'REGISTRATION_OPEN',
       },
     });
     for (let i = 0; i < 4; i++) {
@@ -346,8 +403,13 @@ describe('Bracket algorithm edge cases', () => {
   it('handles 3 players (1 BYE)', async () => {
     const t = await prisma.tournament.create({
       data: {
-        name: 'Test 3er', type: 'KNOCKOUT', category: 'SINGLES',
-        startDate: new Date(), clubId, createdById: adminUserId, status: 'REGISTRATION_OPEN',
+        name: 'Test 3er',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'REGISTRATION_OPEN',
       },
     });
     for (let i = 0; i < 3; i++) {
@@ -369,8 +431,9 @@ describe('Bracket algorithm edge cases', () => {
     expect(walkovers.length).toBe(1);
     // BYE winner should be advanced to round 2
     const round2 = bracket[1];
-    const round2Players = round2.matches.flatMap((m: { player1: { id: string } | null; player2: { id: string } | null }) =>
-      [m.player1?.id, m.player2?.id].filter(Boolean)
+    const round2Players = round2.matches.flatMap(
+      (m: { player1: { id: string } | null; player2: { id: string } | null }) =>
+        [m.player1?.id, m.player2?.id].filter(Boolean),
     );
     expect(round2Players.length).toBeGreaterThanOrEqual(1);
 
@@ -382,8 +445,13 @@ describe('Bracket algorithm edge cases', () => {
   it('handles 7 players (1 BYE in 8-slot bracket)', async () => {
     const t = await prisma.tournament.create({
       data: {
-        name: 'Test 7er', type: 'KNOCKOUT', category: 'SINGLES',
-        startDate: new Date(), clubId, createdById: adminUserId, status: 'REGISTRATION_OPEN',
+        name: 'Test 7er',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'REGISTRATION_OPEN',
       },
     });
     for (let i = 0; i < 7; i++) {
@@ -412,8 +480,13 @@ describe('Bracket algorithm edge cases', () => {
   it('handles 8 players (perfect bracket, no BYEs)', async () => {
     const t = await prisma.tournament.create({
       data: {
-        name: 'Test 8er', type: 'KNOCKOUT', category: 'SINGLES',
-        startDate: new Date(), clubId, createdById: adminUserId, status: 'REGISTRATION_OPEN',
+        name: 'Test 8er',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'REGISTRATION_OPEN',
       },
     });
     for (let i = 0; i < 8; i++) {
