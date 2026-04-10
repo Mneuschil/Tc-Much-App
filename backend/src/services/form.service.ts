@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { FormSubmissionStatus } from '@tennis-club/shared';
+import { FormSubmissionStatus, FormType } from '@tennis-club/shared';
 import type { CourtDamageInput, MediaUploadInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
 
@@ -30,7 +30,7 @@ export async function submitCourtDamage(
 
     return tx.formSubmission.create({
       data: {
-        type: 'COURT_DAMAGE',
+        type: FormType.COURT_DAMAGE,
         data: input as unknown as Parameters<typeof tx.formSubmission.create>[0]['data']['data'],
         clubId,
         submittedById,
@@ -52,7 +52,7 @@ export async function submitMediaUpload(
 ) {
   return prisma.formSubmission.create({
     data: {
-      type: 'MEDIA_UPLOAD',
+      type: FormType.MEDIA_UPLOAD,
       data: input as unknown as Parameters<typeof prisma.formSubmission.create>[0]['data']['data'],
       clubId,
       submittedById,
@@ -65,7 +65,7 @@ export async function submitMediaUpload(
 
 export async function getCourtDamageReports(clubId: string) {
   return prisma.formSubmission.findMany({
-    where: { clubId, type: 'COURT_DAMAGE' },
+    where: { clubId, type: FormType.COURT_DAMAGE },
     include: {
       todo: true,
       submittedBy: { select: { id: true, firstName: true, lastName: true } },

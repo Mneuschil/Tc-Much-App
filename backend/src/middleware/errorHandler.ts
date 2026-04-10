@@ -69,7 +69,8 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
   // Support custom errors with statusCode and code properties
   const statusCode = (err as Error & { statusCode?: number }).statusCode || 500;
   const code =
-    (err as Error & { code?: string }).code || (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
+    (err as Error & { code?: string }).code ||
+    (statusCode === 404 ? 'NOT_FOUND' : statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
   const message = statusCode === 500 ? 'Interner Serverfehler' : err.message;
 
   res.status(statusCode).json({
