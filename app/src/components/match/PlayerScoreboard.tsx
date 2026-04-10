@@ -24,8 +24,15 @@ export function PlayerScoreboard({ p1, p2, sets, large }: PlayerScoreboardProps)
     ? { fontSize: 20, fontWeight: '700' as const }
     : { fontSize: 16, fontWeight: '600' as const };
 
+  const scoreText = sets.map((s) => `${s.games1}:${s.games2}`).join(', ');
+  const winnerName = p1Won ? `${p1.firstName} ${p1.lastName}` : `${p2.firstName} ${p2.lastName}`;
+
   return (
-    <View style={{ gap: 4 }}>
+    <View
+      style={{ gap: 4 }}
+      accessible
+      accessibilityLabel={`${p1.firstName} ${p1.lastName} gegen ${p2.firstName} ${p2.lastName}, ${scoreText}, Gewinner ${winnerName}`}
+    >
       <View
         style={[
           styles.scoreRow,
@@ -47,6 +54,7 @@ export function PlayerScoreboard({ p1, p2, sets, large }: PlayerScoreboardProps)
             size={12}
             color={colors.accentLight}
             style={{ marginRight: 8 }}
+            importantForAccessibility="no"
           />
         )}
         {sets.map((s, i) => (
@@ -86,6 +94,7 @@ export function PlayerScoreboard({ p1, p2, sets, large }: PlayerScoreboardProps)
             size={12}
             color={colors.accentLight}
             style={{ marginRight: 8 }}
+            importantForAccessibility="no"
           />
         )}
         {sets.map((s, i) => (

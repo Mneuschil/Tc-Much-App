@@ -54,7 +54,10 @@ export function RecentResults({ results }: RecentResultsProps) {
 
   return (
     <View>
-      <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+      <Text
+        style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        accessibilityRole="header"
+      >
         Ergebnisse
       </Text>
       <ScrollView
@@ -92,7 +95,7 @@ function ResultCard({ result }: { result: RecentResult }) {
   return (
     <Pressable
       onPress={() => router.push(`/result/${result.id}` as never)}
-      accessibilityLabel={`${label}: ${result.team1 ?? result.player1.lastName} gegen ${result.team2 ?? result.player2.lastName}`}
+      accessibilityLabel={`${label}: ${result.team1 ?? result.player1.lastName} gegen ${result.team2 ?? result.player2.lastName}, ${isTeamMatch ? `${setsWon.player1} zu ${setsWon.player2}` : scoreText}`}
       accessibilityRole="button"
       style={({ pressed }) => [
         styles.card,
@@ -112,7 +115,10 @@ function ResultCard({ result }: { result: RecentResult }) {
             { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
           ]}
         >
-          <View style={[styles.typeDot, { backgroundColor: accentColor }]} />
+          <View
+            style={[styles.typeDot, { backgroundColor: accentColor }]}
+            importantForAccessibility="no"
+          />
           <Text style={[typography.caption, { color: colors.textSecondary }]}>{label}</Text>
         </View>
         <Text style={[typography.caption, { color: colors.textTertiary }]}>
@@ -130,6 +136,8 @@ function ResultCard({ result }: { result: RecentResult }) {
                 styles.teamIcon,
                 { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
               ]}
+              importantForAccessibility="no"
+              accessibilityElementsHidden
             >
               <Ionicons name="shield-half-outline" size={22} color={colors.textSecondary} />
             </View>
@@ -192,6 +200,8 @@ function ResultCard({ result }: { result: RecentResult }) {
                 styles.teamIcon,
                 { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' },
               ]}
+              importantForAccessibility="no"
+              accessibilityElementsHidden
             >
               <Ionicons name="shield-half-outline" size={22} color={colors.textSecondary} />
             </View>

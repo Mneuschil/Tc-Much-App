@@ -71,9 +71,13 @@ export function BracketView({ matches, currentUserId }: BracketViewProps) {
             const isP1Winner = match.winnerId && match.player1Id === match.winnerId;
             const isP2Winner = match.winnerId && match.player2Id === match.winnerId;
 
+            const winnerLabel = isP1Winner ? p1Name : isP2Winner ? p2Name : undefined;
+
             return (
               <View
                 key={match.id}
+                accessible
+                accessibilityLabel={`${p1Name} gegen ${p2Name}${match.score ? `, ${match.score}` : ''}${winnerLabel ? `, Gewinner ${winnerLabel}` : ''}`}
                 style={[
                   styles.bracketCard,
                   {

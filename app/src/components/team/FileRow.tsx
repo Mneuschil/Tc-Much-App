@@ -61,7 +61,11 @@ export function FileRow({ file, onPress, onDelete }: FileRowProps) {
         },
       ]}
     >
-      <View style={[styles.icon, { backgroundColor: colors.backgroundSecondary }]}>
+      <View
+        style={[styles.icon, { backgroundColor: colors.backgroundSecondary }]}
+        importantForAccessibility="no"
+        accessibilityElementsHidden
+      >
         <Ionicons name={getFileIcon(file.mimeType)} size={20} color={colors.textSecondary} />
       </View>
       <View style={{ flex: 1, marginLeft: spacing.md }}>

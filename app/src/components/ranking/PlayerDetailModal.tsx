@@ -88,12 +88,17 @@ export function PlayerDetailModal({
                 imageUrl={player.user.avatarUrl}
                 size="lg"
               />
-              <Text style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.lg }]}>
+              <Text
+                style={[typography.h2, { color: colors.textPrimary, marginTop: spacing.lg }]}
+                accessibilityRole="header"
+              >
                 {player.user.firstName} {player.user.lastName}
               </Text>
               <Badge label={`Rang ${player.rank}`} variant="accent" />
 
               <View
+                accessible
+                accessibilityLabel={`H2H Bilanz: ${h2hRecord.wins} Siege, ${h2hRecord.losses} Niederlagen`}
                 style={[
                   styles.h2hCard,
                   {
@@ -145,6 +150,8 @@ export function PlayerDetailModal({
                   {recentMatches.map((m) => (
                     <View
                       key={m.id}
+                      accessible
+                      accessibilityLabel={`${m.result === 'WIN' ? 'Sieg' : 'Niederlage'} gegen ${m.opponent.firstName} ${m.opponent.lastName}, ${m.score}`}
                       style={{
                         flexDirection: 'row',
                         alignItems: 'center',

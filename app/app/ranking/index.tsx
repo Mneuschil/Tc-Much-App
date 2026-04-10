@@ -168,9 +168,18 @@ export default function RankingScreen() {
       const isMe = item.user.id === user?.id;
       const challengeable = canChallenge(item);
 
+      const movementLabel = movement
+        ? movement.icon === 'caret-up'
+          ? `${movement.text} Plätze gestiegen`
+          : `${movement.text} Plätze gefallen`
+        : 'unverändert';
+
       return (
         <Pressable
           onPress={() => setSelectedPlayer(item)}
+          accessible
+          accessibilityLabel={`Rang ${item.rank}, ${item.user.firstName} ${item.user.lastName}, ${item.wins} Siege, ${item.losses} Niederlagen, ${item.points} Punkte, ${movementLabel}`}
+          accessibilityRole="button"
           style={[
             styles.rankRow,
             {
@@ -214,20 +223,28 @@ export default function RankingScreen() {
             </Text>
           </View>
           {movement ? (
-            <View style={[styles.movementRow, challengeable && styles.movementSpacer]}>
+            <View
+              style={[styles.movementRow, challengeable && styles.movementSpacer]}
+              importantForAccessibility="no"
+            >
               <Ionicons name={movement.icon} size={14} color={movement.color} />
               <Text style={[typography.captionMedium, { color: movement.color, marginLeft: 2 }]}>
                 {movement.text}
               </Text>
             </View>
           ) : (
-            <View style={challengeable ? styles.movementSpacer : undefined}>
+            <View
+              style={challengeable ? styles.movementSpacer : undefined}
+              importantForAccessibility="no"
+            >
               <Ionicons name="remove-outline" size={16} color={colors.textTertiary} />
             </View>
           )}
           {challengeable && (
             <Pressable
               onPress={() => setChallengeTarget(item)}
+              accessibilityLabel={`${item.user.firstName} ${item.user.lastName} herausfordern`}
+              accessibilityRole="button"
               style={[
                 styles.challengeBtn,
                 { backgroundColor: colors.accent, borderRadius: borderRadius.full },

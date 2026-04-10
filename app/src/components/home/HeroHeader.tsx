@@ -115,7 +115,11 @@ export function HeroHeader({
                   {day.getDate()}
                 </Text>
               </View>
-              <View style={styles.dotsRow}>
+              <View
+                style={styles.dotsRow}
+                importantForAccessibility="no"
+                accessibilityElementsHidden
+              >
                 {dayEvts.length > 0 ? (
                   dayEvts
                     .slice(0, 3)
@@ -144,6 +148,7 @@ export function HeroHeader({
         contentFit="cover"
         transition={200}
         cachePolicy="memory-disk"
+        accessibilityElementsHidden
       />
       {/* Single continuous gradient: transparent → dark hint → green */}
       <LinearGradient

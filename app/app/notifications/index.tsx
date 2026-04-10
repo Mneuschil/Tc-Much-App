@@ -79,6 +79,9 @@ export default function NotificationsScreen() {
     ({ item }: { item: NotificationItem }) => (
       <Pressable
         onPress={() => handleNotificationPress(item)}
+        accessible
+        accessibilityLabel={`${!item.isRead ? 'Ungelesen: ' : ''}${item.title}, ${item.body}, ${formatTimeAgo(item.createdAt)}`}
+        accessibilityRole="button"
         style={[
           styles.notifCard,
           {
@@ -97,6 +100,7 @@ export default function NotificationsScreen() {
               borderRadius: borderRadius.lg,
             },
           ]}
+          importantForAccessibility="no"
         >
           <Ionicons
             name={TYPE_ICONS[item.type] ?? 'notifications'}
@@ -123,7 +127,12 @@ export default function NotificationsScreen() {
             {formatTimeAgo(item.createdAt)}
           </Text>
         </View>
-        {!item.isRead && <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />}
+        {!item.isRead && (
+          <View
+            style={[styles.unreadDot, { backgroundColor: colors.primary }]}
+            importantForAccessibility="no"
+          />
+        )}
       </Pressable>
     ),
     [handleNotificationPress, colors, typography, spacing, borderRadius],

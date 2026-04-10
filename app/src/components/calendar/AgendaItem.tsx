@@ -77,6 +77,8 @@ export function AgendaItem({ event, isTrainer, onShowTrainerOverview }: AgendaIt
             styles.eventIcon,
             { backgroundColor: colors.surface, borderRadius: borderRadius.lg },
           ]}
+          importantForAccessibility="no"
+          accessibilityElementsHidden
         >
           <Ionicons
             name={EVENT_ICONS[event.type] ?? 'calendar'}

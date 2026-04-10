@@ -41,7 +41,12 @@ function PersonList({
         {label} ({entries.length})
       </Text>
       {entries.map((a) => (
-        <View key={a.id} style={[styles.personRow, { paddingVertical: spacing.sm }]}>
+        <View
+          key={a.id}
+          accessible
+          accessibilityLabel={`${a.user.firstName} ${a.user.lastName}${a.comment ? `, ${a.comment}` : ''}`}
+          style={[styles.personRow, { paddingVertical: spacing.sm }]}
+        >
           <Avatar firstName={a.user.firstName} lastName={a.user.lastName} size="xs" />
           <Text
             style={[typography.bodySmall, { color: colors.textPrimary, marginLeft: spacing.sm }]}
@@ -78,7 +83,10 @@ export function AvailabilitySection({
 
   return (
     <View style={{ marginTop: spacing.xxl }}>
-      <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+      <Text
+        style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        accessibilityRole="header"
+      >
         Verfügbarkeit
       </Text>
       <View style={styles.buttons}>
