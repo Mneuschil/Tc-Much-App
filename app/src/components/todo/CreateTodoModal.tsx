@@ -334,7 +334,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             {dueDate && (
               <Pressable
                 onPress={() => setDueDate(null)}
-                hitSlop={8}
+                hitSlop={12}
                 accessibilityLabel="Fälligkeitsdatum entfernen"
                 accessibilityRole="button"
               >

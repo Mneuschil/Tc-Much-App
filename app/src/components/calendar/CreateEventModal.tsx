@@ -366,7 +366,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                   setEndDate(null);
                   setShowEndPicker(false);
                 }}
-                hitSlop={8}
+                hitSlop={12}
                 accessibilityLabel="Enddatum entfernen"
                 accessibilityRole="button"
               >

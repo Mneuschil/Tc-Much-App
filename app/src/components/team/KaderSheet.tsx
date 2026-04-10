@@ -251,7 +251,7 @@ export function KaderSheet({
                   {canManage && (
                     <Pressable
                       onPress={() => confirmRemove(item)}
-                      hitSlop={8}
+                      hitSlop={12}
                       accessibilityLabel={`${item.user.firstName} ${item.user.lastName} entfernen`}
                       accessibilityRole="button"
                     >

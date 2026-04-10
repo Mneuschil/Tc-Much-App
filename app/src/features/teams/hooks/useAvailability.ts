@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { teamService } from '../services/teamService';
 import { getErrorMessage } from '../../../utils/errorUtils';
+import { useToast } from '../../../components/ui/Toast';
 
 export function useAvailability(eventId: string) {
   return useQuery({
@@ -13,6 +13,7 @@ export function useAvailability(eventId: string) {
 
 export function useSetAvailability(eventId: string) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: ({
       status,
@@ -24,9 +25,10 @@ export function useSetAvailability(eventId: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availability', eventId] });
       queryClient.invalidateQueries({ queryKey: ['events'] });
+      showToast('Verfügbarkeit gespeichert');
     },
     onError: (err: Error) => {
-      Alert.alert('Fehler', getErrorMessage(err, 'Verfügbarkeit konnte nicht gespeichert werden'));
+      showToast(getErrorMessage(err, 'Verfügbarkeit konnte nicht gespeichert werden'), 'error');
     },
   });
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/theme';
@@ -53,7 +53,6 @@ export default function TournamentDetailScreen() {
       {
         onSuccess: () => {
           setShowPartnerPicker(false);
-          Alert.alert('Erfolg', 'Anmeldung erfolgreich');
         },
       },
     );

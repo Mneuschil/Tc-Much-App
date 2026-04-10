@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Animated,
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
 
 type ButtonVariant =
@@ -37,15 +37,19 @@ export function Button({
   fullWidth = false,
 }: ButtonProps) {
   const { colors, radii } = useTheme();
-  const scale = React.useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
   const handlePressIn = () => {
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true }).start();
+    scale.value = withSpring(0.97);
   };
 
   const handlePressOut = () => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
+    scale.value = withSpring(1);
   };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
     primary: {
@@ -82,7 +86,7 @@ export function Button({
   const vs = variantStyles[variant];
 
   return (
-    <Animated.View style={{ transform: [{ scale }], width: fullWidth ? '100%' : undefined }}>
+    <Animated.View style={[animatedStyle, fullWidth ? styles.fullWidth : undefined]}>
       <Pressable
         onPress={onPress}
         onPressIn={handlePressIn}

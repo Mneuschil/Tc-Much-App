@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { matchService } from '../services/matchService';
 import { getErrorMessage } from '../../../utils/errorUtils';
+import { useToast } from '../../../components/ui/Toast';
 import type { TennisSet } from '@tennis-club/shared';
 
 export function useMatchResults(eventId: string) {
@@ -14,6 +14,7 @@ export function useMatchResults(eventId: string) {
 
 export function useSubmitResult() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (input: {
       matchId: string;
@@ -23,30 +24,32 @@ export function useSubmitResult() {
     }) => matchService.submitResult(input.matchId, { sets: input.sets, winnerId: input.winnerId }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['matchResults', variables.eventId] });
-      Alert.alert('Erfolg', 'Ergebnis eingereicht');
+      showToast('Ergebnis eingereicht');
     },
     onError: (err: Error) => {
-      Alert.alert('Fehler', getErrorMessage(err, 'Ergebnis konnte nicht eingereicht werden'));
+      showToast(getErrorMessage(err, 'Ergebnis konnte nicht eingereicht werden'), 'error');
     },
   });
 }
 
 export function useConfirmResult(eventId: string) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: () => matchService.confirmResult(eventId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['matchResults', eventId] });
-      Alert.alert('Erfolg', 'Ergebnis bestätigt');
+      showToast('Ergebnis bestätigt');
     },
     onError: (err: Error) => {
-      Alert.alert('Fehler', getErrorMessage(err, 'Ergebnis konnte nicht bestätigt werden'));
+      showToast(getErrorMessage(err, 'Ergebnis konnte nicht bestätigt werden'), 'error');
     },
   });
 }
 
 export function useRejectResult(eventId: string) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: ({
       reason,
@@ -59,7 +62,7 @@ export function useRejectResult(eventId: string) {
     }) => matchService.rejectResult(eventId, reason, correctedSets, correctedWinnerId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['matchResults', eventId] }),
     onError: (err: Error) => {
-      Alert.alert('Fehler', getErrorMessage(err, 'Ablehnung fehlgeschlagen'));
+      showToast(getErrorMessage(err, 'Ablehnung fehlgeschlagen'), 'error');
     },
   });
 }

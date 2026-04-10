@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { chatService } from '../services/chatService';
 import { getErrorMessage } from '../../../utils/errorUtils';
+import { useToast } from '../../../components/ui/Toast';
 
 export function useMessages(channelId: string) {
   return useInfiniteQuery({
@@ -16,22 +16,24 @@ export function useMessages(channelId: string) {
 
 export function useSendMessage(channelId: string) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (input: { content: string; replyToId?: string; mediaUrls?: string[] }) =>
       chatService.sendMessage(channelId, input),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channelId] }),
     onError: (err: Error) => {
-      Alert.alert('Fehler', getErrorMessage(err, 'Nachricht konnte nicht gesendet werden'));
+      showToast(getErrorMessage(err, 'Nachricht konnte nicht gesendet werden'), 'error');
     },
   });
 }
 
 export function useDeleteMessage(channelId: string) {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (messageId: string) => chatService.deleteMessage(messageId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['messages', channelId] }),
-    onError: () => Alert.alert('Fehler', 'Nachricht konnte nicht gelöscht werden'),
+    onError: () => showToast('Nachricht konnte nicht gelöscht werden', 'error'),
   });
 }
 

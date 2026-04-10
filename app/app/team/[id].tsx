@@ -91,7 +91,7 @@ export default function TeamDetailScreen() {
           headerShadowVisible: false,
           headerRight: canManage
             ? () => (
-                <Pressable onPress={() => setEditOpen(true)} hitSlop={8}>
+                <Pressable onPress={() => setEditOpen(true)} hitSlop={12}>
                   <Ionicons name="settings-outline" size={22} color={colors.textPrimary} />
                 </Pressable>
               )

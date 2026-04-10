@@ -1,6 +1,6 @@
 import React, { Component, type ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { lightColors } from '../theme/colors';
+import { View, Text, TouchableOpacity, StyleSheet, Appearance } from 'react-native';
+import { lightColors, darkColors } from '../theme/colors';
 
 interface Props {
   children: ReactNode;
@@ -28,17 +28,26 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (this.state.hasError) {
+      const isDark = Appearance.getColorScheme() === 'dark';
+      const colors = isDark ? darkColors : lightColors;
+
       return (
-        <View style={styles.container}>
-          <Text style={styles.title}>Etwas ist schiefgelaufen</Text>
-          <Text style={styles.message}>Die App ist auf einen unerwarteten Fehler gestossen.</Text>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>
+            Etwas ist schiefgelaufen
+          </Text>
+          <Text style={[styles.message, { color: colors.textSecondary }]}>
+            Die App ist auf einen unerwarteten Fehler gestossen.
+          </Text>
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { backgroundColor: colors.buttonPrimary }]}
             onPress={this.handleRetry}
             accessibilityLabel="Erneut versuchen"
             accessibilityRole="button"
           >
-            <Text style={styles.buttonText}>Erneut versuchen</Text>
+            <Text style={[styles.buttonText, { color: colors.buttonPrimaryText }]}>
+              Erneut versuchen
+            </Text>
           </TouchableOpacity>
         </View>
       );
@@ -54,28 +63,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: lightColors.background,
   },
   title: {
     fontSize: 20,
     fontWeight: '700',
-    color: lightColors.textPrimary,
     marginBottom: 8,
   },
   message: {
     fontSize: 16,
-    color: lightColors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
   button: {
-    backgroundColor: lightColors.buttonPrimary,
     paddingHorizontal: 24,
     paddingVertical: 14,
     borderRadius: 12,
   },
   buttonText: {
-    color: lightColors.buttonPrimaryText,
     fontSize: 16,
     fontWeight: '600',
   },

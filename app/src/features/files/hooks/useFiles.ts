@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { fileService } from '../services/fileService';
 import api from '../../../lib/api';
 import { ENDPOINTS } from '../../../lib/endpoints';
 import { appendFileToFormData } from '../../../utils/createFileFormData';
+import { useToast } from '../../../components/ui/Toast';
 
 interface UploadInput {
   uri: string;
@@ -32,6 +32,7 @@ export function useFolders(channelId: string) {
 
 export function useUploadFile() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: async (input: UploadInput) => {
       const formData = new FormData();
@@ -44,28 +45,35 @@ export function useUploadFile() {
     },
     onSuccess: (_data, input) => {
       queryClient.invalidateQueries({ queryKey: ['files', input.channelId] });
+      showToast('Datei hochgeladen');
     },
-    onError: () => Alert.alert('Fehler', 'Datei konnte nicht hochgeladen werden'),
+    onError: () => showToast('Datei konnte nicht hochgeladen werden', 'error'),
   });
 }
 
 export function useCreateFolder() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: ({ name, channelId }: { name: string; channelId: string }) =>
       fileService.createFolder(name, channelId),
     onSuccess: (_data, input) => {
       queryClient.invalidateQueries({ queryKey: ['folders', input.channelId] });
+      showToast('Ordner erstellt');
     },
-    onError: () => Alert.alert('Fehler', 'Ordner konnte nicht erstellt werden'),
+    onError: () => showToast('Ordner konnte nicht erstellt werden', 'error'),
   });
 }
 
 export function useDeleteFile() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (fileId: string) => fileService.deleteFile(fileId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['files'] }),
-    onError: () => Alert.alert('Fehler', 'Datei konnte nicht gelöscht werden'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['files'] });
+      showToast('Datei gelöscht');
+    },
+    onError: () => showToast('Datei konnte nicht gelöscht werden', 'error'),
   });
 }

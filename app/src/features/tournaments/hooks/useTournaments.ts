@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { tournamentService } from '../services/tournamentService';
+import { useToast } from '../../../components/ui/Toast';
 import type { TournamentRegistrationInput } from '@tennis-club/shared';
 
 export function useTournaments() {
@@ -36,12 +36,16 @@ export function useRegistrations(id: string) {
 
 export function useRegisterForTournament() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (input: TournamentRegistrationInput) => tournamentService.register(input),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tournaments', variables.tournamentId, 'registrations'] });
+      queryClient.invalidateQueries({
+        queryKey: ['tournaments', variables.tournamentId, 'registrations'],
+      });
       queryClient.invalidateQueries({ queryKey: ['tournaments'] });
+      showToast('Erfolgreich angemeldet');
     },
-    onError: () => Alert.alert('Fehler', 'Anmeldung fehlgeschlagen'),
+    onError: () => showToast('Anmeldung fehlgeschlagen', 'error'),
   });
 }

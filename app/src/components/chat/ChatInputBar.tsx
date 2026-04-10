@@ -65,7 +65,7 @@ export function ChatInputBar({
           </Text>
           <Pressable
             onPress={onCancelReply}
-            hitSlop={10}
+            hitSlop={12}
             accessibilityLabel="Antwort abbrechen"
             accessibilityRole="button"
           >

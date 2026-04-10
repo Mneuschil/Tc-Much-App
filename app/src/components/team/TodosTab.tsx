@@ -78,7 +78,7 @@ export function TodosTab({ teamId }: TodosTabProps) {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Pressable
                   onPress={() => handleToggle(item)}
-                  hitSlop={8}
+                  hitSlop={12}
                   accessibilityLabel={isDone ? 'Als offen markieren' : 'Als erledigt markieren'}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isDone }}

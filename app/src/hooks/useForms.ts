@@ -1,15 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Alert } from 'react-native';
 import { formService } from '../features/forms/services/formService';
 import { getErrorMessage } from '../utils/errorUtils';
+import { useToast } from '../components/ui/Toast';
 
 export function useSubmitCourtDamage() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (formData: FormData) => formService.submitCourtDamage(formData),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myReports'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myReports'] });
+      showToast('Meldung gesendet');
+    },
     onError: (err: Error) =>
-      Alert.alert('Fehler', getErrorMessage(err, 'Meldung konnte nicht gesendet werden')),
+      showToast(getErrorMessage(err, 'Meldung konnte nicht gesendet werden'), 'error'),
   });
 }
 
@@ -22,9 +26,13 @@ export function useMyReports() {
 
 export function useSubmitMedia() {
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   return useMutation({
     mutationFn: (formData: FormData) => formService.submitMediaUpload(formData),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['myReports'] }),
-    onError: (err: Error) => Alert.alert('Fehler', getErrorMessage(err, 'Upload fehlgeschlagen')),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['myReports'] });
+      showToast('Upload erfolgreich');
+    },
+    onError: (err: Error) => showToast(getErrorMessage(err, 'Upload fehlgeschlagen'), 'error'),
   });
 }

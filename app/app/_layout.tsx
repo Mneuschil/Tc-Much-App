@@ -8,6 +8,7 @@ import { useAuthStore } from '../src/stores/authStore';
 import { useThemeStore } from '../src/stores/themeStore';
 import { useColorScheme } from 'react-native';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { ToastProvider } from '../src/components/ui/Toast';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,13 +38,15 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-      </ErrorBoundary>
-      <StatusBar style="auto" />
+      <ToastProvider>
+        <ErrorBoundary>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </ErrorBoundary>
+        <StatusBar style="auto" />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

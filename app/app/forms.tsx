@@ -20,11 +20,18 @@ export default function FormsScreen() {
   if (activeView === 'court-damage') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.headerRow, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }]}>
-          <Pressable onPress={() => setActiveView('menu')} hitSlop={8}>
+        <View
+          style={[
+            styles.headerRow,
+            { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md },
+          ]}
+        >
+          <Pressable onPress={() => setActiveView('menu')} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>Platzschaden melden</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>
+            Platzschaden melden
+          </Text>
         </View>
         <CourtDamageForm />
       </SafeAreaView>
@@ -34,11 +41,18 @@ export default function FormsScreen() {
   if (activeView === 'media-upload') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View style={[styles.headerRow, { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }]}>
-          <Pressable onPress={() => setActiveView('menu')} hitSlop={8}>
+        <View
+          style={[
+            styles.headerRow,
+            { paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md },
+          ]}
+        >
+          <Pressable onPress={() => setActiveView('menu')} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>Medien hochladen</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>
+            Medien hochladen
+          </Text>
         </View>
         <MediaUploadForm />
       </SafeAreaView>
@@ -59,7 +73,9 @@ export default function FormsScreen() {
         onRefresh={refetch}
         ListHeaderComponent={
           <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
-            <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xl }]}>Formulare</Text>
+            <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xl }]}>
+              Formulare
+            </Text>
 
             {/* Action Cards */}
             <View style={[styles.cardRow, { marginBottom: spacing.xxl }]}>
@@ -67,36 +83,65 @@ export default function FormsScreen() {
                 onPress={() => setActiveView('court-damage')}
                 style={({ pressed }) => [
                   styles.actionCard,
-                  { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg, padding: spacing.lg, opacity: pressed ? 0.7 : 1 },
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: radii.lg,
+                    padding: spacing.lg,
+                    opacity: pressed ? 0.7 : 1,
+                  },
                 ]}
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.warningSurface }]}>
                   <Ionicons name="warning-outline" size={24} color={colors.accent} />
                 </View>
-                <Text style={[typography.bodyMedium, { color: colors.textPrimary, marginTop: spacing.sm }]}>Platzschaden melden</Text>
+                <Text
+                  style={[
+                    typography.bodyMedium,
+                    { color: colors.textPrimary, marginTop: spacing.sm },
+                  ]}
+                >
+                  Platzschaden melden
+                </Text>
               </Pressable>
 
               <Pressable
                 onPress={() => setActiveView('media-upload')}
                 style={({ pressed }) => [
                   styles.actionCard,
-                  { backgroundColor: colors.backgroundSecondary, borderRadius: radii.lg, padding: spacing.lg, opacity: pressed ? 0.7 : 1 },
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: radii.lg,
+                    padding: spacing.lg,
+                    opacity: pressed ? 0.7 : 1,
+                  },
                 ]}
               >
                 <View style={[styles.iconCircle, { backgroundColor: colors.accentSubtle }]}>
                   <Ionicons name="camera-outline" size={24} color={colors.accentLight} />
                 </View>
-                <Text style={[typography.bodyMedium, { color: colors.textPrimary, marginTop: spacing.sm }]}>Medien hochladen</Text>
+                <Text
+                  style={[
+                    typography.bodyMedium,
+                    { color: colors.textPrimary, marginTop: spacing.sm },
+                  ]}
+                >
+                  Medien hochladen
+                </Text>
               </Pressable>
             </View>
 
             {/* Section Title */}
-            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>Meine Meldungen</Text>
+            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+              Meine Meldungen
+            </Text>
           </View>
         }
         ListEmptyComponent={
           !isLoading ? (
-            <EmptyState title="Keine Meldungen" description="Du hast noch keine Meldungen eingereicht" />
+            <EmptyState
+              title="Keine Meldungen"
+              description="Du hast noch keine Meldungen eingereicht"
+            />
           ) : null
         }
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -110,5 +155,11 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center' },
   cardRow: { flexDirection: 'row', gap: 12 },
   actionCard: { flex: 1, alignItems: 'center' },
-  iconCircle: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
