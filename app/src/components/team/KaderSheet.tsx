@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -62,19 +62,104 @@ export function KaderSheet({
     );
   }, [clubMembersData, existingMemberIds, search]);
 
-  const confirmRemove = (member: TeamMemberWithUser) => {
-    const name = `${member.user.firstName} ${member.user.lastName}`;
-    Alert.alert('Mitglied entfernen', `${name} wirklich aus dem Team entfernen?`, [
-      { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Entfernen', style: 'destructive', onPress: () => onRemoveMember(member.user.id) },
-    ]);
-  };
+  const confirmRemove = useCallback(
+    (member: TeamMemberWithUser) => {
+      const name = `${member.user.firstName} ${member.user.lastName}`;
+      Alert.alert('Mitglied entfernen', `${name} wirklich aus dem Team entfernen?`, [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Entfernen', style: 'destructive', onPress: () => onRemoveMember(member.user.id) },
+      ]);
+    },
+    [onRemoveMember],
+  );
 
-  const handleAddSelect = (userId: string) => {
-    onAddMember(userId);
-    setMode('list');
-    setSearch('');
-  };
+  const handleAddSelect = useCallback(
+    (userId: string) => {
+      onAddMember(userId);
+      setMode('list');
+      setSearch('');
+    },
+    [onAddMember],
+  );
+
+  const renderAvailableMember = useCallback(
+    ({ item }: { item: ClubMember }) => (
+      <Pressable
+        onPress={() => handleAddSelect(item.id)}
+        accessibilityLabel={`${item.firstName} ${item.lastName} hinzufügen`}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.memberRow,
+          {
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.md,
+            borderBottomColor: colors.separator,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Avatar
+          firstName={item.firstName}
+          lastName={item.lastName}
+          imageUrl={item.avatarUrl}
+          size="md"
+        />
+        <Text
+          style={[
+            typography.bodyMedium,
+            { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
+          ]}
+        >
+          {item.firstName} {item.lastName}
+        </Text>
+        <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+      </Pressable>
+    ),
+    [handleAddSelect, spacing, colors, typography],
+  );
+
+  const renderTeamMember = useCallback(
+    ({ item }: { item: TeamMemberWithUser }) => (
+      <View
+        style={[
+          styles.memberRow,
+          {
+            paddingHorizontal: spacing.xl,
+            paddingVertical: spacing.md,
+            borderBottomColor: colors.separator,
+          },
+        ]}
+      >
+        <Avatar
+          firstName={item.user.firstName}
+          lastName={item.user.lastName}
+          imageUrl={item.user.avatarUrl}
+          size="md"
+        />
+        <View style={styles.memberInfo}>
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
+            {item.user.firstName} {item.user.lastName}
+          </Text>
+          {showPosition && item.position && (
+            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
+              Position {item.position}
+            </Text>
+          )}
+        </View>
+        {canManage && (
+          <Pressable
+            onPress={() => confirmRemove(item)}
+            hitSlop={12}
+            accessibilityLabel={`${item.user.firstName} ${item.user.lastName} entfernen`}
+            accessibilityRole="button"
+          >
+            <Ionicons name="trash-outline" size={20} color={colors.danger} />
+          </Pressable>
+        )}
+      </View>
+    ),
+    [spacing, colors, typography, showPosition, canManage, confirmRemove],
+  );
 
   const handleClose = () => {
     setMode('list');
@@ -140,38 +225,7 @@ export function KaderSheet({
               data={availableMembers}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={() => handleAddSelect(item.id)}
-                  accessibilityLabel={`${item.firstName} ${item.lastName} hinzufügen`}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.memberRow,
-                    {
-                      paddingHorizontal: spacing.xl,
-                      paddingVertical: spacing.md,
-                      borderBottomColor: colors.separator,
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  <Avatar
-                    firstName={item.firstName}
-                    lastName={item.lastName}
-                    imageUrl={item.avatarUrl}
-                    size="md"
-                  />
-                  <Text
-                    style={[
-                      typography.bodyMedium,
-                      { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
-                    ]}
-                  >
-                    {item.firstName} {item.lastName}
-                  </Text>
-                  <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-                </Pressable>
-              )}
+              renderItem={renderAvailableMember}
               ListEmptyComponent={
                 <EmptyState
                   title="Keine Mitglieder"
@@ -220,47 +274,7 @@ export function KaderSheet({
                   description="Noch keine Personen in diesem Team"
                 />
               }
-              renderItem={({ item }) => (
-                <View
-                  style={[
-                    styles.memberRow,
-                    {
-                      paddingHorizontal: spacing.xl,
-                      paddingVertical: spacing.md,
-                      borderBottomColor: colors.separator,
-                    },
-                  ]}
-                >
-                  <Avatar
-                    firstName={item.user.firstName}
-                    lastName={item.user.lastName}
-                    imageUrl={item.user.avatarUrl}
-                    size="md"
-                  />
-                  <View style={{ marginLeft: spacing.md, flex: 1 }}>
-                    <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
-                      {item.user.firstName} {item.user.lastName}
-                    </Text>
-                    {showPosition && item.position && (
-                      <Text
-                        style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}
-                      >
-                        Position {item.position}
-                      </Text>
-                    )}
-                  </View>
-                  {canManage && (
-                    <Pressable
-                      onPress={() => confirmRemove(item)}
-                      hitSlop={12}
-                      accessibilityLabel={`${item.user.firstName} ${item.user.lastName} entfernen`}
-                      accessibilityRole="button"
-                    >
-                      <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                    </Pressable>
-                  )}
-                </View>
-              )}
+              renderItem={renderTeamMember}
             />
           </>
         )}
@@ -280,6 +294,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  memberInfo: { flex: 1, marginLeft: 12 },
   addButton: {
     height: 48,
     flexDirection: 'row',

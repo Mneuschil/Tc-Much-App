@@ -77,6 +77,17 @@ export default function CalendarScreen() {
     setSelectedDate((prev) => (prev === day.dateString ? null : day.dateString));
   }, []);
 
+  const renderAgendaItem = useCallback(
+    ({ item }: { item: CalendarEvent }) => (
+      <AgendaItem
+        event={item}
+        isTrainer={isTrainer}
+        onShowTrainerOverview={() => setTrainerEventId(item.id)}
+      />
+    ),
+    [isTrainer],
+  );
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View
@@ -122,13 +133,7 @@ export default function CalendarScreen() {
       <FlashList
         data={filteredEvents}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <AgendaItem
-            event={item}
-            isTrainer={isTrainer}
-            onShowTrainerOverview={() => setTrainerEventId(item.id)}
-          />
-        )}
+        renderItem={renderAgendaItem}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />

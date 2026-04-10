@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../../theme';
@@ -55,6 +55,45 @@ export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) 
     return headers;
   }, [messages]);
 
+  const handleReaction = useCallback(
+    (messageId: string, type: ReactionType) => {
+      addReaction.mutate({ messageId, type });
+    },
+    [addReaction],
+  );
+
+  const renderChatMessage = useCallback(
+    ({ item }: { item: ChatMessage }) => (
+      <>
+        <MessageBubble
+          message={item}
+          isOwn={item.author?.id === currentUserId}
+          onReply={setReplyTo}
+          onReaction={handleReaction}
+          onMediaPress={() => {}}
+        />
+        {dateHeaders.has(item.id) && (
+          <View style={styles.dateBadgeRow}>
+            <View
+              style={[
+                styles.dateBadge,
+                {
+                  backgroundColor: colors.backgroundTertiary,
+                  borderRadius: borderRadius.full,
+                },
+              ]}
+            >
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                {formatChatDate(dateHeaders.get(item.id)!)}
+              </Text>
+            </View>
+          </View>
+        )}
+      </>
+    ),
+    [currentUserId, handleReaction, dateHeaders, colors, borderRadius, typography],
+  );
+
   if (!channelId) {
     if (isCreatingChannel) {
       return (
@@ -85,10 +124,6 @@ export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) 
     );
   };
 
-  const handleReaction = (messageId: string, type: ReactionType) => {
-    addReaction.mutate({ messageId, type });
-  };
-
   return (
     <View style={{ flex: 1 }}>
       <FlashList<ChatMessage>
@@ -99,34 +134,7 @@ export function TeamChatTab({ channelId, isCreatingChannel }: TeamChatTabProps) 
         }}
         keyExtractor={(item) => item.id}
         getItemType={(item) => (dateHeaders.has(item.id) ? 'message-with-date' : 'message')}
-        renderItem={({ item }) => (
-          <>
-            <MessageBubble
-              message={item}
-              isOwn={item.author?.id === currentUserId}
-              onReply={setReplyTo}
-              onReaction={handleReaction}
-              onMediaPress={() => {}}
-            />
-            {dateHeaders.has(item.id) && (
-              <View style={styles.dateBadgeRow}>
-                <View
-                  style={[
-                    styles.dateBadge,
-                    {
-                      backgroundColor: colors.backgroundTertiary,
-                      borderRadius: borderRadius.full,
-                    },
-                  ]}
-                >
-                  <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                    {formatChatDate(dateHeaders.get(item.id)!)}
-                  </Text>
-                </View>
-              </View>
-            )}
-          </>
-        )}
+        renderItem={renderChatMessage}
         contentContainerStyle={{
           paddingHorizontal: spacing.lg,
           paddingTop: spacing.sm,

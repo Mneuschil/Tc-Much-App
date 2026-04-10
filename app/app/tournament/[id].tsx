@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useLocalSearchParams, Stack } from 'expo-router';
@@ -224,6 +224,34 @@ interface RegistrationWithUser {
 function ParticipantsTab({ registrations }: { registrations: RegistrationWithUser[] }) {
   const { colors, typography, spacing } = useTheme();
 
+  const renderParticipant = useCallback(
+    ({ item }: { item: RegistrationWithUser }) => (
+      <View
+        style={[
+          styles.participantRow,
+          { paddingVertical: spacing.md, borderBottomColor: colors.separator },
+        ]}
+      >
+        <Avatar
+          firstName={item.user?.firstName}
+          lastName={item.user?.lastName}
+          imageUrl={item.user?.avatarUrl}
+          size="sm"
+        />
+        <Text
+          style={[
+            typography.bodyMedium,
+            { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
+          ]}
+        >
+          {item.user ? `${item.user.firstName} ${item.user.lastName}` : 'Unbekannt'}
+        </Text>
+        {item.seed && <Badge label={`#${item.seed}`} variant="accent" size="sm" />}
+      </View>
+    ),
+    [spacing.md, colors.separator, colors.textPrimary, typography.bodyMedium],
+  );
+
   if (registrations.length === 0) {
     return <EmptyState title="Keine Teilnehmer" description="Noch keine Anmeldungen" />;
   }
@@ -233,30 +261,7 @@ function ParticipantsTab({ registrations }: { registrations: RegistrationWithUse
       data={registrations}
       keyExtractor={(item) => item.id}
       contentContainerStyle={{ paddingHorizontal: spacing.xl, paddingBottom: 100 }}
-      renderItem={({ item }) => (
-        <View
-          style={[
-            styles.participantRow,
-            { paddingVertical: spacing.md, borderBottomColor: colors.separator },
-          ]}
-        >
-          <Avatar
-            firstName={item.user?.firstName}
-            lastName={item.user?.lastName}
-            imageUrl={item.user?.avatarUrl}
-            size="sm"
-          />
-          <Text
-            style={[
-              typography.bodyMedium,
-              { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
-            ]}
-          >
-            {item.user ? `${item.user.firstName} ${item.user.lastName}` : 'Unbekannt'}
-          </Text>
-          {item.seed && <Badge label={`#${item.seed}`} variant="accent" size="sm" />}
-        </View>
-      )}
+      renderItem={renderParticipant}
     />
   );
 }

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Linking, Platform } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -83,9 +83,56 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
     return indices;
   }, [sections]);
 
-  const navigateToMatch = (matchId: string) => {
-    router.push({ pathname: '/match/[id]', params: { id: matchId } });
-  };
+  const navigateToMatch = useCallback(
+    (matchId: string) => {
+      router.push({ pathname: '/match/[id]', params: { id: matchId } });
+    },
+    [router],
+  );
+
+  const renderSpieleItem = useCallback(
+    ({ item }: { item: SpieleListItem }) => {
+      if (item.type === 'header') {
+        return (
+          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+            <Text style={[typography.h4, { color: colors.textPrimary }]}>{item.title}</Text>
+          </View>
+        );
+      }
+      const event = item.data;
+      return (
+        <Pressable
+          onPress={() => navigateToMatch(event.id)}
+          accessibilityLabel={`Spiel: ${event.title}`}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.matchRow,
+            {
+              borderBottomColor: colors.separator,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+        >
+          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]} numberOfLines={1}>
+            {event.title}
+          </Text>
+          <View style={styles.matchMeta}>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              {formatDate(event.startDate)} · {formatTime(event.startDate)}
+            </Text>
+            {event.isHomeGame !== null && (
+              <Badge
+                label={event.isHomeGame ? 'H' : 'A'}
+                variant={event.isHomeGame ? 'success' : 'neutral'}
+                size="sm"
+              />
+            )}
+          </View>
+        </Pressable>
+      );
+    },
+    [navigateToMatch, colors, typography],
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -153,58 +200,7 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
             </View>
           ) : null
         }
-        renderItem={({ item }) => {
-          if (item.type === 'header') {
-            return (
-              <View
-                style={{
-                  paddingHorizontal: spacing.xl,
-                  paddingTop: spacing.lg,
-                  paddingBottom: spacing.sm,
-                  backgroundColor: colors.background,
-                }}
-              >
-                <Text style={[typography.h4, { color: colors.textPrimary }]}>{item.title}</Text>
-              </View>
-            );
-          }
-          const event = item.data;
-          return (
-            <Pressable
-              onPress={() => navigateToMatch(event.id)}
-              accessibilityLabel={`Spiel: ${event.title}`}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                {
-                  paddingHorizontal: spacing.xl,
-                  paddingVertical: spacing.md,
-                  borderBottomWidth: StyleSheet.hairlineWidth,
-                  borderBottomColor: colors.separator,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Text
-                style={[typography.bodyMedium, { color: colors.textPrimary }]}
-                numberOfLines={1}
-              >
-                {event.title}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                  {formatDate(event.startDate)} · {formatTime(event.startDate)}
-                </Text>
-                {event.isHomeGame !== null && (
-                  <Badge
-                    label={event.isHomeGame ? 'H' : 'A'}
-                    variant={event.isHomeGame ? 'success' : 'neutral'}
-                    size="sm"
-                  />
-                )}
-              </View>
-            </Pressable>
-          );
-        }}
+        renderItem={renderSpieleItem}
         ListEmptyComponent={
           <EmptyState title="Keine Spiele" description="Keine Mannschaftsspiele geplant" />
         }
@@ -212,3 +208,13 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeader: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  matchRow: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  matchMeta: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+});

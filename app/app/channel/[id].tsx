@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -90,9 +90,44 @@ export default function ChannelDetailScreen() {
     );
   };
 
-  const handleReaction = (messageId: string, type: ReactionType) => {
-    addReaction.mutate({ messageId, type });
-  };
+  const handleReaction = useCallback(
+    (messageId: string, type: ReactionType) => {
+      addReaction.mutate({ messageId, type });
+    },
+    [addReaction],
+  );
+
+  const renderMessage = useCallback(
+    ({ item }: { item: ChatMessage }) => (
+      <>
+        {dateHeaders.has(item.id) && (
+          <View style={styles.dateBadgeRow}>
+            <View
+              style={[
+                styles.dateBadge,
+                {
+                  backgroundColor: colors.backgroundTertiary,
+                  borderRadius: borderRadius.full,
+                },
+              ]}
+            >
+              <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                {formatChatDate(dateHeaders.get(item.id)!)}
+              </Text>
+            </View>
+          </View>
+        )}
+        <MessageBubble
+          message={item}
+          isOwn={item.author?.id === currentUserId}
+          onReply={setReplyTo}
+          onReaction={handleReaction}
+          onMediaPress={setViewerImage}
+        />
+      </>
+    ),
+    [dateHeaders, currentUserId, handleReaction, colors, borderRadius, typography],
+  );
 
   return (
     <>
@@ -121,34 +156,7 @@ export default function ChannelDetailScreen() {
               autoscrollToBottomThreshold: 50,
             }}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <>
-                {dateHeaders.has(item.id) && (
-                  <View style={styles.dateBadgeRow}>
-                    <View
-                      style={[
-                        styles.dateBadge,
-                        {
-                          backgroundColor: colors.backgroundTertiary,
-                          borderRadius: borderRadius.full,
-                        },
-                      ]}
-                    >
-                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                        {formatChatDate(dateHeaders.get(item.id)!)}
-                      </Text>
-                    </View>
-                  </View>
-                )}
-                <MessageBubble
-                  message={item}
-                  isOwn={item.author?.id === currentUserId}
-                  onReply={setReplyTo}
-                  onReaction={handleReaction}
-                  onMediaPress={setViewerImage}
-                />
-              </>
-            )}
+            renderItem={renderMessage}
             getItemType={(item) => (item.author?.id === currentUserId ? 'own' : 'other')}
             contentContainerStyle={{
               paddingHorizontal: spacing.lg,

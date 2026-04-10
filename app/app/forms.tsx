@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +17,15 @@ export default function FormsScreen() {
   const { colors, spacing, radii, typography } = useTheme();
   const [activeView, setActiveView] = useState<ActiveView>('menu');
   const { data: reports, isLoading, refetch } = useMyReports();
+
+  const renderReport = useCallback(
+    ({ item }: { item: FormSubmission }) => (
+      <View style={styles.reportItem}>
+        <ReportCard report={item} />
+      </View>
+    ),
+    [],
+  );
 
   if (activeView === 'court-damage') {
     return (
@@ -65,11 +74,7 @@ export default function FormsScreen() {
       <FlashList
         data={reports ?? []}
         keyExtractor={(item: FormSubmission) => item.id}
-        renderItem={({ item }) => (
-          <View style={{ paddingHorizontal: spacing.xl, marginBottom: spacing.md }}>
-            <ReportCard report={item} />
-          </View>
-        )}
+        renderItem={renderReport}
         refreshing={isLoading}
         onRefresh={refetch}
         ListHeaderComponent={
@@ -153,6 +158,7 @@ export default function FormsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  reportItem: { paddingHorizontal: 20, marginBottom: 12 },
   headerRow: { flexDirection: 'row', alignItems: 'center' },
   cardRow: { flexDirection: 'row', gap: 12 },
   actionCard: { flex: 1, alignItems: 'center' },

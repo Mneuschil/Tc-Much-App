@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, RefreshControl, Modal } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Stack } from 'expo-router';
@@ -66,26 +66,32 @@ export default function RankingScreen() {
     [challenges, user],
   );
 
-  const canChallenge = (item: RankingItem): boolean => {
-    if (!myRank || !user || item.user.id === user.id) return false;
-    if (item.rank >= myRank.rank) return false;
-    if (myRank.rank - item.rank > 3) return false;
-    return !challenges.some(
-      (c) =>
-        c.status === 'PENDING' &&
-        ((c.challengerId === user.id && c.challengedId === item.user.id) ||
-          (c.challengedId === user.id && c.challengerId === item.user.id)),
-    );
-  };
+  const canChallenge = useCallback(
+    (item: RankingItem): boolean => {
+      if (!myRank || !user || item.user.id === user.id) return false;
+      if (item.rank >= myRank.rank) return false;
+      if (myRank.rank - item.rank > 3) return false;
+      return !challenges.some(
+        (c) =>
+          c.status === 'PENDING' &&
+          ((c.challengerId === user.id && c.challengedId === item.user.id) ||
+            (c.challengedId === user.id && c.challengerId === item.user.id)),
+      );
+    },
+    [myRank, user, challenges],
+  );
 
-  const getMovement = (item: RankingItem) => {
-    if (!item.previousRank) return null;
-    const diff = item.previousRank - item.rank;
-    if (diff > 0) return { icon: 'caret-up' as const, color: colors.success, text: `${diff}` };
-    if (diff < 0)
-      return { icon: 'caret-down' as const, color: colors.danger, text: `${Math.abs(diff)}` };
-    return null;
-  };
+  const getMovement = useCallback(
+    (item: RankingItem) => {
+      if (!item.previousRank) return null;
+      const diff = item.previousRank - item.rank;
+      if (diff > 0) return { icon: 'caret-up' as const, color: colors.success, text: `${diff}` };
+      if (diff < 0)
+        return { icon: 'caret-down' as const, color: colors.danger, text: `${Math.abs(diff)}` };
+      return null;
+    },
+    [colors.success, colors.danger],
+  );
 
   const confirmChallenge = () => {
     if (!challengeTarget) return;
@@ -94,24 +100,22 @@ export default function RankingScreen() {
     });
   };
 
-  const renderChallengeBanner = () => {
+  const renderChallengeBanner = useCallback(() => {
     if (incomingChallenges.length === 0 && outgoingChallenges.length === 0) return null;
     return (
-      <View style={{ marginBottom: spacing.lg }}>
+      <View style={styles.challengeSection}>
         {incomingChallenges.map((c) => (
           <View
             key={c.id}
-            style={{
-              backgroundColor: colors.dangerSurface,
-              borderRadius: borderRadius.xl,
-              padding: spacing.lg,
-              marginBottom: spacing.sm,
-            }}
+            style={[
+              styles.challengeCard,
+              { backgroundColor: colors.dangerSurface, borderRadius: borderRadius.xl },
+            ]}
           >
             <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
               {c.challenger?.firstName ?? ''} {c.challenger?.lastName ?? ''} fordert dich heraus!
             </Text>
-            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md }}>
+            <View style={styles.challengeButtonRow}>
               <Pressable
                 onPress={() => respondChallenge.mutate({ challengeId: c.id, action: 'ACCEPT' })}
                 style={[
@@ -140,14 +144,12 @@ export default function RankingScreen() {
         {outgoingChallenges.map((c) => (
           <View
             key={c.id}
-            style={{
-              backgroundColor: colors.warningSurface,
-              borderRadius: borderRadius.xl,
-              padding: spacing.lg,
-              marginBottom: spacing.sm,
-            }}
+            style={[
+              styles.challengeCard,
+              { backgroundColor: colors.warningSurface, borderRadius: borderRadius.xl },
+            ]}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={styles.challengeHeader}>
               <Text style={[typography.bodyMedium, { color: colors.textPrimary, flex: 1 }]}>
                 Du forderst {c.challenged?.firstName ?? ''} {c.challenged?.lastName ?? ''} – warte
               </Text>
@@ -157,93 +159,90 @@ export default function RankingScreen() {
         ))}
       </View>
     );
-  };
+  }, [incomingChallenges, outgoingChallenges, respondChallenge, colors, typography, borderRadius]);
 
-  const renderRanking = ({ item }: { item: RankingItem }) => {
-    const movement = getMovement(item);
-    const isTop3 = item.rank <= 3;
-    const isMe = item.user.id === user?.id;
-    const challengeable = canChallenge(item);
+  const renderRanking = useCallback(
+    ({ item }: { item: RankingItem }) => {
+      const movement = getMovement(item);
+      const isTop3 = item.rank <= 3;
+      const isMe = item.user.id === user?.id;
+      const challengeable = canChallenge(item);
 
-    return (
-      <Pressable
-        onPress={() => setSelectedPlayer(item)}
-        style={[
-          styles.rankRow,
-          {
-            backgroundColor: isMe ? colors.accentSubtle : colors.backgroundSecondary,
-            borderRadius: borderRadius.xl,
-            padding: spacing.lg,
-            marginBottom: spacing.sm,
-          },
-        ]}
-      >
-        <View
+      return (
+        <Pressable
+          onPress={() => setSelectedPlayer(item)}
           style={[
-            styles.rankBadge,
+            styles.rankRow,
             {
-              backgroundColor: isTop3 ? colors.chipActive : colors.surface,
-              borderRadius: borderRadius.md,
+              backgroundColor: isMe ? colors.accentSubtle : colors.backgroundSecondary,
+              borderRadius: borderRadius.xl,
+              padding: spacing.lg,
+              marginBottom: spacing.sm,
             },
           ]}
         >
-          <Text
-            style={[
-              typography.bodyMedium,
-              { color: isTop3 ? colors.textInverse : colors.textPrimary },
-            ]}
-          >
-            {item.rank}
-          </Text>
-        </View>
-        <Avatar
-          firstName={item.user.firstName}
-          lastName={item.user.lastName}
-          imageUrl={item.user.avatarUrl}
-          size="sm"
-        />
-        <View style={{ flex: 1, marginLeft: spacing.md }}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
-            {item.user.firstName} {item.user.lastName}
-          </Text>
-          <Text style={[typography.caption, { color: colors.textSecondary }]}>
-            {item.wins}S · {item.losses}N · {item.points} Pkt.
-          </Text>
-        </View>
-        {movement ? (
           <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginRight: challengeable ? spacing.sm : 0,
-            }}
-          >
-            <Ionicons name={movement.icon} size={14} color={movement.color} />
-            <Text style={[typography.captionMedium, { color: movement.color, marginLeft: 2 }]}>
-              {movement.text}
-            </Text>
-          </View>
-        ) : (
-          <View style={{ marginRight: challengeable ? spacing.sm : 0 }}>
-            <Ionicons name="remove-outline" size={16} color={colors.textTertiary} />
-          </View>
-        )}
-        {challengeable && (
-          <Pressable
-            onPress={() => setChallengeTarget(item)}
             style={[
-              styles.challengeBtn,
-              { backgroundColor: colors.accent, borderRadius: borderRadius.full },
+              styles.rankBadge,
+              {
+                backgroundColor: isTop3 ? colors.chipActive : colors.surface,
+                borderRadius: borderRadius.md,
+              },
             ]}
           >
-            <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '600' }]}>
-              Fordern
+            <Text
+              style={[
+                typography.bodyMedium,
+                { color: isTop3 ? colors.textInverse : colors.textPrimary },
+              ]}
+            >
+              {item.rank}
             </Text>
-          </Pressable>
-        )}
-      </Pressable>
-    );
-  };
+          </View>
+          <Avatar
+            firstName={item.user.firstName}
+            lastName={item.user.lastName}
+            imageUrl={item.user.avatarUrl}
+            size="sm"
+          />
+          <View style={styles.playerInfo}>
+            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
+              {item.user.firstName} {item.user.lastName}
+            </Text>
+            <Text style={[typography.caption, { color: colors.textSecondary }]}>
+              {item.wins}S · {item.losses}N · {item.points} Pkt.
+            </Text>
+          </View>
+          {movement ? (
+            <View style={[styles.movementRow, challengeable && styles.movementSpacer]}>
+              <Ionicons name={movement.icon} size={14} color={movement.color} />
+              <Text style={[typography.captionMedium, { color: movement.color, marginLeft: 2 }]}>
+                {movement.text}
+              </Text>
+            </View>
+          ) : (
+            <View style={challengeable ? styles.movementSpacer : undefined}>
+              <Ionicons name="remove-outline" size={16} color={colors.textTertiary} />
+            </View>
+          )}
+          {challengeable && (
+            <Pressable
+              onPress={() => setChallengeTarget(item)}
+              style={[
+                styles.challengeBtn,
+                { backgroundColor: colors.accent, borderRadius: borderRadius.full },
+              ]}
+            >
+              <Text style={[typography.caption, { color: colors.textInverse, fontWeight: '600' }]}>
+                Fordern
+              </Text>
+            </Pressable>
+          )}
+        </Pressable>
+      );
+    },
+    [getMovement, canChallenge, user, colors, typography, spacing, borderRadius],
+  );
 
   return (
     <>
@@ -325,7 +324,7 @@ export default function RankingScreen() {
             >
               Die Herausforderung muss innerhalb von 14 Tagen gespielt werden.
             </Text>
-            <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.xxl }}>
+            <View style={styles.confirmActions}>
               <Pressable
                 onPress={() => setChallengeTarget(null)}
                 style={[
@@ -366,7 +365,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 12,
   },
+  playerInfo: { flex: 1, marginLeft: 12 },
+  movementRow: { flexDirection: 'row', alignItems: 'center' },
+  movementSpacer: { marginRight: 8 },
   challengeBtn: { paddingHorizontal: 14, paddingVertical: 6 },
+  challengeSection: { marginBottom: 16 },
+  challengeCard: { padding: 16, marginBottom: 8 },
+  challengeButtonRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  challengeHeader: { flexDirection: 'row', alignItems: 'center' },
+  confirmActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
   bannerBtn: { paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' },
   modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 },
   confirmCard: { width: '100%', maxWidth: 360 },

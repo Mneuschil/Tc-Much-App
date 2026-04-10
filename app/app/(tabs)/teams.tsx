@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -84,11 +84,14 @@ export default function TeamsScreen() {
     return result;
   }, [myTeams]);
 
-  const getTeamIcon = (type: string): { name: keyof typeof Ionicons.glyphMap; accent: boolean } => {
-    if (type === 'MATCH_TEAM') return { name: 'tennisball', accent: true };
-    if (type === 'TRAINING_GROUP') return { name: 'fitness', accent: true };
-    return { name: 'briefcase', accent: false };
-  };
+  const getTeamIcon = useCallback(
+    (type: string): { name: keyof typeof Ionicons.glyphMap; accent: boolean } => {
+      if (type === 'MATCH_TEAM') return { name: 'tennisball', accent: true };
+      if (type === 'TRAINING_GROUP') return { name: 'fitness', accent: true };
+      return { name: 'briefcase', accent: false };
+    },
+    [],
+  );
 
   type TeamsListItem =
     | { type: 'header'; title: string; subtitle: string }
@@ -103,62 +106,84 @@ export default function TeamsScreen() {
     return result;
   }, [sections]);
 
-  const renderTeam = (item: TeamItem) => {
-    const icon = getTeamIcon(item.type);
-    const nextMatch = nextMatchByTeam.get(item.id);
-    return (
-      <Pressable
-        onPress={() => router.push(`/team/${item.id}`)}
-        style={({ pressed }) => [
-          {
-            backgroundColor: colors.backgroundSecondary,
-            borderRadius: borderRadius.xl,
-            padding: spacing.lg,
-            marginBottom: spacing.md,
-            opacity: pressed ? 0.9 : 1,
-          },
-        ]}
-      >
-        <View style={styles.teamRow}>
-          <View
-            style={[
-              styles.teamIcon,
-              {
-                backgroundColor: icon.accent ? colors.accentSurface : colors.backgroundTertiary,
-                borderRadius: borderRadius.lg,
-              },
-            ]}
-          >
-            <Ionicons
-              name={icon.name}
-              size={20}
-              color={icon.accent ? colors.accent : colors.textPrimary}
-            />
+  const renderTeam = useCallback(
+    (item: TeamItem) => {
+      const icon = getTeamIcon(item.type);
+      const nextMatch = nextMatchByTeam.get(item.id);
+      return (
+        <Pressable
+          onPress={() => router.push(`/team/${item.id}`)}
+          style={({ pressed }) => [
+            {
+              backgroundColor: colors.backgroundSecondary,
+              borderRadius: borderRadius.xl,
+              padding: spacing.lg,
+              marginBottom: spacing.md,
+              opacity: pressed ? 0.9 : 1,
+            },
+          ]}
+        >
+          <View style={styles.teamRow}>
+            <View
+              style={[
+                styles.teamIcon,
+                {
+                  backgroundColor: icon.accent ? colors.accentSurface : colors.backgroundTertiary,
+                  borderRadius: borderRadius.lg,
+                },
+              ]}
+            >
+              <Ionicons
+                name={icon.name}
+                size={20}
+                color={icon.accent ? colors.accent : colors.textPrimary}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.md }}>
+              <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
+                {item.name}
+              </Text>
+              {item.league && (
+                <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
+                  {item.league}
+                </Text>
+              )}
+              {nextMatch && (
+                <Text
+                  style={[typography.caption, { color: colors.accentLight, marginTop: 2 }]}
+                  numberOfLines={1}
+                >
+                  Nächstes Spiel: {nextMatch.title}, {formatDate(nextMatch.startDate)}
+                </Text>
+              )}
+              <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
+                {item._count.members} {item._count.members === 1 ? 'Mitglied' : 'Mitglieder'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
           </View>
-          <View style={{ flex: 1, marginLeft: spacing.md }}>
-            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>{item.name}</Text>
-            {item.league && (
-              <Text style={[typography.caption, { color: colors.textSecondary, marginTop: 2 }]}>
-                {item.league}
-              </Text>
-            )}
-            {nextMatch && (
-              <Text
-                style={[typography.caption, { color: colors.accentLight, marginTop: 2 }]}
-                numberOfLines={1}
-              >
-                Nächstes Spiel: {nextMatch.title}, {formatDate(nextMatch.startDate)}
-              </Text>
-            )}
-            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 4 }]}>
-              {item._count.members} {item._count.members === 1 ? 'Mitglied' : 'Mitglieder'}
+        </Pressable>
+      );
+    },
+    [colors, typography, spacing, borderRadius, router, nextMatchByTeam, getTeamIcon],
+  );
+
+  const renderTeamsItem = useCallback(
+    ({ item }: { item: TeamsListItem }) => {
+      if (item.type === 'header') {
+        return (
+          <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
+            <Text style={[typography.h3, { color: colors.textPrimary }]}>{item.title}</Text>
+            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
+              {item.subtitle}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-        </View>
-      </Pressable>
-    );
-  };
+        );
+      }
+      return renderTeam(item.data);
+    },
+    [renderTeam, colors.background, colors.textPrimary, colors.textTertiary, typography],
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -175,25 +200,7 @@ export default function TeamsScreen() {
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={colors.accent} />
         }
-        renderItem={({ item }) => {
-          if (item.type === 'header') {
-            return (
-              <View
-                style={{
-                  paddingTop: spacing.lg,
-                  paddingBottom: spacing.md,
-                  backgroundColor: colors.background,
-                }}
-              >
-                <Text style={[typography.h3, { color: colors.textPrimary }]}>{item.title}</Text>
-                <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-                  {item.subtitle}
-                </Text>
-              </View>
-            );
-          }
-          return renderTeam(item.data);
-        }}
+        renderItem={renderTeamsItem}
         ListEmptyComponent={
           !isLoading ? (
             isError ? (
@@ -210,6 +217,7 @@ export default function TeamsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  sectionHeader: { paddingTop: 16, paddingBottom: 12 },
   teamRow: { flexDirection: 'row', alignItems: 'center' },
   teamIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

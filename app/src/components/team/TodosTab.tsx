@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -34,17 +34,98 @@ export function TodosTab({ teamId }: TodosTabProps) {
 
   const todoList = (todos ?? []) as TodoData[];
 
-  const handleToggle = (todo: TodoData) => {
-    const newStatus = todo.status === 'DONE' ? 'OPEN' : 'DONE';
-    toggleStatus.mutate({ todoId: todo.id, status: newStatus });
-  };
+  const handleToggle = useCallback(
+    (todo: TodoData) => {
+      const newStatus = todo.status === 'DONE' ? 'OPEN' : 'DONE';
+      toggleStatus.mutate({ todoId: todo.id, status: newStatus });
+    },
+    [toggleStatus],
+  );
 
-  const handleDelete = (todo: TodoData) => {
-    Alert.alert('Aufgabe löschen', `"${todo.title}" wirklich löschen?`, [
-      { text: 'Abbrechen', style: 'cancel' },
-      { text: 'Löschen', style: 'destructive', onPress: () => deleteTodo.mutate(todo.id) },
-    ]);
-  };
+  const handleDelete = useCallback(
+    (todo: TodoData) => {
+      Alert.alert('Aufgabe löschen', `"${todo.title}" wirklich löschen?`, [
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Löschen', style: 'destructive', onPress: () => deleteTodo.mutate(todo.id) },
+      ]);
+    },
+    [deleteTodo],
+  );
+
+  const renderTodo = useCallback(
+    ({ item }: { item: TodoData }) => {
+      const isDone = item.status === 'DONE';
+      return (
+        <Pressable
+          onLongPress={() => handleDelete(item)}
+          accessibilityLabel={`Aufgabe: ${item.title}${isDone ? ', erledigt' : ''}`}
+          accessibilityRole="button"
+          accessibilityHint="Lang drücken zum Löschen"
+          style={[
+            styles.todoCard,
+            {
+              backgroundColor: colors.backgroundSecondary,
+              borderRadius: radii.lg,
+              padding: spacing.lg,
+              marginBottom: spacing.md,
+            },
+          ]}
+        >
+          <View style={styles.todoRow}>
+            <Pressable
+              onPress={() => handleToggle(item)}
+              hitSlop={12}
+              accessibilityLabel={isDone ? 'Als offen markieren' : 'Als erledigt markieren'}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isDone }}
+            >
+              <Ionicons
+                name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
+                size={22}
+                color={isDone ? colors.success : colors.textTertiary}
+              />
+            </Pressable>
+            <Text
+              style={[
+                typography.bodyMedium,
+                {
+                  color: isDone ? colors.textTertiary : colors.textPrimary,
+                  flex: 1,
+                  marginLeft: spacing.sm,
+                  textDecorationLine: isDone ? 'line-through' : 'none',
+                },
+              ]}
+            >
+              {item.title}
+            </Text>
+          </View>
+          {item.dueDate && (
+            <Text
+              style={[
+                typography.caption,
+                { color: colors.textSecondary, marginTop: spacing.xs, marginLeft: 30 },
+              ]}
+            >
+              Fällig: {formatDate(item.dueDate)}
+            </Text>
+          )}
+          {item.assignee && (
+            <View style={styles.assigneeRow}>
+              <Avatar
+                firstName={item.assignee.firstName}
+                lastName={item.assignee.lastName}
+                size="xs"
+              />
+              <Text style={[typography.caption, { color: colors.textSecondary, marginLeft: 4 }]}>
+                {item.assignee.firstName} {item.assignee.lastName}
+              </Text>
+            </View>
+          )}
+        </Pressable>
+      );
+    },
+    [handleDelete, handleToggle, colors, typography, spacing, radii],
+  );
 
   return (
     <View style={{ flex: 1 }}>
@@ -58,86 +139,7 @@ export function TodosTab({ teamId }: TodosTabProps) {
         ListEmptyComponent={
           <EmptyState title="Keine Aufgaben" description="Keine offenen Aufgaben für dieses Team" />
         }
-        renderItem={({ item }) => {
-          const isDone = item.status === 'DONE';
-          return (
-            <Pressable
-              onLongPress={() => handleDelete(item)}
-              accessibilityLabel={`Aufgabe: ${item.title}${isDone ? ', erledigt' : ''}`}
-              accessibilityRole="button"
-              accessibilityHint="Lang drücken zum Löschen"
-              style={[
-                styles.todoCard,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  borderRadius: radii.lg,
-                  padding: spacing.lg,
-                  marginBottom: spacing.md,
-                },
-              ]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Pressable
-                  onPress={() => handleToggle(item)}
-                  hitSlop={12}
-                  accessibilityLabel={isDone ? 'Als offen markieren' : 'Als erledigt markieren'}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDone }}
-                >
-                  <Ionicons
-                    name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
-                    size={22}
-                    color={isDone ? colors.success : colors.textTertiary}
-                  />
-                </Pressable>
-                <Text
-                  style={[
-                    typography.bodyMedium,
-                    {
-                      color: isDone ? colors.textTertiary : colors.textPrimary,
-                      flex: 1,
-                      marginLeft: spacing.sm,
-                      textDecorationLine: isDone ? 'line-through' : 'none',
-                    },
-                  ]}
-                >
-                  {item.title}
-                </Text>
-              </View>
-              {item.dueDate && (
-                <Text
-                  style={[
-                    typography.caption,
-                    { color: colors.textSecondary, marginTop: spacing.xs, marginLeft: 30 },
-                  ]}
-                >
-                  Fällig: {formatDate(item.dueDate)}
-                </Text>
-              )}
-              {item.assignee && (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginTop: spacing.xs,
-                    marginLeft: 30,
-                  }}
-                >
-                  <Avatar
-                    firstName={item.assignee.firstName}
-                    lastName={item.assignee.lastName}
-                    size="xs"
-                  />
-                  <Text
-                    style={[typography.caption, { color: colors.textSecondary, marginLeft: 4 }]}
-                  >
-                    {item.assignee.firstName} {item.assignee.lastName}
-                  </Text>
-                </View>
-              )}
-            </Pressable>
-          );
-        }}
+        renderItem={renderTodo}
       />
 
       {canCreateTodo && (
@@ -166,6 +168,8 @@ export function TodosTab({ teamId }: TodosTabProps) {
 
 const styles = StyleSheet.create({
   todoCard: { overflow: 'hidden' },
+  todoRow: { flexDirection: 'row', alignItems: 'center' },
+  assigneeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4, marginLeft: 30 },
   fab: {
     position: 'absolute',
     right: 20,

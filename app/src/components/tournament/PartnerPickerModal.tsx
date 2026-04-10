@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -32,6 +32,35 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
     return allMembers;
   }, [teams]);
 
+  const renderPartner = useCallback(
+    ({ item }: { item: { id: string; firstName: string; lastName: string } }) => (
+      <Pressable
+        onPress={() => onSelect(item.id)}
+        accessibilityLabel={`${item.firstName} ${item.lastName} als Partner wählen`}
+        accessibilityRole="button"
+        style={({ pressed }) => [
+          styles.participantRow,
+          {
+            paddingVertical: spacing.md,
+            borderBottomColor: colors.separator,
+            opacity: pressed ? 0.7 : 1,
+          },
+        ]}
+      >
+        <Avatar firstName={item.firstName} lastName={item.lastName} size="sm" />
+        <Text
+          style={[
+            typography.bodyMedium,
+            { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
+          ]}
+        >
+          {item.firstName} {item.lastName}
+        </Text>
+      </Pressable>
+    ),
+    [onSelect, spacing.md, colors.separator, colors.textPrimary, typography.bodyMedium],
+  );
+
   return (
     <Modal
       visible={visible}
@@ -62,31 +91,7 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
           data={members}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ paddingHorizontal: spacing.xl }}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => onSelect(item.id)}
-              accessibilityLabel={`${item.firstName} ${item.lastName} als Partner wählen`}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.participantRow,
-                {
-                  paddingVertical: spacing.md,
-                  borderBottomColor: colors.separator,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-            >
-              <Avatar firstName={item.firstName} lastName={item.lastName} size="sm" />
-              <Text
-                style={[
-                  typography.bodyMedium,
-                  { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
-                ]}
-              >
-                {item.firstName} {item.lastName}
-              </Text>
-            </Pressable>
-          )}
+          renderItem={renderPartner}
           ListEmptyComponent={
             <EmptyState title="Keine Mitglieder" description="Keine Vereinsmitglieder gefunden" />
           }

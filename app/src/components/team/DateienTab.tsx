@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -63,13 +63,13 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
   const files = (filesData ?? []) as FileData[];
   const folders = currentFolderId ? [] : ((foldersData ?? []) as FolderData[]);
 
-  const handleFilePress = (file: FileData) => {
+  const handleFilePress = useCallback((file: FileData) => {
     if (file.mimeType.startsWith('image/')) {
       setViewerImage(getFullUrl(file.url));
     } else {
       Linking.openURL(getFullUrl(file.url));
     }
-  };
+  }, []);
 
   const handleUploadConfirm = (displayName: string) => {
     if (!uploadFlow.pendingAsset || !channelId) return;
@@ -113,6 +113,17 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
     if (!channelId) return;
     createFolder.mutate({ name, channelId }, { onSuccess: () => setShowFolderModal(false) });
   };
+
+  const renderFileItem = useCallback(
+    ({ item }: { item: FileData }) => (
+      <FileRow
+        file={item}
+        onPress={handleFilePress}
+        onDelete={(f) => deleteFile.mutate(f.id, { onSuccess: () => refetchFiles() })}
+      />
+    ),
+    [handleFilePress, deleteFile, refetchFiles],
+  );
 
   if (!channelId) {
     if (isCreatingChannel) {
@@ -200,13 +211,7 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
             </View>
           ) : null
         }
-        renderItem={({ item }) => (
-          <FileRow
-            file={item}
-            onPress={handleFilePress}
-            onDelete={(f) => deleteFile.mutate(f.id, { onSuccess: () => refetchFiles() })}
-          />
-        )}
+        renderItem={renderFileItem}
         ListEmptyComponent={
           folders.length === 0 ? (
             <EmptyState

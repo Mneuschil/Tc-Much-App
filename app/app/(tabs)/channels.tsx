@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
@@ -28,16 +28,18 @@ export default function ChannelsScreen() {
     return allChannels.filter((ch) => ch.name.toLowerCase().includes(q));
   }, [allChannels, search]);
 
-  const handleChannelPress = (id: string) => router.push(`/channel/${id}`);
+  const handleChannelPress = useCallback((id: string) => router.push(`/channel/${id}`), [router]);
 
-  const separator = () => (
-    <View
-      style={{
-        height: StyleSheet.hairlineWidth,
-        backgroundColor: colors.separator,
-        marginLeft: 86,
-      }}
-    />
+  const renderChannel = useCallback(
+    ({ item }: { item: ChannelItem }) => (
+      <ChannelListItem item={item} onPress={handleChannelPress} />
+    ),
+    [handleChannelPress],
+  );
+
+  const separator = useCallback(
+    () => <View style={[styles.separator, { backgroundColor: colors.separator }]} />,
+    [colors.separator],
   );
 
   return (
@@ -54,7 +56,7 @@ export default function ChannelsScreen() {
       <FlashList
         data={channels}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ChannelListItem item={item} onPress={handleChannelPress} />}
+        renderItem={renderChannel}
         ItemSeparatorComponent={separator}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
@@ -90,6 +92,7 @@ export default function ChannelsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  separator: { height: StyleSheet.hairlineWidth, marginLeft: 86 },
   fab: {
     position: 'absolute',
     bottom: 24,
