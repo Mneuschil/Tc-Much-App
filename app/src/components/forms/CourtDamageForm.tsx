@@ -9,6 +9,7 @@ import {
   Platform,
   ActionSheetIOS,
   Alert,
+  AccessibilityInfo,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -84,7 +85,12 @@ export function CourtDamageForm() {
     formData.append('urgency', urgency);
     appendFileToFormData(formData, 'photo', photoUri, 'court-damage.jpg', 'image/jpeg');
 
-    mutation.mutate(formData, { onSuccess: () => setSubmitted(true) });
+    mutation.mutate(formData, {
+      onSuccess: () => {
+        setSubmitted(true);
+        AccessibilityInfo.announceForAccessibility('Schadensmeldung erfolgreich eingereicht');
+      },
+    });
   };
 
   const isValid = courtNumber !== '' && description.trim().length > 0 && photoUri !== null;
@@ -142,6 +148,7 @@ export function CourtDamageForm() {
       {/* Beschreibung */}
       <View>
         <Text
+          nativeID="damage-desc-label"
           style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
         >
           Beschreibung
@@ -153,6 +160,7 @@ export function CourtDamageForm() {
           placeholder="Beschreibe den Schaden..."
           placeholderTextColor={colors.textTertiary}
           accessibilityLabel="Schadensbeschreibung"
+          accessibilityLabelledBy="damage-desc-label"
           style={[
             styles.textArea,
             {

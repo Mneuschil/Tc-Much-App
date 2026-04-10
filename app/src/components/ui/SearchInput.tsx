@@ -23,13 +23,20 @@ export function SearchInput({ placeholder = 'Suchen...', value, onChangeText }: 
         },
       ]}
     >
-      <Ionicons name="search" size={18} color={colors.textTertiary} style={styles.icon} />
+      <Ionicons
+        name="search"
+        size={18}
+        color={colors.textTertiary}
+        style={styles.icon}
+        importantForAccessibility="no"
+        accessibilityElementsHidden
+      />
       <TextInput
         placeholder={placeholder}
         placeholderTextColor={colors.textTertiary}
         value={value}
         onChangeText={onChangeText}
-        accessibilityLabel={placeholder}
+        accessibilityLabel="Suchfeld"
         accessibilityRole="search"
         style={[styles.input, { color: colors.textPrimary }]}
       />

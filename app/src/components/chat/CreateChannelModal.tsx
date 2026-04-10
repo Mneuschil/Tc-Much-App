@@ -46,7 +46,9 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { padding: spacing.xl }]}>
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Neuer Channel</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Neuer Channel
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -58,6 +60,7 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
         </View>
         <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 0 }}>
           <Text
+            nativeID="channel-name-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -79,9 +82,11 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
             placeholder="Kanalname"
             placeholderTextColor={colors.textTertiary}
             accessibilityLabel="Kanalname"
+            accessibilityLabelledBy="channel-name-label"
           />
 
           <Text
+            nativeID="channel-desc-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.xs },
@@ -106,6 +111,7 @@ export function CreateChannelModal({ visible, onClose }: CreateChannelModalProps
             multiline
             textAlignVertical="top"
             accessibilityLabel="Beschreibung"
+            accessibilityLabelledBy="channel-desc-label"
           />
 
           <Text

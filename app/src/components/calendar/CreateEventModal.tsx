@@ -131,7 +131,9 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             padding: spacing.xl,
           }}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Neues Event</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Neues Event
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -144,6 +146,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
         <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 0 }}>
           {/* Titel */}
           <Text
+            nativeID="event-title-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -165,6 +168,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
             accessibilityLabel="Titel"
+            accessibilityLabelledBy="event-title-label"
           />
 
           {/* Typ */}
@@ -215,6 +219,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
 
           {/* Beschreibung */}
           <Text
+            nativeID="event-desc-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.xs },
@@ -240,6 +245,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             numberOfLines={3}
             textAlignVertical="top"
             accessibilityLabel="Beschreibung"
+            accessibilityLabelledBy="event-desc-label"
           />
 
           {/* Startdatum */}
@@ -419,6 +425,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
           <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.lg }}>
             <View style={{ flex: 2 }}>
               <Text
+                nativeID="event-location-label"
                 style={[
                   typography.captionMedium,
                   { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -440,10 +447,12 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 placeholder="z.B. TC Much"
                 placeholderTextColor={colors.textTertiary}
                 accessibilityLabel="Ort"
+                accessibilityLabelledBy="event-location-label"
               />
             </View>
             <View style={{ flex: 1 }}>
               <Text
+                nativeID="event-court-label"
                 style={[
                   typography.captionMedium,
                   { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -465,6 +474,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 placeholder="z.B. 1"
                 placeholderTextColor={colors.textTertiary}
                 accessibilityLabel="Platznummer"
+                accessibilityLabelledBy="event-court-label"
               />
             </View>
           </View>
@@ -475,7 +485,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             disabled={!canSubmit}
             accessibilityLabel="Event erstellen"
             accessibilityRole="button"
-            accessibilityState={{ disabled: !canSubmit }}
+            accessibilityState={{ disabled: !canSubmit, busy: createEvent.isPending }}
             style={[
               styles.doneBtn,
               {

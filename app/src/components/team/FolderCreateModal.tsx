@@ -44,7 +44,9 @@ export function FolderCreateModal({
         <View
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Neuer Ordner</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Neuer Ordner
+          </Text>
           <Pressable
             onPress={handleClose}
             hitSlop={12}
@@ -56,6 +58,7 @@ export function FolderCreateModal({
         </View>
         <View style={{ paddingHorizontal: spacing.xl }}>
           <Text
+            nativeID="folder-name-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -78,12 +81,14 @@ export function FolderCreateModal({
             placeholderTextColor={colors.textTertiary}
             autoFocus
             accessibilityLabel="Ordnername"
+            accessibilityLabelledBy="folder-name-label"
           />
           <Pressable
             onPress={handleCreate}
             disabled={!folderName.trim() || isPending}
             accessibilityLabel="Ordner erstellen"
             accessibilityRole="button"
+            accessibilityState={{ disabled: !folderName.trim(), busy: isPending }}
             style={({ pressed }) => [
               styles.createBtn,
               {

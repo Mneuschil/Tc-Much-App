@@ -71,7 +71,9 @@ export function EditTeamModal({
         <View
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Team bearbeiten</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Team bearbeiten
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -85,6 +87,7 @@ export function EditTeamModal({
         <View style={{ paddingHorizontal: spacing.xl, gap: spacing.lg }}>
           <View>
             <Text
+              nativeID="edit-team-name-label"
               style={[
                 typography.captionMedium,
                 { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -106,11 +109,13 @@ export function EditTeamModal({
               placeholder="Teamname"
               placeholderTextColor={colors.textTertiary}
               accessibilityLabel="Teamname"
+              accessibilityLabelledBy="edit-team-name-label"
             />
           </View>
 
           <View>
             <Text
+              nativeID="edit-team-league-label"
               style={[
                 typography.captionMedium,
                 { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -132,11 +137,13 @@ export function EditTeamModal({
               placeholder="z.B. Bezirksliga, Kreisliga..."
               placeholderTextColor={colors.textTertiary}
               accessibilityLabel="Liga"
+              accessibilityLabelledBy="edit-team-league-label"
             />
           </View>
 
           <View>
             <Text
+              nativeID="edit-team-season-label"
               style={[
                 typography.captionMedium,
                 { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -158,6 +165,7 @@ export function EditTeamModal({
               placeholder="z.B. 2026"
               placeholderTextColor={colors.textTertiary}
               accessibilityLabel="Saison"
+              accessibilityLabelledBy="edit-team-season-label"
             />
           </View>
 
@@ -166,6 +174,7 @@ export function EditTeamModal({
             disabled={!name.trim() || isPending}
             accessibilityLabel="Team speichern"
             accessibilityRole="button"
+            accessibilityState={{ disabled: !name.trim(), busy: isPending }}
             style={({ pressed }) => [
               styles.saveBtn,
               {

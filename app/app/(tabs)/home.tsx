@@ -93,7 +93,12 @@ export default function HomeScreen() {
         {todos.length > 0 && (
           <View style={{ marginTop: spacing.xxl, paddingHorizontal: spacing.xl }}>
             <View style={styles.sectionHeader}>
-              <Text style={[typography.h4, { color: colors.textPrimary }]}>Offene Todos</Text>
+              <Text
+                accessibilityRole="header"
+                style={[typography.h4, { color: colors.textPrimary }]}
+              >
+                Offene Todos
+              </Text>
               <Pressable onPress={() => router.push('/todo' as never)}>
                 <Text style={[typography.captionMedium, { color: colors.primary }]}>Alle</Text>
               </Pressable>
@@ -156,6 +161,8 @@ export default function HomeScreen() {
                 setPostText('');
               }}
               hitSlop={12}
+              accessibilityLabel="Modal schließen"
+              accessibilityRole="button"
             >
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
@@ -177,6 +184,7 @@ export default function HomeScreen() {
               onChangeText={setPostText}
               multiline
               textAlignVertical="top"
+              accessibilityLabel="Beitragstext"
             />
             <Button
               title="Veröffentlichen"

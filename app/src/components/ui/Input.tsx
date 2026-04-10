@@ -9,6 +9,9 @@ interface InputProps {
   secureTextEntry?: boolean;
   error?: string;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
+  nativeID?: string;
+  accessibilityLabelledBy?: string;
 }
 
 export function Input({
@@ -18,6 +21,9 @@ export function Input({
   secureTextEntry,
   error,
   accessibilityLabel,
+  accessibilityHint,
+  nativeID,
+  accessibilityLabelledBy,
 }: InputProps) {
   const { colors, radii, spacing } = useTheme();
   const [focused, setFocused] = useState(false);
@@ -31,6 +37,9 @@ export function Input({
         onChangeText={onChangeText}
         secureTextEntry={secureTextEntry}
         accessibilityLabel={accessibilityLabel ?? placeholder}
+        accessibilityHint={accessibilityHint}
+        nativeID={nativeID}
+        accessibilityLabelledBy={accessibilityLabelledBy}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={[
@@ -46,7 +55,14 @@ export function Input({
         ]}
       />
       {error ? (
-        <Text style={[styles.error, { color: colors.danger, marginTop: spacing.xs }]}>{error}</Text>
+        <View accessibilityLiveRegion="polite">
+          <Text
+            accessibilityRole="alert"
+            style={[styles.error, { color: colors.danger, marginTop: spacing.xs }]}
+          >
+            {error}
+          </Text>
+        </View>
       ) : null}
     </View>
   );

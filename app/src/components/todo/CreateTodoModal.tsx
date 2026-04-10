@@ -8,6 +8,7 @@ import {
   TextInput,
   ScrollView,
   Platform,
+  AccessibilityInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -73,6 +74,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
     };
     createTodo.mutate(input, {
       onSuccess: () => {
+        AccessibilityInfo.announceForAccessibility('Aufgabe erfolgreich erstellt');
         setTitle('');
         setDescription('');
         setAssigneeId('');
@@ -98,7 +100,9 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             padding: spacing.xl,
           }}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Neues Todo</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Neues Todo
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}
@@ -110,6 +114,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
         </View>
         <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 0 }}>
           <Text
+            nativeID="todo-title-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -131,9 +136,11 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
             accessibilityLabel="Titel"
+            accessibilityLabelledBy="todo-title-label"
           />
 
           <Text
+            nativeID="todo-desc-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginTop: spacing.lg, marginBottom: spacing.xs },
@@ -159,6 +166,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             numberOfLines={3}
             textAlignVertical="top"
             accessibilityLabel="Beschreibung"
+            accessibilityLabelledBy="todo-desc-label"
           />
 
           <Text
@@ -388,6 +396,10 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             disabled={!title.trim() || !assigneeId || createTodo.isPending}
             accessibilityLabel="Aufgabe erstellen"
             accessibilityRole="button"
+            accessibilityState={{
+              disabled: !title.trim() || !assigneeId,
+              busy: createTodo.isPending,
+            }}
             style={[
               styles.createBtn,
               {

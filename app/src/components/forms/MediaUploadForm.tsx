@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, AccessibilityInfo } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -36,7 +36,12 @@ export function MediaUploadForm() {
     formData.append('category', category);
     appendFileToFormData(formData, 'media', mediaUri, 'media-upload.jpg', 'image/jpeg');
 
-    mutation.mutate(formData, { onSuccess: () => setSubmitted(true) });
+    mutation.mutate(formData, {
+      onSuccess: () => {
+        setSubmitted(true);
+        AccessibilityInfo.announceForAccessibility('Upload erfolgreich');
+      },
+    });
   };
 
   if (submitted) {

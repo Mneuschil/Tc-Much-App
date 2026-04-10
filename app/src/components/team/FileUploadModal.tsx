@@ -63,7 +63,9 @@ export function FileUploadModal({
         <View
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Datei hochladen</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Datei hochladen
+          </Text>
           <Pressable
             onPress={handleClose}
             hitSlop={12}
@@ -110,6 +112,7 @@ export function FileUploadModal({
           )}
 
           <Text
+            nativeID="file-name-label"
             style={[
               typography.captionMedium,
               { color: colors.textSecondary, marginTop: spacing.xl, marginBottom: spacing.xs },
@@ -132,6 +135,7 @@ export function FileUploadModal({
             placeholderTextColor={colors.textTertiary}
             autoFocus
             accessibilityLabel="Dateiname"
+            accessibilityLabelledBy="file-name-label"
           />
 
           <Pressable

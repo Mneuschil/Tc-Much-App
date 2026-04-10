@@ -231,10 +231,14 @@ export default function NewsDetailScreen() {
               onChangeText={setText}
               multiline
               maxLength={500}
+              accessibilityLabel="Kommentar schreiben"
             />
             <Pressable
               onPress={handleSend}
               disabled={!text.trim()}
+              accessibilityLabel="Kommentar senden"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !text.trim() }}
               style={[
                 styles.sendBtn,
                 {

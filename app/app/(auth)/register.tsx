@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  AccessibilityInfo,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -53,6 +54,7 @@ export default function RegisterScreen() {
         password,
         clubCode: clubCode.trim().toUpperCase(),
       });
+      AccessibilityInfo.announceForAccessibility('Erfolgreich registriert');
       router.replace('/(tabs)/home');
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
@@ -89,6 +91,7 @@ export default function RegisterScreen() {
           <View style={styles.row}>
             <View style={styles.halfField}>
               <Text
+                nativeID="reg-firstname-label"
                 style={[
                   typography.bodySmall,
                   { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -103,10 +106,13 @@ export default function RegisterScreen() {
                 placeholder="Max"
                 placeholderTextColor={colors.textSecondary}
                 autoCorrect={false}
+                accessibilityLabel="Vorname"
+                accessibilityLabelledBy="reg-firstname-label"
               />
             </View>
             <View style={[styles.halfField, { marginLeft: spacing.md }]}>
               <Text
+                nativeID="reg-lastname-label"
                 style={[
                   typography.bodySmall,
                   { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -121,11 +127,14 @@ export default function RegisterScreen() {
                 placeholder="Mustermann"
                 placeholderTextColor={colors.textSecondary}
                 autoCorrect={false}
+                accessibilityLabel="Nachname"
+                accessibilityLabelledBy="reg-lastname-label"
               />
             </View>
           </View>
 
           <Text
+            nativeID="reg-email-label"
             style={[
               typography.bodySmall,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -142,9 +151,12 @@ export default function RegisterScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            accessibilityLabel="E-Mail-Adresse"
+            accessibilityLabelledBy="reg-email-label"
           />
 
           <Text
+            nativeID="reg-password-label"
             style={[
               typography.bodySmall,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -159,9 +171,13 @@ export default function RegisterScreen() {
             placeholder="Mind. 8 Zeichen"
             placeholderTextColor={colors.textSecondary}
             secureTextEntry
+            accessibilityLabel="Passwort"
+            accessibilityLabelledBy="reg-password-label"
+            accessibilityHint="Mindestens 8 Zeichen"
           />
 
           <Text
+            nativeID="reg-clubcode-label"
             style={[
               typography.bodySmall,
               { color: colors.textSecondary, marginBottom: spacing.xs },
@@ -177,6 +193,9 @@ export default function RegisterScreen() {
             placeholderTextColor={colors.textSecondary}
             autoCapitalize="characters"
             autoCorrect={false}
+            accessibilityLabel="Club-Code"
+            accessibilityLabelledBy="reg-clubcode-label"
+            accessibilityHint="Vereinskürzel oder Mitgliedsnummer eingeben"
           />
 
           <Button title="Registrieren" onPress={handleRegister} loading={loading} fullWidth />
@@ -188,6 +207,8 @@ export default function RegisterScreen() {
             <Text
               style={[typography.bodySmall, { color: colors.accent, fontWeight: '600' }]}
               onPress={() => router.push('/(auth)/login')}
+              accessibilityRole="link"
+              accessibilityLabel="Anmelden"
             >
               Anmelden
             </Text>
