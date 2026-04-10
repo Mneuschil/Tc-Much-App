@@ -21,27 +21,51 @@ beforeAll(async () => {
   const club = await prisma.club.create({ data: { name: 'Event Test Club', clubCode: CLUB_CODE } });
   clubId = club.id;
 
-  const otherClub = await prisma.club.create({ data: { name: 'Other Event Club', clubCode: 'EVNTOTH1' } });
+  const otherClub = await prisma.club.create({
+    data: { name: 'Other Event Club', clubCode: 'EVNTOTH1' },
+  });
   otherClubId = otherClub.id;
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'evntadmin@test.de', passwordHash, firstName: 'Admin', lastName: 'Event', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'evntadmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'Event',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   adminUserId = adminUser.id;
 
   const boardUser = await prisma.user.create({
     data: {
-      email: 'evntboard@test.de', passwordHash, firstName: 'Board', lastName: 'Event', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'evntboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'Event',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
 
   const memberUser = await prisma.user.create({
     data: {
-      email: 'evntmember@test.de', passwordHash, firstName: 'Member', lastName: 'Event', clubId,
+      email: 'evntmember@test.de',
+      passwordHash,
+      firstName: 'Member',
+      lastName: 'Event',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -49,7 +73,11 @@ beforeAll(async () => {
 
   const otherUser = await prisma.user.create({
     data: {
-      email: 'evntother@test.de', passwordHash, firstName: 'Other', lastName: 'Event', clubId: otherClubId,
+      email: 'evntother@test.de',
+      passwordHash,
+      firstName: 'Other',
+      lastName: 'Event',
+      clubId: otherClubId,
       roles: { create: [{ role: 'MEMBER', clubId: otherClubId }] },
     },
   });
@@ -57,27 +85,55 @@ beforeAll(async () => {
   // Create event in other club for multi-tenant test
   await prisma.event.create({
     data: {
-      title: 'Other Club Match', type: 'LEAGUE_MATCH',
+      title: 'Other Club Match',
+      type: 'LEAGUE_MATCH',
       startDate: new Date('2026-06-01T10:00:00Z'),
-      clubId: otherClubId, createdById: otherUser.id,
+      clubId: otherClubId,
+      createdById: otherUser.id,
     },
   });
 
-  adminToken = generateAccessToken({ userId: adminUser.id, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUser.id, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
-  memberToken = generateAccessToken({ userId: memberUser.id, clubId, roles: ['MEMBER'] as UserRole[] });
-  otherClubToken = generateAccessToken({ userId: otherUser.id, clubId: otherClubId, roles: ['MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUser.id,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUser.id,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
+  memberToken = generateAccessToken({
+    userId: memberUser.id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
+  otherClubToken = generateAccessToken({
+    userId: otherUser.id,
+    clubId: otherClubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
 });
 
 afterAll(async () => {
-  await prisma.availability.deleteMany({ where: { event: { clubId: { in: [clubId, otherClubId] } } } });
-  await prisma.matchLineup.deleteMany({ where: { event: { clubId: { in: [clubId, otherClubId] } } } });
-  await prisma.matchResult.deleteMany({ where: { event: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.availability.deleteMany({
+    where: { event: { clubId: { in: [clubId, otherClubId] } } },
+  });
+  await prisma.matchLineup.deleteMany({
+    where: { event: { clubId: { in: [clubId, otherClubId] } } },
+  });
+  await prisma.matchResult.deleteMany({
+    where: { event: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.event.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
-  await prisma.teamMember.deleteMany({ where: { team: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.teamMember.deleteMany({
+    where: { team: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.team.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
   await prisma.userRoleAssignment.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
-  await prisma.refreshToken.deleteMany({ where: { user: { clubId: { in: [clubId, otherClubId] } } } });
+  await prisma.refreshToken.deleteMany({
+    where: { user: { clubId: { in: [clubId, otherClubId] } } },
+  });
   await prisma.user.deleteMany({ where: { clubId: { in: [clubId, otherClubId] } } });
   await prisma.club.deleteMany({ where: { clubCode: { in: [CLUB_CODE, 'EVNTOTH1'] } } });
   await prisma.$disconnect();
@@ -109,7 +165,8 @@ describe('POST /api/v1/events', () => {
       .post('/api/v1/events')
       .set('Authorization', `Bearer ${memberToken}`)
       .send({
-        title: 'Fail', type: 'TRAINING',
+        title: 'Fail',
+        type: 'TRAINING',
         startDate: '2026-06-20T10:00:00Z',
       });
 
@@ -122,9 +179,27 @@ describe('GET /api/v1/events', () => {
   beforeAll(async () => {
     await prisma.event.createMany({
       data: [
-        { title: 'Training Mo', type: 'TRAINING', startDate: new Date('2026-07-01T18:00:00Z'), clubId, createdById: adminUserId },
-        { title: 'Training Mi', type: 'TRAINING', startDate: new Date('2026-07-03T18:00:00Z'), clubId, createdById: adminUserId },
-        { title: 'Clubfest', type: 'CLUB_EVENT', startDate: new Date('2026-08-01T12:00:00Z'), clubId, createdById: adminUserId },
+        {
+          title: 'Training Mo',
+          type: 'TRAINING',
+          startDate: new Date('2026-07-01T18:00:00Z'),
+          clubId,
+          createdById: adminUserId,
+        },
+        {
+          title: 'Training Mi',
+          type: 'TRAINING',
+          startDate: new Date('2026-07-03T18:00:00Z'),
+          clubId,
+          createdById: adminUserId,
+        },
+        {
+          title: 'Clubfest',
+          type: 'CLUB_EVENT',
+          startDate: new Date('2026-08-01T12:00:00Z'),
+          clubId,
+          createdById: adminUserId,
+        },
       ],
     });
   });
@@ -149,6 +224,24 @@ describe('GET /api/v1/events', () => {
     }
   });
 
+  it('rejects limit=0 with 400 (defensive validation)', async () => {
+    const res = await request(app)
+      .get('/api/v1/events?limit=0')
+      .set('Authorization', `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('rejects negative and NaN pagination params with 400 (defensive validation)', async () => {
+    const res = await request(app)
+      .get('/api/v1/events?page=-1&limit=abc')
+      .set('Authorization', `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+  });
+
   it('filters by date range (AC-02)', async () => {
     const res = await request(app)
       .get('/api/v1/events?from=2026-07-01T00:00:00Z&to=2026-07-31T23:59:59Z')
@@ -165,7 +258,13 @@ describe('GET /api/v1/events/:eventId', () => {
 
   beforeAll(async () => {
     const event = await prisma.event.create({
-      data: { title: 'Detail Event', type: 'CLUB_EVENT', startDate: new Date('2026-09-01T10:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'Detail Event',
+        type: 'CLUB_EVENT',
+        startDate: new Date('2026-09-01T10:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
     eventId = event.id;
 
@@ -192,7 +291,13 @@ describe('PUT /api/v1/events/:eventId', () => {
 
   beforeAll(async () => {
     const event = await prisma.event.create({
-      data: { title: 'Update Event', type: 'TRAINING', startDate: new Date('2026-10-01T18:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'Update Event',
+        type: 'TRAINING',
+        startDate: new Date('2026-10-01T18:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
     eventId = event.id;
   });
@@ -223,7 +328,7 @@ describe('PUT /api/v1/events/:eventId', () => {
       .set('Authorization', `Bearer ${boardToken}`)
       .send({ title: 'Changed Again' });
 
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
 
     expect(spy).toHaveBeenCalledWith(
       [memberUserId],
@@ -238,7 +343,13 @@ describe('PUT /api/v1/events/:eventId', () => {
 describe('DELETE /api/v1/events/:eventId', () => {
   it('deletes event as ADMIN (AC-05)', async () => {
     const event = await prisma.event.create({
-      data: { title: 'Delete Me', type: 'CLUB_EVENT', startDate: new Date('2026-11-01T10:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'Delete Me',
+        type: 'CLUB_EVENT',
+        startDate: new Date('2026-11-01T10:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
 
     const res = await request(app)
@@ -251,7 +362,13 @@ describe('DELETE /api/v1/events/:eventId', () => {
   // AC-09: MEMBER cannot delete
   it('rejects BOARD_MEMBER from deleting (AC-09)', async () => {
     const event = await prisma.event.create({
-      data: { title: 'No Delete', type: 'TRAINING', startDate: new Date('2026-11-15T18:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'No Delete',
+        type: 'TRAINING',
+        startDate: new Date('2026-11-15T18:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
 
     const res = await request(app)
@@ -268,7 +385,13 @@ describe('PUT /api/v1/events/:eventId/availability', () => {
 
   beforeAll(async () => {
     const event = await prisma.event.create({
-      data: { title: 'RSVP Event', type: 'LEAGUE_MATCH', startDate: new Date('2026-12-01T14:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'RSVP Event',
+        type: 'LEAGUE_MATCH',
+        startDate: new Date('2026-12-01T14:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
     eventId = event.id;
   });
@@ -301,18 +424,33 @@ describe('GET /api/v1/calendar/me', () => {
 
   beforeAll(async () => {
     // Create team + add member
-    const team = await prisma.team.create({ data: { name: 'Calendar Team', type: 'MATCH_TEAM', clubId } });
+    const team = await prisma.team.create({
+      data: { name: 'Calendar Team', type: 'MATCH_TEAM', clubId },
+    });
     teamId = team.id;
     await prisma.teamMember.create({ data: { teamId, userId: memberUserId } });
 
     // Create team event
     await prisma.event.create({
-      data: { title: 'Team Match', type: 'LEAGUE_MATCH', startDate: new Date('2026-06-20T14:00:00Z'), teamId, clubId, createdById: adminUserId },
+      data: {
+        title: 'Team Match',
+        type: 'LEAGUE_MATCH',
+        startDate: new Date('2026-06-20T14:00:00Z'),
+        teamId,
+        clubId,
+        createdById: adminUserId,
+      },
     });
 
     // Create club event (should always appear)
     await prisma.event.create({
-      data: { title: 'Sommerfest', type: 'CLUB_EVENT', startDate: new Date('2026-07-15T12:00:00Z'), clubId, createdById: adminUserId },
+      data: {
+        title: 'Sommerfest',
+        type: 'CLUB_EVENT',
+        startDate: new Date('2026-07-15T12:00:00Z'),
+        clubId,
+        createdById: adminUserId,
+      },
     });
   });
 

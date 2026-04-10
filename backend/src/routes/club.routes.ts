@@ -11,6 +11,7 @@ import {
 import * as clubService from '../services/club.service';
 import { ClubError } from '../services/club.service';
 import { success, error } from '../utils/apiResponse';
+import { clubIdParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -53,20 +54,26 @@ router.post(
 );
 
 // GET /:clubId – Club-Details
-router.get('/:clubId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const club = await clubService.getClubById(req.params.clubId as string);
-    success(res, club);
-  } catch (err) {
-    handleClubError(err, res, next);
-  }
-});
+router.get(
+  '/:clubId',
+  requireAuth,
+  validate(clubIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const club = await clubService.getClubById(req.params.clubId as string);
+      success(res, club);
+    } catch (err) {
+      handleClubError(err, res, next);
+    }
+  },
+);
 
 // PUT /:clubId – Club aktualisieren (nur CLUB_ADMIN des eigenen Clubs)
 router.put(
   '/:clubId',
   requireAuth,
   requireAdmin,
+  validate(clubIdParams, 'params'),
   validate(updateClubSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

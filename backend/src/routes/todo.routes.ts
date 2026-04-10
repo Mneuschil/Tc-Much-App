@@ -10,6 +10,7 @@ import {
 } from '@tennis-club/shared';
 import * as todoService from '../services/todo.service';
 import { success } from '../utils/apiResponse';
+import { todoIdParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -75,6 +76,7 @@ router.post(
 // PATCH /:todoId/status – Status toggle OPEN↔DONE (AC-04)
 router.patch(
   '/:todoId/status',
+  validate(todoIdParams, 'params'),
   validate(toggleTodoStatusSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -93,6 +95,7 @@ router.patch(
 // PUT /:todoId – Todo aktualisieren
 router.put(
   '/:todoId',
+  validate(todoIdParams, 'params'),
   validate(updateTodoSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -105,13 +108,17 @@ router.put(
 );
 
 // DELETE /:todoId – Todo loeschen
-router.delete('/:todoId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await todoService.deleteTodo(req.params.todoId as string, req.user!.clubId);
-    success(res, { message: 'Todo geloescht' });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete(
+  '/:todoId',
+  validate(todoIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await todoService.deleteTodo(req.params.todoId as string, req.user!.clubId);
+      success(res, { message: 'Todo geloescht' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

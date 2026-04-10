@@ -8,6 +8,7 @@ import * as teamService from '../services/team.service';
 import { UserError } from '../services/user.service';
 import { success, error, paginated } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
+import { userIdParams, userListQuery } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -56,36 +57,49 @@ router.put(
 );
 
 // GET / – Club-Mitglieder auflisten (CLUB_ADMIN/BOARD_MEMBER)
-router.get('/', requireBoard, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
-    const { users, total } = await userService.getClubMembers(
-      req.user!.clubId,
-      req.query.role as string | undefined,
-      page,
-      limit,
-    );
-    paginated(res, users, total, page, limit);
-  } catch (err) {
-    handleUserError(err, res, next);
-  }
-});
+router.get(
+  '/',
+  requireBoard,
+  validate(userListQuery, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { page, limit, role } = req.query as unknown as {
+        page: number;
+        limit: number;
+        role?: string;
+      };
+      const { users, total } = await userService.getClubMembers(
+        req.user!.clubId,
+        role,
+        page,
+        limit,
+      );
+      paginated(res, users, total, page, limit);
+    } catch (err) {
+      handleUserError(err, res, next);
+    }
+  },
+);
 
 // GET /:userId – einzelnes Profil (gleicher Club)
-router.get('/:userId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const profile = await userService.getUserById(req.params.userId as string, req.user!.clubId);
-    success(res, profile);
-  } catch (err) {
-    handleUserError(err, res, next);
-  }
-});
+router.get(
+  '/:userId',
+  validate(userIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const profile = await userService.getUserById(req.params.userId as string, req.user!.clubId);
+      success(res, profile);
+    } catch (err) {
+      handleUserError(err, res, next);
+    }
+  },
+);
 
 // PUT /:userId/roles – Rollen setzen (nur CLUB_ADMIN)
 router.put(
   '/:userId/roles',
   requireAdmin,
+  validate(userIdParams, 'params'),
   validate(updateRolesSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -96,7 +110,7 @@ router.put(
         req.user!.clubId,
       );
       logAudit('ROLES_UPDATED', req.user!.userId, req.user!.clubId, {
-        targetUserId: req.params.userId,
+        targetUserId: req.params.userId as string,
         newRoles: req.body.roles,
       });
       success(res, profile);

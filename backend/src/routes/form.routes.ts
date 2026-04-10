@@ -6,6 +6,7 @@ import { courtDamageSchema, mediaUploadSchema } from '@tennis-club/shared';
 import * as formService from '../services/form.service';
 import { success, error } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
+import { formIdParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -49,6 +50,7 @@ router.get(
 // GET /court-damage/:formId/status – Status-Tracking fuer User
 router.get(
   '/court-damage/:formId/status',
+  validate(formIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const form = await formService.getFormStatus(req.params.formId as string, req.user!.clubId);
@@ -67,6 +69,7 @@ router.get(
 router.patch(
   '/court-damage/:formId/status',
   requireBoard,
+  validate(formIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await formService.updateFormStatus(
@@ -75,7 +78,7 @@ router.patch(
         req.body.status,
       );
       logAudit('FORM_STATUS_UPDATED', req.user!.userId, req.user!.clubId, {
-        formId: req.params.formId,
+        formId: req.params.formId as string,
         status: req.body.status,
       });
       success(res, result);

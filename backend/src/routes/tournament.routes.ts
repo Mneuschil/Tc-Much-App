@@ -6,6 +6,7 @@ import { createTournamentSchema, reportResultSchema } from '@tennis-club/shared'
 import * as tournamentService from '../services/tournament.service';
 import { success } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
+import { tournamentIdParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -44,35 +45,44 @@ router.post(
 );
 
 // GET /:tournamentId – Turnier-Details
-router.get('/:tournamentId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const tournament = await tournamentService.getTournamentById(
-      req.params.tournamentId as string,
-      req.user!.clubId,
-    );
-    success(res, tournament);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:tournamentId',
+  validate(tournamentIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tournament = await tournamentService.getTournamentById(
+        req.params.tournamentId as string,
+        req.user!.clubId,
+      );
+      success(res, tournament);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST /:tournamentId/register – Anmelden (AC-02: DOUBLES mit partnerId)
-router.post('/:tournamentId/register', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const reg = await tournamentService.registerPlayer(
-      req.params.tournamentId as string,
-      req.user!.userId,
-      req.body.partnerId,
-    );
-    success(res, reg, 201);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  '/:tournamentId/register',
+  validate(tournamentIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const reg = await tournamentService.registerPlayer(
+        req.params.tournamentId as string,
+        req.user!.userId,
+        req.body.partnerId,
+      );
+      success(res, reg, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /:tournamentId/registrations – Alle Anmeldungen (AC-03)
 router.get(
   '/:tournamentId/registrations',
+  validate(tournamentIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const regs = await tournamentService.getRegistrations(req.params.tournamentId as string);
@@ -87,6 +97,7 @@ router.get(
 router.post(
   '/:tournamentId/draw',
   requireBoard,
+  validate(tournamentIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const bracket = await tournamentService.startDraw(
@@ -94,7 +105,7 @@ router.post(
         req.user!.clubId,
       );
       logAudit('TOURNAMENT_DRAW', req.user!.userId, req.user!.clubId, {
-        tournamentId: req.params.tournamentId,
+        tournamentId: req.params.tournamentId as string,
       });
       success(res, bracket, 201);
     } catch (err) {
@@ -104,18 +115,23 @@ router.post(
 );
 
 // GET /:tournamentId/bracket – KO-Tableau (AC-06, AC-07)
-router.get('/:tournamentId/bracket', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const bracket = await tournamentService.getBracket(req.params.tournamentId as string);
-    success(res, bracket);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:tournamentId/bracket',
+  validate(tournamentIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const bracket = await tournamentService.getBracket(req.params.tournamentId as string);
+      success(res, bracket);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST /:tournamentId/result – Ergebnis melden (AC-08, AC-09)
 router.post(
   '/:tournamentId/result',
+  validate(tournamentIdParams, 'params'),
   validate(reportResultSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -127,7 +143,7 @@ router.post(
         req.user!.clubId,
       );
       logAudit('TOURNAMENT_RESULT_REPORTED', req.user!.userId, req.user!.clubId, {
-        tournamentId: req.params.tournamentId,
+        tournamentId: req.params.tournamentId as string,
         matchId: req.body.matchId,
         winnerId: req.body.winnerId,
       });

@@ -11,6 +11,7 @@ import {
 import * as teamService from '../services/team.service';
 import { success } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
+import { teamIdParams, teamMemberParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -42,19 +43,24 @@ router.post(
 );
 
 // GET /:teamId – Team-Details mit Mitgliedern
-router.get('/:teamId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const team = await teamService.getTeamById(req.params.teamId as string, req.user!.clubId);
-    success(res, team);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:teamId',
+  validate(teamIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const team = await teamService.getTeamById(req.params.teamId as string, req.user!.clubId);
+      success(res, team);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // PUT /:teamId – Team aktualisieren (Board/Admin)
 router.put(
   '/:teamId',
   requireBoard,
+  validate(teamIdParams, 'params'),
   validate(updateTeamSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -71,36 +77,46 @@ router.put(
 );
 
 // DELETE /:teamId – Team + Channel loeschen (nur Admin)
-router.delete('/:teamId', requireAdmin, async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await teamService.deleteTeam(req.params.teamId as string, req.user!.clubId);
-    logAudit('TEAM_DELETED', req.user!.userId, req.user!.clubId, {
-      teamId: req.params.teamId,
-    });
-    success(res, { message: 'Team geloescht' });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete(
+  '/:teamId',
+  requireAdmin,
+  validate(teamIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await teamService.deleteTeam(req.params.teamId as string, req.user!.clubId);
+      logAudit('TEAM_DELETED', req.user!.userId, req.user!.clubId, {
+        teamId: req.params.teamId as string,
+      });
+      success(res, { message: 'Team geloescht' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST /:teamId/ensure-channel – Channel sicherstellen (idempotent)
-router.post('/:teamId/ensure-channel', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const channel = await teamService.ensureTeamChannel(
-      req.params.teamId as string,
-      req.user!.clubId,
-      req.user!.userId,
-    );
-    success(res, channel);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  '/:teamId/ensure-channel',
+  validate(teamIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const channel = await teamService.ensureTeamChannel(
+        req.params.teamId as string,
+        req.user!.clubId,
+        req.user!.userId,
+      );
+      success(res, channel);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST /:teamId/members – Mitglied hinzufuegen (Board/Admin) + ChannelMember-Sync
 router.post(
   '/:teamId/members',
   requireBoard,
+  validate(teamIdParams, 'params'),
   validate(addMembersSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -121,6 +137,7 @@ router.post(
 router.delete(
   '/:teamId/members/:userId',
   requireBoard,
+  validate(teamMemberParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await teamService.removeTeamMember(
@@ -129,8 +146,8 @@ router.delete(
         req.user!.clubId,
       );
       logAudit('TEAM_MEMBER_REMOVED', req.user!.userId, req.user!.clubId, {
-        teamId: req.params.teamId,
-        removedUserId: req.params.userId,
+        teamId: req.params.teamId as string,
+        removedUserId: req.params.userId as string,
       });
       success(res, { message: 'Mitglied entfernt' });
     } catch (err) {
@@ -143,6 +160,7 @@ router.delete(
 router.put(
   '/:teamId/members/:userId/position',
   requireBoard,
+  validate(teamMemberParams, 'params'),
   validate(updatePositionSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {

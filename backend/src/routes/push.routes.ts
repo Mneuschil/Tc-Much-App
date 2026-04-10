@@ -1,7 +1,9 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { validate } from '../middleware/validate';
 import * as pushService from '../services/push.service';
 import { success } from '../utils/apiResponse';
+import { tokenParams } from '../utils/requestSchemas';
 
 const router = Router();
 
@@ -19,13 +21,17 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // DELETE /:token – Push-Token deaktivieren
-router.delete('/:token', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await pushService.deactivateToken(req.params.token as string);
-    success(res, { message: 'Token deaktiviert' });
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete(
+  '/:token',
+  validate(tokenParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await pushService.deactivateToken(req.params.token as string);
+      success(res, { message: 'Token deaktiviert' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

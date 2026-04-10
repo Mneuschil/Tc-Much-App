@@ -11,27 +11,40 @@ import { requireAnyRole } from '../middleware/roles';
 import { UserRole } from '@tennis-club/shared';
 import { success, error } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
+import { eventIdParams, eventListQuery } from '../utils/requestSchemas';
 
 const router = Router();
 
 router.use(requireAuth);
 
 // GET / – Alle Events (filter by type, from, to, teamId)
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const result = await eventService.getEventsForClub(req.user!.clubId, {
-      type: req.query.type as string,
-      from: req.query.from as string,
-      to: req.query.to as string,
-      teamId: req.query.teamId as string,
-      page: req.query.page ? Number(req.query.page) : undefined,
-      limit: req.query.limit ? Number(req.query.limit) : undefined,
-    });
-    res.json({ success: true, data: result.events, pagination: result.pagination });
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/',
+  validate(eventListQuery, 'query'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { type, from, to, teamId, page, limit } = req.query as unknown as {
+        type?: string;
+        from?: string;
+        to?: string;
+        teamId?: string;
+        page: number;
+        limit: number;
+      };
+      const result = await eventService.getEventsForClub(req.user!.clubId, {
+        type,
+        from,
+        to,
+        teamId,
+        page,
+        limit,
+      });
+      res.json({ success: true, data: result.events, pagination: result.pagination });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST / – Neues Event erstellen (Board/Admin)
 router.post(
@@ -55,23 +68,28 @@ router.post(
 );
 
 // GET /:eventId – Event-Details mit Availabilities
-router.get('/:eventId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const event = await eventService.getEventById(req.params.eventId as string, req.user!.clubId);
-    if (!event) {
-      error(res, 'Event nicht gefunden', 404, 'NOT_FOUND');
-      return;
+router.get(
+  '/:eventId',
+  validate(eventIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const event = await eventService.getEventById(req.params.eventId as string, req.user!.clubId);
+      if (!event) {
+        error(res, 'Event nicht gefunden', 404, 'NOT_FOUND');
+        return;
+      }
+      success(res, event);
+    } catch (err) {
+      next(err);
     }
-    success(res, event);
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 // PUT /:eventId – Event aktualisieren (Board/Admin) + Push an RSVP-User
 router.put(
   '/:eventId',
   requireBoard,
+  validate(eventIdParams, 'params'),
   validate(updateEventSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -93,11 +111,12 @@ router.put(
 router.delete(
   '/:eventId',
   requireAdmin,
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await eventService.deleteEvent(req.params.eventId as string, req.user!.clubId);
       logAudit('EVENT_DELETED', req.user!.userId, req.user!.clubId, {
-        eventId: req.params.eventId,
+        eventId: req.params.eventId as string,
       });
       success(res, { message: 'Event geloescht' });
     } catch (err) {
@@ -107,20 +126,25 @@ router.delete(
 );
 
 // GET /:eventId/availability – Verfuegbarkeiten abrufen
-router.get('/:eventId/availability', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const availabilities = await availabilityService.getAvailabilityForEvent(
-      req.params.eventId as string,
-    );
-    success(res, availabilities);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:eventId/availability',
+  validate(eventIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const availabilities = await availabilityService.getAvailabilityForEvent(
+        req.params.eventId as string,
+      );
+      success(res, availabilities);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /:eventId/availability/summary – Zusammenfassung
 router.get(
   '/:eventId/availability/summary',
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const summary = await availabilityService.getAvailabilitySummary(
@@ -136,6 +160,7 @@ router.get(
 // PUT /:eventId/availability – RSVP setzen (AVAILABLE/NOT_AVAILABLE) mit Team-Membership-Check
 router.put(
   '/:eventId/availability',
+  validate(eventIdParams, 'params'),
   validate(availabilitySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -159,6 +184,7 @@ router.put(
 router.post(
   '/:eventId/availability/remind',
   requireBoard,
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await availabilityService.sendReminder(
@@ -175,29 +201,38 @@ router.post(
 // ─── Lineup ─────────────────────────────────────────────────────────
 
 // GET /:eventId/lineup/suggest – Auto-Aufstellungsvorschlag
-router.get('/:eventId/lineup/suggest', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const suggestion = await lineupService.suggestLineup(req.params.eventId as string);
-    success(res, suggestion);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:eventId/lineup/suggest',
+  validate(eventIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const suggestion = await lineupService.suggestLineup(req.params.eventId as string);
+      success(res, suggestion);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /:eventId/lineup – Gespeicherte Aufstellung
-router.get('/:eventId/lineup', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const lineup = await lineupService.getLineup(req.params.eventId as string);
-    success(res, lineup);
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  '/:eventId/lineup',
+  validate(eventIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const lineup = await lineupService.getLineup(req.params.eventId as string);
+      success(res, lineup);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // POST /:eventId/lineup – Aufstellung speichern (Board/Admin)
 router.post(
   '/:eventId/lineup',
   requireBoard,
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const io = req.app.get('io');
@@ -220,6 +255,7 @@ router.post(
 router.put(
   '/:eventId/lineup',
   requireBoard,
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const io = req.app.get('io');
@@ -242,6 +278,7 @@ router.put(
 router.post(
   '/:eventId/lineup/confirm',
   requireBoard,
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const result = await lineupService.confirmLineup(req.params.eventId as string);
@@ -255,18 +292,22 @@ router.post(
 // ─── Training Attendance (F15) ──────────────────────────────────────
 
 // POST /:eventId/attendance – Teilnahme setzen (AC-01, AC-02)
-router.post('/:eventId/attendance', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const attendance = await trainingService.setAttendance(
-      req.params.eventId as string,
-      req.user!.userId,
-      req.body.attending,
-    );
-    success(res, attendance, 201);
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  '/:eventId/attendance',
+  validate(eventIdParams, 'params'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const attendance = await trainingService.setAttendance(
+        req.params.eventId as string,
+        req.user!.userId,
+        req.body.attending,
+      );
+      success(res, attendance, 201);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 // GET /:eventId/attendance – Teilnahmeliste (AC-03: nur TRAINER/BOARD/ADMIN)
 router.get(
@@ -277,6 +318,7 @@ router.get(
     UserRole.CLUB_ADMIN,
     UserRole.SYSTEM_ADMIN,
   ]),
+  validate(eventIdParams, 'params'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const attendance = await trainingService.getAttendanceForEvent(req.params.eventId as string);
