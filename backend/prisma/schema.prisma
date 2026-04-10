@@ -315,6 +315,7 @@ model ChannelMember {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([channelId, userId])
+  @@index([userId])
   @@map("channel_members")
 }
 
@@ -403,6 +404,7 @@ model TeamMember {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
+  @@index([userId])
   @@map("team_members")
 }
 
@@ -482,6 +484,8 @@ model MatchResult {
   resolvedBy  User? @relation("ResultResolver", fields: [resolvedById], references: [id])
 
   @@index([eventId])
+  @@index([submittedById])
+  @@index([winnerId])
   @@map("match_results")
 }
 

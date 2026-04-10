@@ -67,7 +67,7 @@ export async function createTeam(input: CreateTeamInput, clubId: string, created
   });
 
   // Auto-create a RESTRICTED channel for this team
-  await prisma.channel.create({
+  const channel = await prisma.channel.create({
     data: {
       name: `${team.name} Chat`,
       visibility: 'RESTRICTED',
@@ -75,15 +75,14 @@ export async function createTeam(input: CreateTeamInput, clubId: string, created
       clubId,
       createdById,
     },
+    select: { id: true, name: true },
   });
 
-  return prisma.team.findUnique({
-    where: { id: team.id },
-    include: {
-      channels: { select: { id: true, name: true } },
-      _count: { select: { members: true } },
-    },
-  });
+  return {
+    ...team,
+    channels: [channel],
+    _count: { members: 0 },
+  };
 }
 
 export async function updateTeam(

@@ -5,6 +5,7 @@ import { validate } from '../middleware/validate';
 import { createTournamentSchema, reportResultSchema } from '@tennis-club/shared';
 import * as tournamentService from '../services/tournament.service';
 import { success } from '../utils/apiResponse';
+import { logAudit } from '../utils/audit';
 
 const router = Router();
 
@@ -32,6 +33,9 @@ router.post(
         req.user!.clubId,
         req.user!.userId,
       );
+      logAudit('TOURNAMENT_CREATED', req.user!.userId, req.user!.clubId, {
+        tournamentId: tournament.id,
+      });
       success(res, tournament, 201);
     } catch (err) {
       next(err);
@@ -89,6 +93,9 @@ router.post(
         req.params.tournamentId as string,
         req.user!.clubId,
       );
+      logAudit('TOURNAMENT_DRAW', req.user!.userId, req.user!.clubId, {
+        tournamentId: req.params.tournamentId,
+      });
       success(res, bracket, 201);
     } catch (err) {
       next(err);
@@ -119,6 +126,11 @@ router.post(
         req.body.score,
         req.user!.clubId,
       );
+      logAudit('TOURNAMENT_RESULT_REPORTED', req.user!.userId, req.user!.clubId, {
+        tournamentId: req.params.tournamentId,
+        matchId: req.body.matchId,
+        winnerId: req.body.winnerId,
+      });
       success(res, result);
     } catch (err) {
       next(err);

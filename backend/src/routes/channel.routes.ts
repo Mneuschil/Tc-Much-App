@@ -12,6 +12,7 @@ import * as channelService from '../services/channel.service';
 import * as messageService from '../services/message.service';
 import * as reactionService from '../services/reaction.service';
 import { success, paginated } from '../utils/apiResponse';
+import { logAudit } from '../utils/audit';
 import type { Server } from 'socket.io';
 
 const router = Router();
@@ -47,6 +48,7 @@ router.post(
         req.user!.clubId,
         req.user!.userId,
       );
+      logAudit('CHANNEL_CREATED', req.user!.userId, req.user!.clubId, { channelId: channel.id });
       success(res, channel, 201);
     } catch (err) {
       next(err);
@@ -79,6 +81,10 @@ router.post(
         req.user!.clubId,
         req.user!.userId,
       );
+      logAudit('SUBCHANNEL_CREATED', req.user!.userId, req.user!.clubId, {
+        channelId: channel.id,
+        parentChannelId: req.params.channelId,
+      });
       success(res, channel, 201);
     } catch (err) {
       next(err);
@@ -98,6 +104,9 @@ router.put(
         req.user!.clubId,
         req.body,
       );
+      logAudit('CHANNEL_UPDATED', req.user!.userId, req.user!.clubId, {
+        channelId: req.params.channelId,
+      });
       success(res, channel);
     } catch (err) {
       next(err);
