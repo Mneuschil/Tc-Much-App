@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger';
+import { env } from '../config/env';
 
 export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
-  logger.error(err.message, { stack: err.stack, name: err.name });
+  const meta: Record<string, unknown> = { name: err.name };
+  if (env.NODE_ENV !== 'production') {
+    meta.stack = err.stack;
+  }
+  logger.error(err.message, meta);
 
   if (err instanceof ZodError) {
     res.status(400).json({
@@ -63,7 +68,8 @@ export function errorHandler(err: Error, _req: Request, res: Response, _next: Ne
 
   // Support custom errors with statusCode and code properties
   const statusCode = (err as Error & { statusCode?: number }).statusCode || 500;
-  const code = (err as Error & { code?: string }).code || (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
+  const code =
+    (err as Error & { code?: string }).code || (statusCode === 500 ? 'INTERNAL_ERROR' : 'ERROR');
   const message = statusCode === 500 ? 'Interner Serverfehler' : err.message;
 
   res.status(statusCode).json({

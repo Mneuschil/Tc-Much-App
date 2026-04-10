@@ -9,7 +9,7 @@ import {
   updatePositionSchema,
 } from '@tennis-club/shared';
 import * as teamService from '../services/team.service';
-import { success, error } from '../utils/apiResponse';
+import { success } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
 
 const router = Router();
@@ -45,10 +45,6 @@ router.post(
 router.get('/:teamId', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const team = await teamService.getTeamById(req.params.teamId as string, req.user!.clubId);
-    if (!team) {
-      error(res, 'Team nicht gefunden', 404, 'NOT_FOUND');
-      return;
-    }
     success(res, team);
   } catch (err) {
     next(err);

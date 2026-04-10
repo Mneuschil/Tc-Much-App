@@ -30,15 +30,28 @@ beforeAll(async () => {
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'fileadmin@test.de', passwordHash, firstName: 'Admin', lastName: 'File', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'fileadmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'File',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   adminUserId = adminUser.id;
 
   const member = await prisma.user.create({
     data: {
-      email: 'filemember@test.de', passwordHash, firstName: 'Mitglied', lastName: 'File', clubId,
+      email: 'filemember@test.de',
+      passwordHash,
+      firstName: 'Mitglied',
+      lastName: 'File',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -46,7 +59,11 @@ beforeAll(async () => {
 
   const member2 = await prisma.user.create({
     data: {
-      email: 'filemember2@test.de', passwordHash, firstName: 'Mitglied2', lastName: 'File', clubId,
+      email: 'filemember2@test.de',
+      passwordHash,
+      firstName: 'Mitglied2',
+      lastName: 'File',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -54,7 +71,9 @@ beforeAll(async () => {
 
   const channel = await prisma.channel.create({
     data: {
-      name: 'Testkanal', clubId, createdById: adminUserId,
+      name: 'Testkanal',
+      clubId,
+      createdById: adminUserId,
     },
   });
   channelId = channel.id;
@@ -62,9 +81,17 @@ beforeAll(async () => {
   // Ensure test upload dir exists
   await fs.mkdir(path.join(TEST_UPLOAD_DIR, clubId), { recursive: true });
 
-  adminToken = generateAccessToken({ userId: adminUserId, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUserId,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
   memberToken = generateAccessToken({ userId: memberId, clubId, roles: ['MEMBER'] as UserRole[] });
-  member2Token = generateAccessToken({ userId: member2Id, clubId, roles: ['MEMBER'] as UserRole[] });
+  member2Token = generateAccessToken({
+    userId: member2Id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
 });
 
 afterAll(async () => {
@@ -92,20 +119,38 @@ describe('POST /api/v1/upload (AC-01)', () => {
     const res = await request(app)
       .post('/api/v1/upload')
       .set('Authorization', `Bearer ${memberToken}`)
-      .attach('file', Buffer.from('test content'), { filename: 'test.txt', contentType: 'text/plain' })
+      .attach('file', Buffer.from('%PDF-1.4 test'), {
+        filename: 'test.pdf',
+        contentType: 'application/pdf',
+      })
       .field('channelId', channelId);
 
     expect(res.status).toBe(201);
-    expect(res.body.data.name).toBe('test.txt');
+    expect(res.body.data.name).toBe('test.pdf');
     expect(res.body.data.url).toContain(`/uploads/${clubId}/`);
-    expect(res.body.data.mimeType).toBe('text/plain');
+    expect(res.body.data.mimeType).toBe('application/pdf');
   });
 
-  it('rejects disallowed file type', async () => {
+  it('rejects disallowed file type (M-05: tightened whitelist)', async () => {
     const res = await request(app)
       .post('/api/v1/upload')
       .set('Authorization', `Bearer ${memberToken}`)
-      .attach('file', Buffer.from('#!/bin/bash'), { filename: 'hack.sh', contentType: 'application/x-sh' });
+      .attach('file', Buffer.from('test'), {
+        filename: 'hack.sh',
+        contentType: 'application/x-sh',
+      });
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+  });
+
+  it('rejects text/plain after MIME tightening (M-05)', async () => {
+    const res = await request(app)
+      .post('/api/v1/upload')
+      .set('Authorization', `Bearer ${memberToken}`)
+      .attach('file', Buffer.from('text content'), {
+        filename: 'readme.txt',
+        contentType: 'text/plain',
+      });
 
     expect(res.status).toBeGreaterThanOrEqual(400);
   });
@@ -117,14 +162,17 @@ describe('File storage and metadata (AC-02, AC-03)', () => {
     const res = await request(app)
       .post('/api/v1/upload')
       .set('Authorization', `Bearer ${memberToken}`)
-      .attach('file', Buffer.from('hello world'), { filename: 'readme.txt', contentType: 'text/plain' })
+      .attach('file', Buffer.from('%PDF-1.4 hello'), {
+        filename: 'readme.pdf',
+        contentType: 'application/pdf',
+      })
       .field('channelId', channelId);
 
     expect(res.status).toBe(201);
 
     // Check DB record
     const dbFile = await prisma.file.findFirst({
-      where: { clubId, name: 'readme.txt' },
+      where: { clubId, name: 'readme.pdf' },
     });
     expect(dbFile).not.toBeNull();
     expect(dbFile!.url).toContain(`/uploads/${clubId}/`);
@@ -195,9 +243,14 @@ describe('GET /api/v1/files/channel/:channelId (AC-05)', () => {
 describe('Image compression (AC-06)', () => {
   it('compresses uploaded image', async () => {
     // Create a simple 100x100 PNG using sharp
-    const testImage = await (await import('sharp')).default({
-      create: { width: 2500, height: 2000, channels: 3, background: { r: 255, g: 0, b: 0 } },
-    }).png().toBuffer();
+    const testImage = await (
+      await import('sharp')
+    )
+      .default({
+        create: { width: 2500, height: 2000, channels: 3, background: { r: 255, g: 0, b: 0 } },
+      })
+      .png()
+      .toBuffer();
 
     const res = await request(app)
       .post('/api/v1/upload')

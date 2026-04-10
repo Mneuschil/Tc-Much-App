@@ -35,7 +35,7 @@ export async function getMyTeams(userId: string, clubId: string) {
 }
 
 export async function getTeamById(teamId: string, clubId: string) {
-  return prisma.team.findFirst({
+  const team = await prisma.team.findFirst({
     where: { id: teamId, clubId },
     include: {
       members: {
@@ -49,6 +49,10 @@ export async function getTeamById(teamId: string, clubId: string) {
       channels: { select: { id: true, name: true } },
     },
   });
+  if (!team) {
+    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404, code: 'NOT_FOUND' });
+  }
+  return team;
 }
 
 export async function createTeam(input: CreateTeamInput, clubId: string, createdById: string) {

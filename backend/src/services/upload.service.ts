@@ -23,17 +23,14 @@ export const upload = multer({
   storage,
   limits: { fileSize: env.MAX_FILE_SIZE },
   fileFilter: (_req, file, cb) => {
-    const allowed = [
-      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
-      'application/pdf',
-      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain', 'text/csv',
-    ];
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(Object.assign(new Error('Dateityp nicht erlaubt'), { statusCode: 400 }) as unknown as null, false);
+      cb(
+        Object.assign(new Error('Dateityp nicht erlaubt'), { statusCode: 400 }) as unknown as null,
+        false,
+      );
     }
   },
 });
@@ -96,14 +93,21 @@ export async function processAndSave(
   };
 }
 
-export async function deleteFileWithAuth(fileId: string, userId: string, clubId: string, isAdmin: boolean) {
+export async function deleteFileWithAuth(
+  fileId: string,
+  userId: string,
+  clubId: string,
+  isAdmin: boolean,
+) {
   const file = await prisma.file.findFirst({ where: { id: fileId, clubId } });
   if (!file) {
     throw Object.assign(new Error('Datei nicht gefunden'), { statusCode: 404 });
   }
 
   if (file.uploadedById !== userId && !isAdmin) {
-    throw Object.assign(new Error('Nur der Uploader oder ein Admin kann diese Datei loeschen'), { statusCode: 403 });
+    throw Object.assign(new Error('Nur der Uploader oder ein Admin kann diese Datei loeschen'), {
+      statusCode: 403,
+    });
   }
 
   // Delete physical file (best effort)

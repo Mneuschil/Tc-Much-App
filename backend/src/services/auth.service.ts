@@ -174,6 +174,9 @@ export async function login(
     throw new AuthError('Ungueltige Anmeldedaten', 'INVALID_CREDENTIALS', 401);
   }
 
+  // M-06: Invalidate existing refresh tokens on login (token rotation)
+  await prisma.refreshToken.deleteMany({ where: { userId: dbUser.id } });
+
   const payload: TokenPayload = {
     userId: dbUser.id,
     clubId: dbUser.clubId,

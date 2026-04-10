@@ -1,45 +1,55 @@
 import { prisma } from '../config/database';
+import { FormSubmissionStatus } from '@tennis-club/shared';
 import type { CourtDamageInput, MediaUploadInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
 
 // Spec section 14: Court Damage Report → creates todo for groundskeeper → status tracking
 
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  submitted: ['in_progress'],
-  in_progress: ['resolved'],
-  resolved: [],
+const VALID_TRANSITIONS: Record<FormSubmissionStatus, FormSubmissionStatus[]> = {
+  [FormSubmissionStatus.SUBMITTED]: [FormSubmissionStatus.IN_PROGRESS],
+  [FormSubmissionStatus.IN_PROGRESS]: [FormSubmissionStatus.RESOLVED],
+  [FormSubmissionStatus.RESOLVED]: [],
 };
 
-export async function submitCourtDamage(input: CourtDamageInput, clubId: string, submittedById: string) {
-  // Create todo for groundskeeper (linked via formSubmission)
-  const todo = await prisma.todo.create({
-    data: {
-      title: `Platzschaden Platz ${input.courtNumber}`,
-      description: input.description,
-      assigneeId: submittedById, // Will be reassigned by admin to groundskeeper
-      scope: 'BOARD',
-      clubId,
-      createdById: submittedById,
-    },
-  });
+export async function submitCourtDamage(
+  input: CourtDamageInput,
+  clubId: string,
+  submittedById: string,
+) {
+  return prisma.$transaction(async (tx) => {
+    const todo = await tx.todo.create({
+      data: {
+        title: `Platzschaden Platz ${input.courtNumber}`,
+        description: input.description,
+        assigneeId: submittedById,
+        scope: 'BOARD',
+        clubId,
+        createdById: submittedById,
+      },
+    });
 
-  return prisma.formSubmission.create({
-    data: {
-      type: 'COURT_DAMAGE',
-      data: input as unknown as Parameters<typeof prisma.formSubmission.create>[0]['data']['data'],
-      clubId,
-      submittedById,
-      todoId: todo.id,
-      status: 'submitted',
-    },
-    include: {
-      todo: true,
-      submittedBy: { select: { id: true, firstName: true, lastName: true } },
-    },
+    return tx.formSubmission.create({
+      data: {
+        type: 'COURT_DAMAGE',
+        data: input as unknown as Parameters<typeof tx.formSubmission.create>[0]['data']['data'],
+        clubId,
+        submittedById,
+        todoId: todo.id,
+        status: FormSubmissionStatus.SUBMITTED,
+      },
+      include: {
+        todo: true,
+        submittedBy: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
   });
 }
 
-export async function submitMediaUpload(input: MediaUploadInput, clubId: string, submittedById: string) {
+export async function submitMediaUpload(
+  input: MediaUploadInput,
+  clubId: string,
+  submittedById: string,
+) {
   return prisma.formSubmission.create({
     data: {
       type: 'MEDIA_UPLOAD',
@@ -74,16 +84,21 @@ export async function getFormStatus(formId: string, clubId: string) {
   });
 }
 
-export async function updateFormStatus(formId: string, clubId: string, newStatus: string) {
+export async function updateFormStatus(
+  formId: string,
+  clubId: string,
+  newStatus: FormSubmissionStatus,
+) {
   const form = await prisma.formSubmission.findFirst({ where: { id: formId, clubId } });
   if (!form) {
     throw Object.assign(new Error('Formular nicht gefunden'), { statusCode: 404 });
   }
 
-  const allowed = VALID_TRANSITIONS[form.status];
+  const currentStatus = form.status as FormSubmissionStatus;
+  const allowed = VALID_TRANSITIONS[currentStatus];
   if (!allowed || !allowed.includes(newStatus)) {
     throw Object.assign(
-      new Error(`Statuswechsel von "${form.status}" zu "${newStatus}" nicht erlaubt`),
+      new Error(`Statuswechsel von "${currentStatus}" zu "${newStatus}" nicht erlaubt`),
       { statusCode: 400 },
     );
   }
@@ -95,8 +110,8 @@ export async function updateFormStatus(formId: string, clubId: string, newStatus
 
   // Push to original submitter
   const statusLabels: Record<string, string> = {
-    in_progress: 'In Bearbeitung',
-    resolved: 'Erledigt',
+    [FormSubmissionStatus.IN_PROGRESS]: 'In Bearbeitung',
+    [FormSubmissionStatus.RESOLVED]: 'Erledigt',
   };
 
   await pushService.sendToUsers([form.submittedById], {
