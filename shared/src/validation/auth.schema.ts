@@ -12,6 +12,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().email('Ungueltige E-Mail-Adresse'),
   password: z.string().min(1, 'Passwort ist erforderlich'),
+  clubCode: z.string().min(1, 'Club-Code ist erforderlich').max(20),
 });
 
 export const refreshTokenSchema = z.object({

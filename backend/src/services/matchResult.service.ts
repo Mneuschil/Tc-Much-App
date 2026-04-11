@@ -5,6 +5,7 @@ import type { Server } from 'socket.io';
 import * as rankingService from './ranking.service';
 import * as pushService from './push.service';
 import * as messageService from './message.service';
+import { AppError } from '../utils/AppError';
 
 // Spec section 8: Player A submits → Player B confirms/rejects → dispute → sports manager
 
@@ -12,13 +13,14 @@ export async function submitResult(
   eventId: string,
   input: Omit<SubmitResultInput, 'eventId'>,
   submittedById: string,
+  clubId: string,
 ) {
-  // Verify the event exists and get details
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+  // Verify the event exists and belongs to the user's club
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, clubId },
     select: { id: true, teamId: true, clubId: true, title: true, type: true },
   });
-  if (!event) throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+  if (!event) throw AppError.notFound('Event nicht gefunden');
 
   // AC-09: Only involved players or captain can submit
   if (event.teamId) {
@@ -33,10 +35,7 @@ export async function submitResult(
         },
       });
       if (!hasRole) {
-        throw Object.assign(
-          new Error('Nur beteiligte Spieler oder Captain koennen Ergebnisse melden'),
-          { statusCode: 403 },
-        );
+        throw AppError.forbidden('Nur beteiligte Spieler oder Captain koennen Ergebnisse melden');
       }
     }
   }
@@ -74,21 +73,17 @@ export async function submitResult(
   return result;
 }
 
-export async function confirmResult(resultId: string, confirmedById: string) {
-  const result = await prisma.matchResult.findUnique({
-    where: { id: resultId },
+export async function confirmResult(resultId: string, confirmedById: string, clubId: string) {
+  const result = await prisma.matchResult.findFirst({
+    where: { id: resultId, event: { clubId } },
     include: { event: true },
   });
 
-  if (!result) throw Object.assign(new Error('Ergebnis nicht gefunden'), { statusCode: 404 });
+  if (!result) throw AppError.notFound('Ergebnis nicht gefunden');
   if (result.status !== 'SUBMITTED')
-    throw Object.assign(new Error('Ergebnis kann nicht mehr bestaetigt werden'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Ergebnis kann nicht mehr bestaetigt werden');
   if (result.submittedById === confirmedById)
-    throw Object.assign(new Error('Eigenes Ergebnis kann nicht bestaetigt werden'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Eigenes Ergebnis kann nicht bestaetigt werden');
 
   const updated = await prisma.matchResult.update({
     where: { id: resultId },
@@ -127,13 +122,18 @@ export async function confirmResult(resultId: string, confirmedById: string) {
   return updated;
 }
 
-export async function rejectResult(resultId: string, rejectedById: string, reason: string) {
-  const result = await prisma.matchResult.findUnique({ where: { id: resultId } });
-  if (!result) throw Object.assign(new Error('Ergebnis nicht gefunden'), { statusCode: 404 });
+export async function rejectResult(
+  resultId: string,
+  rejectedById: string,
+  reason: string,
+  clubId: string,
+) {
+  const result = await prisma.matchResult.findFirst({
+    where: { id: resultId, event: { clubId } },
+  });
+  if (!result) throw AppError.notFound('Ergebnis nicht gefunden');
   if (result.status !== 'SUBMITTED')
-    throw Object.assign(new Error('Ergebnis kann nicht mehr abgelehnt werden'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Ergebnis kann nicht mehr abgelehnt werden');
 
   const updated = await prisma.matchResult.update({
     where: { id: resultId },
@@ -173,16 +173,15 @@ export async function resolveDispute(
   resolvedById: string,
   sets: TennisSet[],
   winnerId: string,
+  clubId: string,
 ) {
-  const result = await prisma.matchResult.findUnique({
-    where: { id: resultId },
+  const result = await prisma.matchResult.findFirst({
+    where: { id: resultId, event: { clubId } },
     include: { event: true },
   });
-  if (!result) throw Object.assign(new Error('Ergebnis nicht gefunden'), { statusCode: 404 });
+  if (!result) throw AppError.notFound('Ergebnis nicht gefunden');
   if (result.status !== 'DISPUTED')
-    throw Object.assign(new Error('Nur strittige Ergebnisse koennen aufgeloest werden'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Nur strittige Ergebnisse koennen aufgeloest werden');
 
   const updated = await prisma.matchResult.update({
     where: { id: resultId },
@@ -215,9 +214,9 @@ export async function resolveDispute(
   return updated;
 }
 
-export async function getMatchDetail(eventId: string) {
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+export async function getMatchDetail(eventId: string, clubId: string) {
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, clubId },
     include: {
       team: {
         include: {
@@ -238,13 +237,13 @@ export async function getMatchDetail(eventId: string) {
       },
     },
   });
-  if (!event) throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+  if (!event) throw AppError.notFound('Event nicht gefunden');
   return event;
 }
 
-export async function getResultsForEvent(eventId: string) {
+export async function getResultsForEvent(eventId: string, clubId: string) {
   return prisma.matchResult.findMany({
-    where: { eventId },
+    where: { eventId, event: { clubId } },
     include: {
       submittedBy: { select: { id: true, firstName: true, lastName: true } },
       confirmedBy: { select: { id: true, firstName: true, lastName: true } },
@@ -263,7 +262,7 @@ export async function submitResultAndNotify(
   clubId: string,
   io: Server | null,
 ) {
-  const result = await submitResult(eventId, input, submittedById);
+  const result = await submitResult(eventId, input, submittedById, clubId);
   if (io) {
     io.to(SOCKET_ROOMS.club(clubId)).emit('result:submitted', result);
   }
@@ -276,15 +275,12 @@ export async function confirmPendingResult(
   clubId: string,
   io: Server | null,
 ) {
-  const results = await getResultsForEvent(eventId);
+  const results = await getResultsForEvent(eventId, clubId);
   const pending = results.find((r) => r.status === 'SUBMITTED');
   if (!pending) {
-    throw Object.assign(new Error('Kein offenes Ergebnis gefunden'), {
-      statusCode: 400,
-      code: 'NO_PENDING_RESULT',
-    });
+    throw AppError.badRequest('Kein offenes Ergebnis gefunden', 'NO_PENDING_RESULT');
   }
-  const result = await confirmResult(pending.id, confirmedById);
+  const result = await confirmResult(pending.id, confirmedById, clubId);
   if (io) {
     io.to(SOCKET_ROOMS.club(clubId)).emit('result:confirmed', result);
   }
@@ -298,15 +294,12 @@ export async function rejectPendingResult(
   clubId: string,
   io: Server | null,
 ) {
-  const results = await getResultsForEvent(eventId);
+  const results = await getResultsForEvent(eventId, clubId);
   const pending = results.find((r) => r.status === 'SUBMITTED');
   if (!pending) {
-    throw Object.assign(new Error('Kein offenes Ergebnis gefunden'), {
-      statusCode: 400,
-      code: 'NO_PENDING_RESULT',
-    });
+    throw AppError.badRequest('Kein offenes Ergebnis gefunden', 'NO_PENDING_RESULT');
   }
-  const result = await rejectResult(pending.id, rejectedById, reason);
+  const result = await rejectResult(pending.id, rejectedById, reason, clubId);
   if (io) {
     io.to(SOCKET_ROOMS.club(clubId)).emit('result:disputed', result);
   }
@@ -318,16 +311,14 @@ export async function resolveEventDispute(
   resolvedById: string,
   sets: TennisSet[],
   winnerId: string,
+  clubId: string,
 ) {
-  const results = await getResultsForEvent(eventId);
+  const results = await getResultsForEvent(eventId, clubId);
   const disputed = results.find((r) => r.status === 'DISPUTED');
   if (!disputed) {
-    throw Object.assign(new Error('Kein strittiges Ergebnis gefunden'), {
-      statusCode: 400,
-      code: 'NO_DISPUTED_RESULT',
-    });
+    throw AppError.badRequest('Kein strittiges Ergebnis gefunden', 'NO_DISPUTED_RESULT');
   }
-  return resolveDispute(disputed.id, resolvedById, sets, winnerId);
+  return resolveDispute(disputed.id, resolvedById, sets, winnerId, clubId);
 }
 
 // Helper: Auto-post match result to "Allgemein" channel

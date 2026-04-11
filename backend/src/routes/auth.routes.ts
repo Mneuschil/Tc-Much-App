@@ -5,6 +5,7 @@ import { authLimiter } from '../middleware/rateLimiter';
 import * as authService from '../services/auth.service';
 import { AuthError } from '../services/auth.service';
 import { success, error } from '../utils/apiResponse';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
@@ -39,8 +40,8 @@ router.post(
   validate(loginSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, password } = req.body;
-      const result = await authService.login(email, password);
+      const { email, password, clubCode } = req.body;
+      const result = await authService.login(email, password, clubCode);
       success(res, result);
     } catch (err) {
       if (err instanceof AuthError) return handleAuthError(err, res);
@@ -66,16 +67,16 @@ router.post(
 );
 
 // POST /logout – Refresh Token invalidieren
-router.post('/logout', authLimiter, async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.post(
+  '/logout',
+  authLimiter,
+  asyncHandler(async (req, res) => {
     const { refreshToken } = req.body ?? {};
     if (refreshToken) {
       await authService.logout(refreshToken);
     }
     success(res, { message: 'Erfolgreich abgemeldet' });
-  } catch (err) {
-    next(err);
-  }
-});
+  }),
+);
 
 export default router;

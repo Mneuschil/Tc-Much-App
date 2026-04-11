@@ -3,11 +3,12 @@ import { SOCKET_ROOMS } from '@tennis-club/shared';
 import * as pushService from './push.service';
 import * as lineupService from './lineup.service';
 import type { Server } from 'socket.io';
+import { AppError } from '../utils/AppError';
 
 export async function checkTeamMembership(eventId: string, userId: string, clubId: string) {
   const event = await prisma.event.findFirst({ where: { id: eventId, clubId } });
   if (!event) {
-    throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Event nicht gefunden');
   }
 
   // For team events, check team membership
@@ -25,10 +26,10 @@ export async function checkTeamMembership(eventId: string, userId: string, clubI
         ['CLUB_ADMIN', 'BOARD_MEMBER', 'SYSTEM_ADMIN'].includes(r.role),
       );
       if (!isPrivileged) {
-        throw Object.assign(new Error('Nur Team-Mitglieder koennen Verfuegbarkeit setzen'), {
-          statusCode: 403,
-          code: 'NOT_TEAM_MEMBER',
-        });
+        throw AppError.forbidden(
+          'Nur Team-Mitglieder koennen Verfuegbarkeit setzen',
+          'NOT_TEAM_MEMBER',
+        );
       }
     }
   }
@@ -105,10 +106,10 @@ export async function sendReminder(eventId: string, clubId: string) {
     where: { id: eventId, clubId },
   });
   if (!event) {
-    throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Event nicht gefunden');
   }
   if (!event.teamId) {
-    throw Object.assign(new Error('Nur Team-Events unterstuetzen Reminders'), { statusCode: 400 });
+    throw AppError.badRequest('Nur Team-Events unterstuetzen Reminders');
   }
 
   // Check how many reminders have been sent by looking at minimum remindersLeft
@@ -119,10 +120,7 @@ export async function sendReminder(eventId: string, clubId: string) {
 
   // If any availability record has remindersLeft <= 0, max reminders reached
   if (existingReminders.some((a) => a.remindersLeft <= 0)) {
-    throw Object.assign(new Error('Maximale Anzahl Erinnerungen (2) erreicht'), {
-      statusCode: 400,
-      code: 'MAX_REMINDERS_REACHED',
-    });
+    throw AppError.badRequest('Maximale Anzahl Erinnerungen (2) erreicht', 'MAX_REMINDERS_REACHED');
   }
 
   // Get non-responders
@@ -183,7 +181,7 @@ export async function setAvailabilityAndNotify(
     io.to(SOCKET_ROOMS.club(clubId)).emit('availability:updated', availability);
   }
 
-  lineupService.handleAvailabilityChange(eventId, userId, status).catch(() => {
+  lineupService.handleAvailabilityChange(eventId, userId, status, clubId).catch(() => {
     /* swallow */
   });
 

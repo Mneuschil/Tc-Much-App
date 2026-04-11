@@ -12,3 +12,4 @@ export * from './todo.schema';
 export * from './file.schema';
 export * from './form.schema';
 export * from './notification.schema';
+export * from './push.schema';

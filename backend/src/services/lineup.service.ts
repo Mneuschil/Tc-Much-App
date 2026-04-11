@@ -4,12 +4,13 @@ import { SOCKET_ROOMS } from '@tennis-club/shared';
 import type { Server } from 'socket.io';
 import * as pushService from './push.service';
 import { logAudit } from '../utils/audit';
+import { AppError } from '../utils/AppError';
 
 const DEFAULT_TEAM_SIZE = 6;
 
-export async function getLineup(eventId: string) {
+export async function getLineup(eventId: string, clubId: string) {
   return prisma.matchLineup.findMany({
-    where: { eventId },
+    where: { eventId, event: { clubId } },
     include: {
       user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
     },
@@ -17,13 +18,13 @@ export async function getLineup(eventId: string) {
   });
 }
 
-export async function suggestLineup(eventId: string) {
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+export async function suggestLineup(eventId: string, clubId: string) {
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, clubId },
     select: { teamId: true, title: true },
   });
   if (!event?.teamId) {
-    throw Object.assign(new Error('Event hat kein zugehoeriges Team'), { statusCode: 400 });
+    throw AppError.badRequest('Event hat kein zugehoeriges Team');
   }
 
   // Get team size from member count
@@ -71,7 +72,7 @@ export async function saveLineup(
 ) {
   const event = await prisma.event.findUnique({ where: { id: eventId }, select: { teamId: true } });
   if (!event?.teamId) {
-    throw Object.assign(new Error('Event hat kein zugehoeriges Team'), { statusCode: 400 });
+    throw AppError.badRequest('Event hat kein zugehoeriges Team');
   }
 
   await prisma.matchLineup.deleteMany({ where: { eventId } });
@@ -112,14 +113,14 @@ export async function setLineup(input: SetLineupInput) {
   });
 }
 
-export async function confirmLineup(eventId: string) {
+export async function confirmLineup(eventId: string, clubId: string) {
   const lineup = await prisma.matchLineup.findMany({
-    where: { eventId },
+    where: { eventId, event: { clubId } },
     select: { userId: true, position: true },
   });
 
   if (lineup.length === 0) {
-    throw Object.assign(new Error('Keine Aufstellung vorhanden'), { statusCode: 400 });
+    throw AppError.badRequest('Keine Aufstellung vorhanden');
   }
 
   const event = await prisma.event.findUnique({
@@ -148,7 +149,12 @@ export async function confirmLineup(eventId: string) {
   return { confirmed: true, notifiedCount: lineup.length };
 }
 
-export async function handleAvailabilityChange(eventId: string, userId: string, newStatus: string) {
+export async function handleAvailabilityChange(
+  eventId: string,
+  userId: string,
+  newStatus: string,
+  clubId: string,
+) {
   if (newStatus !== 'NOT_AVAILABLE') return;
 
   // Check if user is in the lineup
@@ -158,8 +164,8 @@ export async function handleAvailabilityChange(eventId: string, userId: string, 
   if (!lineupEntry) return;
 
   // Get event + team captain
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, clubId },
     select: { title: true, teamId: true },
   });
   if (!event?.teamId) return;
@@ -169,9 +175,10 @@ export async function handleAvailabilityChange(eventId: string, userId: string, 
     select: { firstName: true, lastName: true },
   });
 
-  // Find team captain (TEAM_CAPTAIN role) or board members
+  // Find team captain (TEAM_CAPTAIN role) or board members within the same club
   const captains = await prisma.userRoleAssignment.findMany({
     where: {
+      clubId,
       role: { in: ['TEAM_CAPTAIN', 'BOARD_MEMBER', 'CLUB_ADMIN'] },
     },
     select: { userId: true },
@@ -189,7 +196,13 @@ export async function handleAvailabilityChange(eventId: string, userId: string, 
   }
 }
 
-export async function autoGenerateLineup(eventId: string, teamId: string) {
+export async function autoGenerateLineup(eventId: string, teamId: string, clubId: string) {
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, clubId },
+    select: { id: true },
+  });
+  if (!event) throw AppError.notFound('Event nicht gefunden');
+
   const available = await prisma.availability.findMany({
     where: { eventId, status: 'AVAILABLE' },
     include: {

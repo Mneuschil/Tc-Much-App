@@ -32,15 +32,13 @@ afterAll(async () => {
 // ─── auth-1: Register creates user with MEMBER role + tokens ────────
 describe('POST /api/v1/auth/register', () => {
   it('creates user with MEMBER role and returns tokens (auth-1)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: 'testuser@test.de',
-        password: 'password123',
-        firstName: 'Test',
-        lastName: 'User',
-        clubCode: CLUB_CODE,
-      });
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'testuser@test.de',
+      password: 'password123',
+      firstName: 'Test',
+      lastName: 'User',
+      clubCode: CLUB_CODE,
+    });
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
@@ -52,15 +50,13 @@ describe('POST /api/v1/auth/register', () => {
 
   // ─── auth-2: Rejects duplicate email ──────────────────────────────
   it('rejects duplicate email in same club (auth-2)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: 'testuser@test.de',
-        password: 'password123',
-        firstName: 'Test',
-        lastName: 'Duplicate',
-        clubCode: CLUB_CODE,
-      });
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'testuser@test.de',
+      password: 'password123',
+      firstName: 'Test',
+      lastName: 'Duplicate',
+      clubCode: CLUB_CODE,
+    });
 
     expect(res.status).toBe(409);
     expect(res.body.success).toBe(false);
@@ -68,15 +64,13 @@ describe('POST /api/v1/auth/register', () => {
 
   // ─── auth-3: Rejects invalid club code ────────────────────────────
   it('rejects invalid club code (auth-3)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/register')
-      .send({
-        email: 'other@test.de',
-        password: 'password123',
-        firstName: 'Other',
-        lastName: 'User',
-        clubCode: 'INVALID_CODE',
-      });
+    const res = await request(app).post('/api/v1/auth/register').send({
+      email: 'other@test.de',
+      password: 'password123',
+      firstName: 'Other',
+      lastName: 'User',
+      clubCode: 'INVALID_CODE',
+    });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
@@ -87,12 +81,11 @@ describe('POST /api/v1/auth/register', () => {
 describe('POST /api/v1/auth/login', () => {
   // ─── auth-4: Login returns user with roles + tokens ───────────────
   it('returns user with roles array and valid tokens (auth-4)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'testuser@test.de',
-        password: 'password123',
-      });
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'testuser@test.de',
+      password: 'password123',
+      clubCode: CLUB_CODE,
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -105,12 +98,11 @@ describe('POST /api/v1/auth/login', () => {
 
   // ─── auth-5: Rejects wrong password ───────────────────────────────
   it('rejects wrong password (auth-5)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'testuser@test.de',
-        password: 'wrongpassword',
-      });
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'testuser@test.de',
+      password: 'wrongpassword',
+      clubCode: CLUB_CODE,
+    });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -118,12 +110,11 @@ describe('POST /api/v1/auth/login', () => {
 
   // ─── auth-6: Rejects non-existent email ───────────────────────────
   it('rejects non-existent email (auth-6)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: 'nobody@test.de',
-        password: 'password123',
-      });
+    const res = await request(app).post('/api/v1/auth/login').send({
+      email: 'nobody@test.de',
+      password: 'password123',
+      clubCode: CLUB_CODE,
+    });
 
     expect(res.status).toBe(401);
     expect(res.body.success).toBe(false);
@@ -138,16 +129,14 @@ describe('POST /api/v1/auth/refresh', () => {
   beforeAll(async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'testuser@test.de', password: 'password123' });
+      .send({ email: 'testuser@test.de', password: 'password123', clubCode: CLUB_CODE });
     refreshToken = res.body.data.tokens.refreshToken;
     accessToken = res.body.data.tokens.accessToken;
   });
 
   // ─── auth-7: Refresh returns new tokens ───────────────────────────
   it('returns new token pair and invalidates old refresh token (auth-7)', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/refresh')
-      .send({ refreshToken });
+    const res = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -157,9 +146,7 @@ describe('POST /api/v1/auth/refresh', () => {
     expect(res.body.data.tokens.refreshToken).not.toBe(refreshToken);
 
     // Old refresh token should be invalid now (rotation)
-    const res2 = await request(app)
-      .post('/api/v1/auth/refresh')
-      .send({ refreshToken });
+    const res2 = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
     expect(res2.status).toBe(401);
   });
@@ -181,12 +168,10 @@ describe('POST /api/v1/auth/logout', () => {
   it('invalidates refresh token (auth-9)', async () => {
     const loginRes = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'testuser@test.de', password: 'password123' });
+      .send({ email: 'testuser@test.de', password: 'password123', clubCode: CLUB_CODE });
     const token = loginRes.body.data.tokens.refreshToken;
 
-    const logoutRes = await request(app)
-      .post('/api/v1/auth/logout')
-      .send({ refreshToken: token });
+    const logoutRes = await request(app).post('/api/v1/auth/logout').send({ refreshToken: token });
 
     expect(logoutRes.status).toBe(200);
 
@@ -206,7 +191,7 @@ describe('Auth Middleware', () => {
   beforeAll(async () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
-      .send({ email: 'testuser@test.de', password: 'password123' });
+      .send({ email: 'testuser@test.de', password: 'password123', clubCode: CLUB_CODE });
     validToken = res.body.data.tokens.accessToken;
   });
 

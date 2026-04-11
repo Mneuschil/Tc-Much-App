@@ -159,13 +159,19 @@ export async function register(input: {
 export async function login(
   email: string,
   password: string,
+  clubCode: string,
 ): Promise<{ user: User; tokens: AuthTokens }> {
-  const dbUser = await prisma.user.findFirst({
-    where: { email, isActive: true },
+  const club = await prisma.club.findUnique({ where: { clubCode } });
+  if (!club) {
+    throw new AuthError('Ungueltiger Club-Code', 'INVALID_CLUB_CODE', 400);
+  }
+
+  const dbUser = await prisma.user.findUnique({
+    where: { email_clubId: { email, clubId: club.id } },
     include: { roles: true },
   });
 
-  if (!dbUser) {
+  if (!dbUser || !dbUser.isActive) {
     throw new AuthError('Ungueltige Anmeldedaten', 'INVALID_CREDENTIALS', 401);
   }
 
