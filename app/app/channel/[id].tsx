@@ -275,3 +275,5 @@ const styles = StyleSheet.create({
   viewerClose: { position: 'absolute', top: 60, right: 20, zIndex: 1 },
   viewerImage: { width: '90%', height: '70%' },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

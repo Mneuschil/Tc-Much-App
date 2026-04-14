@@ -7,6 +7,7 @@ import { differenceInDays } from 'date-fns';
 import { useTheme } from '../../src/theme';
 import { Badge, EmptyState } from '../../src/components/ui';
 import { useTournaments } from '../../src/features/tournaments/hooks/useTournaments';
+import { useRefreshOnFocus } from '../../src/hooks/useRefreshOnFocus';
 import { formatDate } from '../../src/utils/formatDate';
 import type { Tournament, TournamentStatus, TournamentCategory } from '@tennis-club/shared';
 
@@ -29,6 +30,7 @@ export default function TournamentsScreen() {
   const { colors, typography, spacing, radii } = useTheme();
   const router = useRouter();
   const { data: tournaments, isLoading, refetch } = useTournaments();
+  useRefreshOnFocus(refetch);
 
   const renderTournament = ({ item }: { item: Tournament }) => {
     const statusInfo = STATUS_BADGE[item.status];
@@ -78,7 +80,9 @@ export default function TournamentsScreen() {
       <View
         style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.lg }}
       >
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Turniere</Text>
+        <Text accessibilityRole="header" style={[typography.h1, { color: colors.textPrimary }]}>
+          Turniere
+        </Text>
       </View>
       <FlashList
         data={(tournaments ?? []) as Tournament[]}
@@ -131,3 +135,5 @@ export default function TournamentsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

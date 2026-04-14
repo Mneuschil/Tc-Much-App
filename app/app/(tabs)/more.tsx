@@ -165,3 +165,5 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center' },
   menuIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

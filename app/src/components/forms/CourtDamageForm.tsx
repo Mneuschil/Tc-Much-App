@@ -1,25 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Platform,
-  ActionSheetIOS,
-  Alert,
-  AccessibilityInfo,
-} from 'react-native';
+import React from 'react';
+import { View, Text, TextInput, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../../theme';
 import { Button } from '../ui/Button';
 import { FilterPill } from '../ui/FilterPill';
-import { useSubmitCourtDamage } from '../../hooks/useForms';
-import { appendFileToFormData } from '../../utils/createFileFormData';
 import { Urgency } from '@tennis-club/shared';
+import { useCourtDamageForm } from './useCourtDamageForm';
+import { DamageSuccessCard } from './DamageSuccessCard';
 
 const COURTS = ['1', '2', '3', '4', '5'];
 const URGENCY_OPTIONS: { value: Urgency; label: string }[] = [
@@ -30,103 +18,14 @@ const URGENCY_OPTIONS: { value: Urgency; label: string }[] = [
 
 export function CourtDamageForm() {
   const { colors, spacing, radii, typography } = useTheme();
-  const mutation = useSubmitCourtDamage();
+  const form = useCourtDamageForm();
 
-  const [courtNumber, setCourtNumber] = useState('');
-  const [description, setDescription] = useState('');
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [urgency, setUrgency] = useState<Urgency>(Urgency.LOW);
-  const [submitted, setSubmitted] = useState(false);
-
-  const pickFromCamera = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) return;
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
-
-  const pickFromGallery = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.8,
-      allowsEditing: true,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
-
-  const pickImage = useCallback(() => {
-    const options = ['Kamera', 'Galerie', 'Abbrechen'];
-    const cancelButtonIndex = 2;
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions({ options, cancelButtonIndex }, (buttonIndex) => {
-        if (buttonIndex === 0) pickFromCamera();
-        if (buttonIndex === 1) pickFromGallery();
-      });
-    } else {
-      Alert.alert('Foto hinzufuegen', '', [
-        { text: 'Kamera', onPress: pickFromCamera },
-        { text: 'Galerie', onPress: pickFromGallery },
-        { text: 'Abbrechen', style: 'cancel' },
-      ]);
-    }
-  }, []);
-
-  const handleSubmit = () => {
-    if (!courtNumber || !description || !photoUri) return;
-
-    const formData = new FormData();
-    formData.append('courtNumber', courtNumber);
-    formData.append('description', description);
-    formData.append('urgency', urgency);
-    appendFileToFormData(formData, 'photo', photoUri, 'court-damage.jpg', 'image/jpeg');
-
-    mutation.mutate(formData, {
-      onSuccess: () => {
-        setSubmitted(true);
-        AccessibilityInfo.announceForAccessibility('Schadensmeldung erfolgreich eingereicht');
-      },
-    });
-  };
-
-  const isValid = courtNumber !== '' && description.trim().length > 0 && photoUri !== null;
-
-  if (submitted) {
-    return (
-      <View
-        style={[
-          styles.successCard,
-          { backgroundColor: colors.successSurface, borderRadius: radii.md, padding: spacing.xxl },
-        ]}
-      >
-        <Ionicons name="checkmark-circle" size={48} color={colors.success} />
-        <Text
-          style={[
-            typography.h3,
-            { color: colors.textPrimary, marginTop: spacing.md, textAlign: 'center' },
-          ]}
-        >
-          Meldung eingereicht
-        </Text>
-        <Text
-          style={[
-            typography.caption,
-            { color: colors.textSecondary, marginTop: spacing.s, textAlign: 'center' },
-          ]}
-        >
-          Du wirst über den Status informiert
-        </Text>
-      </View>
-    );
+  if (form.submitted) {
+    return <DamageSuccessCard />;
   }
 
   return (
     <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.xl }}>
-      {/* Platz-Nr */}
       <View>
         <Text
           style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
@@ -138,14 +37,13 @@ export function CourtDamageForm() {
             <FilterPill
               key={c}
               label={c}
-              isActive={courtNumber === c}
-              onPress={() => setCourtNumber(c)}
+              isActive={form.courtNumber === c}
+              onPress={() => form.setCourtNumber(c)}
             />
           ))}
         </View>
       </View>
 
-      {/* Beschreibung */}
       <View>
         <Text
           nativeID="damage-desc-label"
@@ -154,8 +52,8 @@ export function CourtDamageForm() {
           Beschreibung
         </Text>
         <TextInput
-          value={description}
-          onChangeText={setDescription}
+          value={form.description}
+          onChangeText={form.setDescription}
           multiline
           placeholder="Beschreibe den Schaden..."
           placeholderTextColor={colors.textTertiary}
@@ -174,17 +72,16 @@ export function CourtDamageForm() {
         />
       </View>
 
-      {/* Foto */}
       <View>
         <Text
           style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
         >
           Foto
         </Text>
-        {photoUri ? (
+        {form.photoUri ? (
           <View>
             <Image
-              source={{ uri: photoUri }}
+              source={{ uri: form.photoUri }}
               style={[styles.preview, { borderRadius: radii.md }]}
               contentFit="cover"
               transition={200}
@@ -192,7 +89,7 @@ export function CourtDamageForm() {
               accessibilityElementsHidden
             />
             <Pressable
-              onPress={() => setPhotoUri(null)}
+              onPress={() => form.setPhotoUri(null)}
               accessibilityLabel="Foto entfernen"
               accessibilityRole="button"
               style={[
@@ -205,7 +102,7 @@ export function CourtDamageForm() {
           </View>
         ) : (
           <Pressable
-            onPress={pickImage}
+            onPress={form.pickImage}
             accessibilityLabel="Foto aufnehmen oder auswählen"
             accessibilityRole="button"
             style={[
@@ -223,7 +120,6 @@ export function CourtDamageForm() {
         )}
       </View>
 
-      {/* Dringlichkeit */}
       <View>
         <Text
           style={[typography.bodyMedium, { color: colors.textPrimary, marginBottom: spacing.s }]}
@@ -232,7 +128,7 @@ export function CourtDamageForm() {
         </Text>
         <View style={styles.urgencyRow}>
           {URGENCY_OPTIONS.map((opt) => {
-            const isActive = urgency === opt.value;
+            const isActive = form.urgency === opt.value;
             const bg =
               opt.value === 'LOW'
                 ? colors.backgroundSecondary
@@ -249,7 +145,7 @@ export function CourtDamageForm() {
             return (
               <Pressable
                 key={opt.value}
-                onPress={() => setUrgency(opt.value)}
+                onPress={() => form.setUrgency(opt.value)}
                 accessibilityLabel={`Dringlichkeit: ${opt.label}`}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isActive }}
@@ -282,14 +178,13 @@ export function CourtDamageForm() {
         </View>
       </View>
 
-      {/* Submit */}
       <Button
         title="Meldung absenden"
-        onPress={handleSubmit}
+        onPress={form.handleSubmit}
         variant="primary"
         fullWidth
-        loading={mutation.isPending}
-        disabled={!isValid}
+        loading={form.isPending}
+        disabled={!form.isValid}
       />
     </ScrollView>
   );
@@ -318,5 +213,4 @@ const styles = StyleSheet.create({
   urgencyRow: { flexDirection: 'row', gap: 8 },
   urgencyBtn: { flex: 1, height: 44, alignItems: 'center', justifyContent: 'center' },
   urgencyLabel: { fontSize: 14 },
-  successCard: { alignItems: 'center', justifyContent: 'center', marginTop: 40 },
 });

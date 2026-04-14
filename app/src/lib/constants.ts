@@ -1,5 +1,5 @@
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.178.97:3000/api/v1';
-export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://192.168.178.97:3000';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',

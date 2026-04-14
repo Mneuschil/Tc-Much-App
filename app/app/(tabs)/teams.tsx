@@ -8,6 +8,7 @@ import { useTheme } from '../../src/theme';
 import { EmptyState, QueryError } from '../../src/components/ui';
 import { useMyTeams } from '../../src/features/teams/hooks/useMyTeams';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
+import { useRefreshOnFocus } from '../../src/hooks/useRefreshOnFocus';
 import { formatDate } from '../../src/utils/formatDate';
 
 interface TeamItem {
@@ -39,6 +40,7 @@ export default function TeamsScreen() {
   const router = useRouter();
 
   const { myTeams: apiMyTeams, isLoading, isError, refetch } = useMyTeams();
+  useRefreshOnFocus(refetch);
   const { data: weekEventsData } = useWeekEvents();
 
   const myTeams = useMemo(() => (apiMyTeams ?? []) as TeamItem[], [apiMyTeams]);
@@ -173,7 +175,9 @@ export default function TeamsScreen() {
       if (item.type === 'header') {
         return (
           <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-            <Text style={[typography.h3, { color: colors.textPrimary }]}>{item.title}</Text>
+            <Text accessibilityRole="header" style={[typography.h3, { color: colors.textPrimary }]}>
+              {item.title}
+            </Text>
             <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
               {item.subtitle}
             </Text>
@@ -190,7 +194,9 @@ export default function TeamsScreen() {
       <View
         style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.md }}
       >
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Teams</Text>
+        <Text accessibilityRole="header" style={[typography.h1, { color: colors.textPrimary }]}>
+          Teams
+        </Text>
       </View>
       <FlashList
         data={flatData}
@@ -221,3 +227,5 @@ const styles = StyleSheet.create({
   teamRow: { flexDirection: 'row', alignItems: 'center' },
   teamIcon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

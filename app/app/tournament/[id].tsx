@@ -294,3 +294,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

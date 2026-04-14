@@ -10,6 +10,7 @@ import { ChannelListItem, CreateChannelModal } from '../../src/components/chat';
 import type { ChannelItem } from '../../src/components/chat';
 import { useChannels } from '../../src/features/chat/hooks/useChannels';
 import { usePermissions } from '../../src/hooks/usePermissions';
+import { useRefreshOnFocus } from '../../src/hooks/useRefreshOnFocus';
 
 const ListSeparator = React.memo(function ListSeparator({ color }: { color: string }) {
   return <View style={[styles.separator, { backgroundColor: color }]} />;
@@ -24,6 +25,7 @@ export default function ChannelsScreen() {
   const [showCreate, setShowCreate] = useState(false);
 
   const { data, isLoading, isError, refetch } = useChannels();
+  useRefreshOnFocus(refetch);
   const allChannels = useMemo(() => (data ?? []) as ChannelItem[], [data]);
 
   const channels = useMemo(() => {
@@ -51,7 +53,9 @@ export default function ChannelsScreen() {
       <View
         style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}
       >
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Chats</Text>
+        <Text accessibilityRole="header" style={[typography.h1, { color: colors.textPrimary }]}>
+          Chats
+        </Text>
       </View>
       <View style={{ paddingHorizontal: spacing.xl, paddingBottom: spacing.sm }}>
         <SearchInput placeholder="Channel suchen..." value={search} onChangeText={setSearch} />
@@ -113,3 +117,5 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

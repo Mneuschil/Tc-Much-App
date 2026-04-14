@@ -5,15 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import type { TeamMemberWithUser } from '@tennis-club/shared';
 import { useTheme } from '../../theme';
-import { Avatar, EmptyState, SearchInput } from '../ui';
+import { EmptyState, SearchInput } from '../ui';
 import { useClubMembers } from '../../hooks/useProfile';
-
-interface ClubMember {
-  id: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl: string | null;
-}
+import { TeamMemberRow } from './KaderMemberRow';
+import { KaderAddMemberRow } from './KaderAddMemberRow';
 
 interface KaderSheetProps {
   visible: boolean;
@@ -31,7 +26,6 @@ export function KaderSheet({
   onClose,
   members,
   teamType,
-  // teamId reserved for future position-editing feature
   canManage,
   onAddMember,
   onRemoveMember,
@@ -49,12 +43,16 @@ export function KaderSheet({
     [members, showPosition],
   );
 
-  const existingMemberIds = useMemo(() => members.map((m) => m.user.id), [members]);
+  const existingMemberIds = useMemo(() => new Set(members.map((m) => m.user.id)), [members]);
 
   const availableMembers = useMemo(() => {
-    const existingSet = new Set(existingMemberIds);
-    const all = (clubMembersData ?? []) as ClubMember[];
-    const filtered = all.filter((m) => !existingSet.has(m.id));
+    const all = (clubMembersData ?? []) as {
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl: string | null;
+    }[];
+    const filtered = all.filter((m) => !existingMemberIds.has(m.id));
     if (!search.trim()) return filtered;
     const q = search.toLowerCase();
     return filtered.filter(
@@ -82,85 +80,6 @@ export function KaderSheet({
     [onAddMember],
   );
 
-  const renderAvailableMember = useCallback(
-    ({ item }: { item: ClubMember }) => (
-      <Pressable
-        onPress={() => handleAddSelect(item.id)}
-        accessibilityLabel={`${item.firstName} ${item.lastName} hinzufügen`}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.memberRow,
-          {
-            paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.md,
-            borderBottomColor: colors.separator,
-            opacity: pressed ? 0.7 : 1,
-          },
-        ]}
-      >
-        <Avatar
-          firstName={item.firstName}
-          lastName={item.lastName}
-          imageUrl={item.avatarUrl}
-          size="md"
-        />
-        <Text
-          style={[
-            typography.bodyMedium,
-            { color: colors.textPrimary, flex: 1, marginLeft: spacing.md },
-          ]}
-        >
-          {item.firstName} {item.lastName}
-        </Text>
-        <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
-      </Pressable>
-    ),
-    [handleAddSelect, spacing, colors, typography],
-  );
-
-  const renderTeamMember = useCallback(
-    ({ item }: { item: TeamMemberWithUser }) => (
-      <View
-        style={[
-          styles.memberRow,
-          {
-            paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.md,
-            borderBottomColor: colors.separator,
-          },
-        ]}
-      >
-        <Avatar
-          firstName={item.user.firstName}
-          lastName={item.user.lastName}
-          imageUrl={item.user.avatarUrl}
-          size="md"
-        />
-        <View style={styles.memberInfo}>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>
-            {item.user.firstName} {item.user.lastName}
-          </Text>
-          {showPosition && item.position && (
-            <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
-              Position {item.position}
-            </Text>
-          )}
-        </View>
-        {canManage && (
-          <Pressable
-            onPress={() => confirmRemove(item)}
-            hitSlop={12}
-            accessibilityLabel={`${item.user.firstName} ${item.user.lastName} entfernen`}
-            accessibilityRole="button"
-          >
-            <Ionicons name="trash-outline" size={20} color={colors.danger} />
-          </Pressable>
-        )}
-      </View>
-    ),
-    [spacing, colors, typography, showPosition, canManage, confirmRemove],
-  );
-
   const handleClose = () => {
     setMode('list');
     setSearch('');
@@ -181,7 +100,7 @@ export function KaderSheet({
         <View
           style={[styles.header, { paddingHorizontal: spacing.xl, paddingVertical: spacing.lg }]}
         >
-          {mode === 'add' ? (
+          {mode === 'add' && (
             <Pressable
               onPress={() => {
                 setMode('list');
@@ -193,12 +112,13 @@ export function KaderSheet({
             >
               <Ionicons name="arrow-back" size={26} color={colors.textPrimary} />
             </Pressable>
-          ) : null}
+          )}
           <Text
             style={[
               typography.h2,
               { color: colors.textPrimary, flex: 1, marginLeft: mode === 'add' ? spacing.md : 0 },
             ]}
+            accessibilityRole="header"
           >
             {mode === 'add' ? 'Mitglied hinzufügen' : 'Mitglieder'}
           </Text>
@@ -225,7 +145,9 @@ export function KaderSheet({
               data={availableMembers}
               keyExtractor={(item) => item.id}
               contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-              renderItem={renderAvailableMember}
+              renderItem={({ item }) => (
+                <KaderAddMemberRow item={item} onSelect={handleAddSelect} />
+              )}
               ListEmptyComponent={
                 <EmptyState
                   title="Keine Mitglieder"
@@ -274,7 +196,14 @@ export function KaderSheet({
                   description="Noch keine Personen in diesem Team"
                 />
               }
-              renderItem={renderTeamMember}
+              renderItem={({ item }) => (
+                <TeamMemberRow
+                  item={item}
+                  showPosition={showPosition}
+                  canManage={canManage}
+                  onRemove={confirmRemove}
+                />
+              )}
             />
           </>
         )}
@@ -285,20 +214,6 @@ export function KaderSheet({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  memberInfo: { flex: 1, marginLeft: 12 },
-  addButton: {
-    height: 48,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  header: { flexDirection: 'row', alignItems: 'center' },
+  addButton: { height: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
 });

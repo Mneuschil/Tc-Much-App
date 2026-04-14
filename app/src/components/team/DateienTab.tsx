@@ -26,6 +26,7 @@ import { useFileUploadFlow } from '../../features/files/hooks/useFileUploadFlow'
 import { API_URL } from '../../lib/constants';
 import { FileRow, type FileData } from './FileRow';
 import { FolderRow, type FolderData } from './FolderRow';
+import { FolderBreadcrumb } from './FolderBreadcrumb';
 import { FileUploadModal } from './FileUploadModal';
 import { FolderCreateModal } from './FolderCreateModal';
 import { ImageViewerModal } from './ImageViewerModal';
@@ -139,33 +140,13 @@ export function DateienTab({ channelId, isCreatingChannel }: DateienTabProps) {
   return (
     <View style={{ flex: 1 }}>
       {currentFolderName && (
-        <Pressable
-          onPress={() => {
+        <FolderBreadcrumb
+          folderName={currentFolderName}
+          onNavigateBack={() => {
             setCurrentFolderId(undefined);
             setCurrentFolderName(null);
           }}
-          accessibilityLabel="Zurück zum übergeordneten Ordner"
-          accessibilityRole="button"
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingHorizontal: spacing.xl,
-            paddingVertical: spacing.md,
-            backgroundColor: colors.backgroundSecondary,
-            opacity: pressed ? 0.7 : 1,
-          })}
-        >
-          <Ionicons name="arrow-back" size={18} color={colors.accent} />
-          <Ionicons
-            name="folder"
-            size={16}
-            color={colors.accent}
-            style={{ marginLeft: spacing.sm }}
-          />
-          <Text style={[typography.bodyMedium, { color: colors.accent, marginLeft: spacing.xs }]}>
-            {currentFolderName}
-          </Text>
-        </Pressable>
+        />
       )}
 
       <FlashList

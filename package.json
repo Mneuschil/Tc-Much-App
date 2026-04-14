@@ -21,6 +21,8 @@
     "test": "npm run test -w backend && npm run test -w app",
     "validate": "npm run build:shared && npm run typecheck && npm run lint && npm run test",
     "dev": "npm run build:shared && npx concurrently -n shared,backend,app -c blue,green,magenta \"npm run dev -w shared\" \"npm run dev -w backend\" \"npm run start -w app\"",
+    "dev:sim": "npm run build:shared && npx concurrently -n shared,backend,app -c blue,green,magenta \"npm run dev -w shared\" \"npm run dev -w backend\" \"npm run ios -w app\"",
+    "dev:phone": "bash scripts/dev-phone.sh",
     "format": "prettier --write \"**/*.{ts,tsx,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json}\"",
     "prepare": "husky"

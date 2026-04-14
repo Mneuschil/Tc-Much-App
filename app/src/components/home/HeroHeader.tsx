@@ -1,19 +1,11 @@
-import { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import {
-  getWeekDays,
-  toDateKey,
-  isSameDay,
-  getCalendarWeek,
-  DAY_LABELS_DE,
-  MONTH_NAMES_DE,
-  type CalendarEvent,
-} from '../../utils/calendarUtils';
+import { WeekDayStrip } from './WeekDayStrip';
+import type { CalendarEvent } from '../../utils/calendarUtils';
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const heroBg = require('../../../assets/images/hero-bg.jpg') as number;
@@ -37,108 +29,6 @@ export function HeroHeader({
 }: HeroHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const today = useMemo(() => new Date(), []);
-  const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
-
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, WeekEvent[]>();
-    for (const ev of events) {
-      const k = toDateKey(new Date(ev.startDate));
-      const arr = map.get(k);
-      if (arr) {
-        arr.push(ev);
-      } else {
-        map.set(k, [ev]);
-      }
-    }
-    return map;
-  }, [events]);
-
-  const HERO_DOT_COLORS: Record<string, string> = {
-    LEAGUE_MATCH: '#FF453A',
-    CUP_MATCH: '#FF453A',
-    RANKING_MATCH: '#FF9500',
-    TOURNAMENT: '#0EA65A',
-    CLUB_CHAMPIONSHIP: '#0EA65A',
-    TRAINING: '#34D058',
-    CLUB_EVENT: 'rgba(255,255,255,0.7)',
-  };
-  const dotColor = (type: string): string => HERO_DOT_COLORS[type] ?? 'rgba(255,255,255,0.5)';
-
-  const isToday = isSameDay(selectedDate, today);
-
-  const calendarStrip = (
-    <View style={styles.calendarSection}>
-      {/* Today label + month */}
-      <View style={styles.metaRow}>
-        <Text style={styles.todayLabel}>{isToday ? 'Heute' : ''}</Text>
-        <Text style={styles.monthLabel}>
-          KW {getCalendarWeek(selectedDate)} · {MONTH_NAMES_DE[selectedDate.getMonth()]}{' '}
-          {selectedDate.getFullYear()}
-        </Text>
-      </View>
-
-      {/* Week strip */}
-      <View style={styles.weekRow}>
-        {weekDays.map((day, index) => {
-          const isTodayDay = isSameDay(day, today);
-          const isSelected = isSameDay(day, selectedDate);
-          const key = toDateKey(day);
-          const dayEvts = eventsByDate.get(key) ?? [];
-
-          return (
-            <Pressable
-              key={key}
-              onPress={() => onDateSelect(day)}
-              style={styles.dayCol}
-              accessibilityLabel={`${DAY_LABELS_DE[index]} ${day.getDate()}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-            >
-              <Text style={[styles.dayLabel, isSelected && styles.dayLabelActive]}>
-                {DAY_LABELS_DE[index]}
-              </Text>
-              <View
-                style={[
-                  styles.dayCircle,
-                  isSelected && styles.dayCircleActive,
-                  isTodayDay && !isSelected && styles.dayCircleToday,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.dayNumber,
-                    isSelected && styles.dayNumberActive,
-                    isTodayDay && !isSelected && styles.dayNumberToday,
-                  ]}
-                >
-                  {day.getDate()}
-                </Text>
-              </View>
-              <View
-                style={styles.dotsRow}
-                importantForAccessibility="no"
-                accessibilityElementsHidden
-              >
-                {dayEvts.length > 0 ? (
-                  dayEvts
-                    .slice(0, 3)
-                    .map((ev) => (
-                      <View
-                        key={ev.id}
-                        style={[styles.dot, { backgroundColor: dotColor(ev.type) }]}
-                      />
-                    ))
-                ) : (
-                  <View style={styles.dotPlaceholder} />
-                )}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles.hero}>
@@ -150,7 +40,6 @@ export function HeroHeader({
         cachePolicy="memory-disk"
         accessibilityElementsHidden
       />
-      {/* Single continuous gradient: transparent → dark hint → green */}
       <LinearGradient
         colors={[
           'rgba(0,0,0,0.08)',
@@ -163,7 +52,6 @@ export function HeroHeader({
         locations={[0, 0.25, 0.45, 0.6, 0.78, 1]}
         style={[styles.overlay, { paddingTop: insets.top }]}
       >
-        {/* Top action row */}
         <View style={styles.topRow}>
           <Pressable
             style={styles.glassBtn}
@@ -202,8 +90,7 @@ export function HeroHeader({
           </View>
         </View>
 
-        {/* Calendar strip — sits in the green zone */}
-        {calendarStrip}
+        <WeekDayStrip events={events} selectedDate={selectedDate} onDateSelect={onDateSelect} />
       </LinearGradient>
     </View>
   );
@@ -217,7 +104,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   overlay: { paddingHorizontal: 20 },
-
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -245,42 +131,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   notifBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-
-  calendarSection: { paddingTop: 14, paddingBottom: 16 },
-
-  metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  todayLabel: { fontSize: 15, fontWeight: '600', color: 'rgba(255,255,255,0.9)' },
-  monthLabel: { fontSize: 13, fontWeight: '500', color: 'rgba(255,255,255,0.55)' },
-
-  weekRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  dayCol: { alignItems: 'center', flex: 1 },
-  dayLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.45)',
-    marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  dayLabelActive: { color: '#fff' },
-  dayCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dayCircleActive: { backgroundColor: 'rgba(255,255,255,0.95)' },
-  dayCircleToday: { borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)' },
-  dayNumber: { fontSize: 15, fontWeight: '500', color: 'rgba(255,255,255,0.6)' },
-  dayNumberActive: { color: '#023320', fontWeight: '700' },
-  dayNumberToday: { color: '#fff' },
-  dotsRow: { flexDirection: 'row', marginTop: 6, gap: 3, height: 6, alignItems: 'center' },
-  dot: { width: 5, height: 5, borderRadius: 2.5 },
-  dotPlaceholder: { height: 5 },
 });

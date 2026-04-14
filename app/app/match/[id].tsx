@@ -302,3 +302,5 @@ export default function MatchDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

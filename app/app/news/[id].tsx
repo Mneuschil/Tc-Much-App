@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
 import { Avatar } from '../../src/components/ui';
 import { formatTimeAgo } from '../../src/utils/formatDate';
+// MOCK: Ersetzen durch useNewsPost(id) Hook wenn Backend-Endpoint bereit
 import { getNewsById } from '../../src/components/home/mockNews';
 import type { NewsComment } from '../../src/components/home/newsTypes';
 
@@ -286,3 +287,5 @@ const styles = StyleSheet.create({
   input: { flex: 1, paddingHorizontal: 16, paddingVertical: 10, maxHeight: 100 },
   sendBtn: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';

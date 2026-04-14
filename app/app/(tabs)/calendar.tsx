@@ -9,6 +9,7 @@ import { useTheme } from '../../src/theme';
 import { EmptyState, QueryError } from '../../src/components/ui';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useEvents } from '../../src/features/calendar/hooks/useEvents';
+import { useRefreshOnFocus } from '../../src/hooks/useRefreshOnFocus';
 import { formatDate } from '../../src/utils/formatDate';
 import { toDateKey, getEventColor, type CalendarEvent } from '../../src/utils/calendarUtils';
 import { AgendaItem } from '../../src/components/calendar/AgendaItem';
@@ -34,6 +35,7 @@ export default function CalendarScreen() {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useEvents();
+  useRefreshOnFocus(refetch);
   const apiEvents = useMemo(() => (data ?? []) as CalendarEvent[], [data]);
   const allEvents = useMemo(
     () => (activeFilter ? apiEvents.filter((e) => e.type === activeFilter) : apiEvents),
@@ -93,15 +95,18 @@ export default function CalendarScreen() {
       <View
         style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg, paddingBottom: spacing.sm }}
       >
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Kalender</Text>
+        <Text accessibilityRole="header" style={[typography.h1, { color: colors.textPrimary }]}>
+          Kalender
+        </Text>
       </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filterRow}
         contentContainerStyle={{
           paddingHorizontal: spacing.xl,
           gap: spacing.sm,
-          paddingBottom: spacing.md,
+          alignItems: 'center',
         }}
       >
         {EVENT_FILTER_OPTIONS.map((opt) => {
@@ -171,7 +176,10 @@ export default function CalendarScreen() {
                   marginTop: spacing.lg,
                 }}
               >
-                <Text style={[typography.h3, { color: colors.textPrimary }]}>
+                <Text
+                  accessibilityRole="header"
+                  style={[typography.h3, { color: colors.textPrimary }]}
+                >
                   {formatDate(selectedDate)}
                 </Text>
                 <Pressable onPress={() => setSelectedDate(null)}>
@@ -182,7 +190,10 @@ export default function CalendarScreen() {
               </View>
             )}
             {!selectedDate && (
-              <Text style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.lg }]}>
+              <Text
+                accessibilityRole="header"
+                style={[typography.h3, { color: colors.textPrimary, marginTop: spacing.lg }]}
+              >
                 Kommende Termine
               </Text>
             )}
@@ -233,6 +244,7 @@ export default function CalendarScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  filterRow: { flexGrow: 0, marginBottom: 8 },
   filterPill: { paddingHorizontal: 14, paddingVertical: 8 },
   fab: {
     position: 'absolute',
@@ -245,3 +257,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+export { ScreenErrorBoundary as ErrorBoundary } from '../../src/components/ScreenErrorBoundary';
