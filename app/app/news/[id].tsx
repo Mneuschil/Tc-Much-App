@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,14 @@ import {
   Share,
   ActivityIndicator,
   RefreshControl,
+  Linking,
+  useWindowDimensions,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 import { useTheme } from '../../src/theme';
 import { formatDate } from '../../src/utils/formatDate';
 import { useNewsDetail } from '../../src/features/news/hooks/useNews';
@@ -20,8 +23,74 @@ import { useNewsDetail } from '../../src/features/news/hooks/useNews';
 export default function NewsDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, typography, spacing } = useTheme();
+  const { width } = useWindowDimensions();
+  const bodyMaxWidth = width - spacing.xl * 2;
 
   const { data, isLoading, isError, refetch, isRefetching } = useNewsDetail(id);
+
+  const markdownStyles = useMemo(
+    () => ({
+      body: { color: colors.textPrimary, fontSize: 16, lineHeight: 24 },
+      paragraph: { marginTop: 0, marginBottom: 14, color: colors.textPrimary },
+      heading1: { ...typography.h2, color: colors.textPrimary, marginTop: 16, marginBottom: 8 },
+      heading2: { ...typography.h3, color: colors.textPrimary, marginTop: 16, marginBottom: 8 },
+      heading3: { ...typography.h4, color: colors.textPrimary, marginTop: 12, marginBottom: 6 },
+      strong: { fontWeight: '700' as const, color: colors.textPrimary },
+      em: { fontStyle: 'italic' as const },
+      link: { color: colors.accent, textDecorationLine: 'underline' as const },
+      bullet_list: { marginBottom: 14 },
+      ordered_list: { marginBottom: 14 },
+      list_item: { marginBottom: 4, color: colors.textPrimary },
+      blockquote: {
+        backgroundColor: colors.backgroundSecondary,
+        borderLeftColor: colors.accent,
+        borderLeftWidth: 3,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        marginVertical: 8,
+      },
+      code_inline: {
+        backgroundColor: colors.backgroundSecondary,
+        color: colors.textPrimary,
+        paddingHorizontal: 4,
+        borderRadius: 4,
+      },
+      hr: { backgroundColor: colors.separator, height: 1, marginVertical: 16 },
+    }),
+    [colors, typography],
+  );
+
+  const markdownRules = useMemo(
+    () => ({
+      // Render images via expo-image so they cache and we can control sizing.
+      image: (node: { attributes: { src?: string; alt?: string } }) => {
+        const src = node.attributes.src;
+        if (!src) return null;
+        return (
+          <Image
+            key={src}
+            source={{ uri: src }}
+            style={{
+              width: bodyMaxWidth,
+              height: bodyMaxWidth * 0.66,
+              marginVertical: 8,
+              borderRadius: 12,
+            }}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            accessibilityLabel={node.attributes.alt ?? undefined}
+          />
+        );
+      },
+    }),
+    [bodyMaxWidth],
+  );
+
+  const handleLinkPress = useCallback((url: string) => {
+    void Linking.openURL(url);
+    return false;
+  }, []);
 
   const handleShare = useCallback(() => {
     if (!data) return;
@@ -135,18 +204,11 @@ export default function NewsDetailScreen() {
               </Pressable>
             </View>
 
-            <Text
-              style={[
-                typography.body,
-                {
-                  color: colors.textPrimary,
-                  marginTop: spacing.xl,
-                  lineHeight: 24,
-                },
-              ]}
-            >
-              {data.body}
-            </Text>
+            <View style={{ marginTop: spacing.xl }}>
+              <Markdown style={markdownStyles} rules={markdownRules} onLinkPress={handleLinkPress}>
+                {data.body}
+              </Markdown>
+            </View>
           </View>
         </ScrollView>
       </SafeAreaView>
