@@ -11,24 +11,29 @@ export function connectSocket(token: string): Socket | null {
   try {
     socket = io(SOCKET_URL, {
       auth: { token },
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: true,
-      reconnectionAttempts: 3,
-      reconnectionDelay: 5000,
-      timeout: 5000,
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 10000,
     });
 
-    socket.on('connect', () => {
-      // Verbindung hergestellt
-    });
-
-    socket.on('disconnect', () => {
-      // Verbindung getrennt
-    });
-
-    socket.on('connect_error', () => {
-      // Stille Fehler - Socket ist optional
-    });
+    if (__DEV__) {
+      socket.on('connect', () => {
+        // eslint-disable-next-line no-console
+        console.log('[socket] connected', SOCKET_URL);
+      });
+      socket.on('disconnect', (reason) => {
+        // eslint-disable-next-line no-console
+        console.log('[socket] disconnected:', reason);
+      });
+      socket.on('connect_error', (err) => {
+        // eslint-disable-next-line no-console
+        console.log('[socket] connect_error:', err.message);
+      });
+    }
 
     return socket;
   } catch {

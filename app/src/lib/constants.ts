@@ -1,5 +1,4 @@
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
-export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+export { API_URL, SOCKET_URL, BACKEND_BASE_URL } from './getApiUrl';
 
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',

@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from '../services/chatService';
+import { useAuthStore } from '../../../stores/authStore';
 import type { CreateChannelInput } from '@tennis-club/shared';
 
 export function useChannels() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return useQuery({
     queryKey: ['channels'],
     queryFn: chatService.getChannels,
+    enabled: isAuthenticated,
   });
 }
 

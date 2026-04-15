@@ -20,7 +20,7 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response Interceptor: Token Refresh bei 401
@@ -62,7 +62,9 @@ api.interceptors.response.use(
     try {
       const refreshToken = await SecureStore.getItemAsync(STORAGE_KEYS.REFRESH_TOKEN);
       if (!refreshToken) {
-        throw new Error('No refresh token');
+        // Kein Refresh-Token vorhanden → echter Logout-Fall
+        await useAuthStore.getState().logout();
+        return Promise.reject(error);
       }
 
       const { data } = await axios.post(`${API_URL}/auth/refresh`, {
@@ -86,14 +88,22 @@ api.interceptors.response.use(
     } catch (refreshError) {
       processQueue(refreshError);
 
-      // Store-State konsistent halten bei Refresh-Fehler
-      await useAuthStore.getState().logout();
+      // Nur ausloggen wenn der Refresh-Endpoint wirklich auth-bedingt
+      // abgelehnt hat (401/403). Bei Netzwerk-/Timeout-Fehlern bleibt der
+      // User eingeloggt und der naechste Request kann es erneut versuchen.
+      const axErr = refreshError as AxiosError | undefined;
+      const status = axErr?.response?.status;
+      const isAuthRejection = status === 401 || status === 403;
+
+      if (isAuthRejection) {
+        await useAuthStore.getState().logout();
+      }
 
       return Promise.reject(refreshError);
     } finally {
       isRefreshing = false;
     }
-  }
+  },
 );
 
 export default api;

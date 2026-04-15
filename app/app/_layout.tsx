@@ -9,6 +9,7 @@ import { useThemeStore } from '../src/stores/themeStore';
 import { useColorScheme } from 'react-native';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { ToastProvider } from '../src/components/ui/Toast';
+import { BackendHealthCheck } from '../src/components/BackendHealthCheck';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
+        <BackendHealthCheck />
         <ErrorBoundary>
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(auth)" />
