@@ -2,7 +2,7 @@ import type { CreateCourtBookingInput, TrainingType } from '@tennis-club/shared'
 import { prisma } from '../config/database';
 import { AppError } from '../utils/AppError';
 
-export type CourtCategory = 'TRAINING' | 'MEDENSPIEL' | 'CLUB_EVENT' | 'OTHER';
+export type CourtCategory = 'TRAINING' | 'MEDENSPIEL' | 'WETTSPIEL' | 'CLUB_EVENT' | 'OTHER';
 
 type EventTypeName =
   | 'LEAGUE_MATCH'
@@ -31,8 +31,8 @@ const TYPE_TO_CATEGORY: Record<EventTypeName, CourtCategory> = {
   TRAINING: 'TRAINING',
   LEAGUE_MATCH: 'MEDENSPIEL',
   CUP_MATCH: 'MEDENSPIEL',
-  CLUB_CHAMPIONSHIP: 'MEDENSPIEL',
-  RANKING_MATCH: 'MEDENSPIEL',
+  RANKING_MATCH: 'WETTSPIEL',
+  CLUB_CHAMPIONSHIP: 'WETTSPIEL',
   CLUB_EVENT: 'CLUB_EVENT',
   TOURNAMENT: 'CLUB_EVENT',
 };
@@ -146,6 +146,7 @@ export async function getSlotDetail(
 const CATEGORY_TO_EVENT_TYPE = {
   TRAINING: 'TRAINING' as const,
   MEDENSPIEL: 'LEAGUE_MATCH' as const,
+  WETTSPIEL: 'RANKING_MATCH' as const,
   CLUB_EVENT: 'CLUB_EVENT' as const,
 };
 

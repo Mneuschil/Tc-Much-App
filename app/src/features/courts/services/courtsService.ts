@@ -1,7 +1,7 @@
 import api from '../../../lib/api';
 import { ENDPOINTS } from '../../../lib/endpoints';
 
-export type CourtCategory = 'TRAINING' | 'MEDENSPIEL' | 'CLUB_EVENT' | 'OTHER';
+export type CourtCategory = 'TRAINING' | 'MEDENSPIEL' | 'WETTSPIEL' | 'CLUB_EVENT' | 'OTHER';
 
 export type TrainingType =
   | 'MANNSCHAFTSTRAINING'
@@ -35,7 +35,7 @@ export interface CourtSlotDetail extends CourtSlot {
 }
 
 export interface CreateCourtBookingInput {
-  category: 'TRAINING' | 'MEDENSPIEL' | 'CLUB_EVENT';
+  category: 'TRAINING' | 'MEDENSPIEL' | 'WETTSPIEL' | 'CLUB_EVENT';
   court: number;
   startDate: string;
   endDate: string;

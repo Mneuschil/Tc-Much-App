@@ -4,7 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/theme';
-import { LoadingSkeleton, QueryError, EmptyState } from '../../src/components/ui';
+import {
+  LoadingSkeleton,
+  QueryError,
+  EmptyState,
+  GradientBackground,
+} from '../../src/components/ui';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useCourtOccupancy } from '../../src/features/courts/hooks/useCourtOccupancy';
 import { DateNavigator } from '../../src/features/courts/components/DateNavigator';
@@ -36,66 +41,67 @@ export default function CourtsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
-      <View style={[styles.head, { paddingHorizontal: spacing.xl, paddingTop: spacing.l }]}>
-        <Text style={[typography.h1, { color: colors.textPrimary }]}>Plätze</Text>
-        <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
-          Tagesbelegung der 5 Plätze
-        </Text>
-      </View>
+      <GradientBackground style={styles.safe}>
+        <View style={[styles.head, { paddingHorizontal: spacing.xl, paddingTop: spacing.l }]}>
+          <Text style={[typography.h1, { color: colors.textPrimary }]}>Plätze</Text>
+          <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.xs }]}>
+            Tagesbelegung der 5 Plätze
+          </Text>
+        </View>
 
-      <View style={[styles.controls, { paddingHorizontal: spacing.xl, gap: spacing.m }]}>
-        <BookingComingSoonBanner />
-        <DateNavigator date={date} onChange={setDate} />
-        <CategoryLegend />
-      </View>
+        <View style={[styles.controls, { paddingHorizontal: spacing.xl, gap: spacing.m }]}>
+          <BookingComingSoonBanner />
+          <DateNavigator date={date} onChange={setDate} />
+          <CategoryLegend />
+        </View>
 
-      <View style={[styles.timelineWrap, { marginHorizontal: spacing.xl, marginTop: spacing.m }]}>
-        {isLoading ? (
-          <View style={{ gap: spacing.s }}>
-            <LoadingSkeleton width="100%" height={56} borderRadius={12} />
-            <LoadingSkeleton width="100%" height={56} borderRadius={12} />
-            <LoadingSkeleton width="100%" height={56} borderRadius={12} />
-            <LoadingSkeleton width="100%" height={56} borderRadius={12} />
-          </View>
-        ) : isError ? (
-          <QueryError onRetry={refetch} />
-        ) : slots.length === 0 ? (
-          <EmptyState
-            title="Keine Belegungen"
-            description="An diesem Tag ist kein Platz durch Training, Medenspiel oder Verein belegt."
-          />
-        ) : (
-          <CourtsTimeline
-            slots={slots}
-            onSlotPress={setSelectedSlot}
-            onRefresh={refetch}
-            refreshing={isRefetching}
-            bottomInset={tabBarHeight + spacing.l}
-          />
+        <View style={[styles.timelineWrap, { marginHorizontal: spacing.xl, marginTop: spacing.m }]}>
+          {isLoading ? (
+            <View style={{ gap: spacing.s }}>
+              <LoadingSkeleton width="100%" height={56} borderRadius={12} />
+              <LoadingSkeleton width="100%" height={56} borderRadius={12} />
+              <LoadingSkeleton width="100%" height={56} borderRadius={12} />
+              <LoadingSkeleton width="100%" height={56} borderRadius={12} />
+            </View>
+          ) : isError ? (
+            <QueryError onRetry={refetch} />
+          ) : slots.length === 0 ? (
+            <EmptyState
+              title="Keine Belegungen"
+              description="An diesem Tag ist kein Platz durch Training, Medenspiel oder Verein belegt."
+            />
+          ) : (
+            <CourtsTimeline
+              slots={slots}
+              onSlotPress={setSelectedSlot}
+              onRefresh={refetch}
+              refreshing={isRefetching}
+              bottomInset={tabBarHeight + spacing.l}
+            />
+          )}
+        </View>
+
+        {canBookCourt && (
+          <Pressable
+            onPress={() => setCreateOpen(true)}
+            accessibilityLabel="Neue Platzbelegung anlegen"
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.fab,
+              shadows.lg,
+              {
+                right: spacing.xl,
+                bottom: tabBarHeight + spacing.l,
+                backgroundColor: colors.buttonPrimary,
+                borderRadius: borderRadius.full,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Ionicons name="add" size={28} color={colors.buttonPrimaryText} />
+          </Pressable>
         )}
-      </View>
-
-      {canBookCourt && (
-        <Pressable
-          onPress={() => setCreateOpen(true)}
-          accessibilityLabel="Neue Platzbelegung anlegen"
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            styles.fab,
-            shadows.lg,
-            {
-              right: spacing.xl,
-              bottom: tabBarHeight + spacing.l,
-              backgroundColor: colors.buttonPrimary,
-              borderRadius: borderRadius.full,
-              opacity: pressed ? 0.9 : 1,
-            },
-          ]}
-        >
-          <Ionicons name="add" size={28} color={colors.buttonPrimaryText} />
-        </Pressable>
-      )}
-
+      </GradientBackground>
       <SlotDetailModal slot={selectedSlot} onClose={() => setSelectedSlot(null)} />
       <CreateBookingModal
         visible={createOpen}

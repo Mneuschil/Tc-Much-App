@@ -10,3 +10,4 @@ export { LoadingSkeleton } from './LoadingSkeleton';
 export { EmptyState } from './EmptyState';
 export { QueryError } from './QueryError';
 export { ToastProvider, useToast } from './Toast';
+export { GradientBackground } from './GradientBackground';

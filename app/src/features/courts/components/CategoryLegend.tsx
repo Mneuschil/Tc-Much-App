@@ -4,7 +4,7 @@ import { useTheme } from '../../../theme';
 import { CATEGORY_LABEL, getCategoryStyle } from '../utils/courtConstants';
 import type { CourtCategory } from '../services/courtsService';
 
-const CATEGORIES: CourtCategory[] = ['TRAINING', 'MEDENSPIEL'];
+const CATEGORIES: CourtCategory[] = ['TRAINING', 'MEDENSPIEL', 'WETTSPIEL'];
 
 export function CategoryLegend() {
   const { colors, typography, spacing } = useTheme();

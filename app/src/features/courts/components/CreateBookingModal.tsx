@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../../theme';
+import { GradientBackground } from '../../../components/ui';
 import { useTeams } from '../../teams/hooks/useTeams';
 import { useCreateBooking } from '../hooks/useCreateBooking';
 import {
@@ -35,7 +36,7 @@ interface CreateBookingModalProps {
 }
 
 type BookingCategory = Exclude<CourtCategory, 'OTHER'>;
-const CATEGORY_OPTIONS: BookingCategory[] = ['TRAINING', 'MEDENSPIEL', 'CLUB_EVENT'];
+const CATEGORY_OPTIONS: BookingCategory[] = ['TRAINING', 'MEDENSPIEL', 'WETTSPIEL', 'CLUB_EVENT'];
 const TRAINING_TYPES: TrainingType[] = [
   'MANNSCHAFTSTRAINING',
   'JUGENDTRAINING',
@@ -189,282 +190,326 @@ export function CreateBookingModal({ visible, onClose, initialDate }: CreateBook
       onRequestClose={handleClose}
     >
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
-        <View
-          style={[
-            styles.header,
-            { paddingHorizontal: spacing.xl, paddingTop: spacing.l, paddingBottom: spacing.m },
-          ]}
-        >
-          <Pressable
-            onPress={handleClose}
-            hitSlop={8}
-            accessibilityLabel="Abbrechen"
-            accessibilityRole="button"
+        <GradientBackground style={styles.safe}>
+          <View
+            style={[
+              styles.header,
+              { paddingHorizontal: spacing.xl, paddingTop: spacing.l, paddingBottom: spacing.m },
+            ]}
           >
-            <Text style={[typography.body, { color: colors.textSecondary }]}>Abbrechen</Text>
-          </Pressable>
-          <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>Platz buchen</Text>
-          <Pressable
-            disabled={!canSubmit || mutation.isPending}
-            onPress={onSubmit}
-            hitSlop={8}
-            accessibilityLabel="Speichern"
-            accessibilityRole="button"
-          >
-            <Text
-              style={[
-                typography.bodyMedium,
-                {
-                  color: canSubmit && !mutation.isPending ? colors.accent : colors.textTertiary,
-                  fontWeight: '700',
-                },
-              ]}
+            <Pressable
+              onPress={handleClose}
+              hitSlop={8}
+              accessibilityLabel="Abbrechen"
+              accessibilityRole="button"
             >
-              Speichern
-            </Text>
-          </Pressable>
-        </View>
+              <Text style={[typography.body, { color: colors.textSecondary }]}>Abbrechen</Text>
+            </Pressable>
+            <Text style={[typography.bodyMedium, { color: colors.textPrimary }]}>Platz buchen</Text>
+            <Pressable
+              disabled={!canSubmit || mutation.isPending}
+              onPress={onSubmit}
+              hitSlop={8}
+              accessibilityLabel="Speichern"
+              accessibilityRole="button"
+            >
+              <Text
+                style={[
+                  typography.bodyMedium,
+                  {
+                    color: canSubmit && !mutation.isPending ? colors.accent : colors.textTertiary,
+                    fontWeight: '700',
+                  },
+                ]}
+              >
+                Speichern
+              </Text>
+            </Pressable>
+          </View>
 
-        <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.l }}>
-          {/* Kategorie */}
-          <Section title="Art der Belegung" colors={colors} typography={typography}>
-            <View style={styles.pillRow}>
-              {CATEGORY_OPTIONS.map((c) => (
-                <Pill
-                  key={c}
-                  label={CATEGORY_LABEL[c]}
-                  active={category === c}
-                  onPress={() => setCategory(c)}
-                />
-              ))}
-            </View>
-          </Section>
-
-          {/* Platz */}
-          <Section title="Platz" colors={colors} typography={typography}>
-            <View style={styles.pillRow}>
-              {COURTS.map((c) => (
-                <Pill
-                  key={c}
-                  label={`Platz ${c}`}
-                  active={court === c}
-                  onPress={() => setCourt(c)}
-                />
-              ))}
-            </View>
-          </Section>
-
-          {/* Datum + Zeit */}
-          <Section title="Datum" colors={colors} typography={typography}>
-            <FieldRow
-              label={formatDate(startDate)}
-              onPress={() => setShowDatePicker(true)}
-              icon="calendar-outline"
-            />
-            {showDatePicker && (
-              <DateTimePicker
-                value={startDate}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                onChange={(_, d) => {
-                  setShowDatePicker(Platform.OS === 'ios');
-                  if (d) applyDate(d);
-                }}
-              />
-            )}
-          </Section>
-
-          <Section title="Zeit" colors={colors} typography={typography}>
-            <View style={{ flexDirection: 'row', gap: spacing.m }}>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}
-                >
-                  Von
-                </Text>
-                <FieldRow
-                  label={formatTime(startDate)}
-                  onPress={() => setShowStartPicker(true)}
-                  icon="time-outline"
-                />
+          <ScrollView contentContainerStyle={{ padding: spacing.xl, gap: spacing.l }}>
+            {/* Kategorie */}
+            <Section title="Art der Belegung" colors={colors} typography={typography}>
+              <View style={styles.pillRow}>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <Pill
+                    key={c}
+                    label={CATEGORY_LABEL[c]}
+                    active={category === c}
+                    onPress={() => setCategory(c)}
+                  />
+                ))}
               </View>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}
-                >
-                  Bis
-                </Text>
-                <FieldRow
-                  label={formatTime(endDate)}
-                  onPress={() => setShowEndPicker(true)}
-                  icon="time-outline"
-                />
-              </View>
-            </View>
-            {showStartPicker && (
-              <DateTimePicker
-                value={startDate}
-                mode="time"
-                minuteInterval={15}
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(_, d) => {
-                  setShowStartPicker(Platform.OS === 'ios');
-                  if (d) applyStartTime(d);
-                }}
-              />
-            )}
-            {showEndPicker && (
-              <DateTimePicker
-                value={endDate}
-                mode="time"
-                minuteInterval={15}
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(_, d) => {
-                  setShowEndPicker(Platform.OS === 'ios');
-                  if (d) applyEndTime(d);
-                }}
-              />
-            )}
-          </Section>
+            </Section>
 
-          {/* Training spezifisch */}
-          {category === 'TRAINING' && (
-            <>
-              <Section title="Trainings-Typ" colors={colors} typography={typography}>
-                <View style={styles.pillRow}>
-                  {TRAINING_TYPES.map((t) => (
-                    <Pill
-                      key={t}
-                      label={TRAINING_TYPE_LABEL[t]}
-                      active={trainingType === t}
-                      onPress={() => setTrainingType(t)}
-                    />
-                  ))}
+            {/* Platz */}
+            <Section title="Platz" colors={colors} typography={typography}>
+              <View style={styles.pillRow}>
+                {COURTS.map((c) => (
+                  <Pill
+                    key={c}
+                    label={`Platz ${c}`}
+                    active={court === c}
+                    onPress={() => setCourt(c)}
+                  />
+                ))}
+              </View>
+            </Section>
+
+            {/* Datum + Zeit */}
+            <Section title="Datum" colors={colors} typography={typography}>
+              <FieldRow
+                label={formatDate(startDate)}
+                onPress={() => setShowDatePicker(true)}
+                icon="calendar-outline"
+              />
+              {showDatePicker && (
+                <View
+                  style={{
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: borderRadius.md,
+                    padding: 8,
+                    marginTop: 8,
+                  }}
+                >
+                  <DateTimePicker
+                    value={startDate}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                    themeVariant="light"
+                    textColor={colors.textPrimary}
+                    accentColor={colors.accent}
+                    onChange={(_, d) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (d) applyDate(d);
+                    }}
+                  />
                 </View>
-              </Section>
+              )}
+            </Section>
 
-              {trainingType === 'MANNSCHAFTSTRAINING' && (
-                <Section title="Mannschaft" colors={colors} typography={typography}>
-                  {matchTeams.length === 0 ? (
-                    <Text style={[typography.caption, { color: colors.textSecondary }]}>
-                      Keine Mannschaften verfügbar
-                    </Text>
-                  ) : (
+            <Section title="Zeit" colors={colors} typography={typography}>
+              <View style={{ flexDirection: 'row', gap: spacing.m }}>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}
+                  >
+                    Von
+                  </Text>
+                  <FieldRow
+                    label={formatTime(startDate)}
+                    onPress={() => setShowStartPicker(true)}
+                    icon="time-outline"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[typography.caption, { color: colors.textSecondary, marginBottom: 4 }]}
+                  >
+                    Bis
+                  </Text>
+                  <FieldRow
+                    label={formatTime(endDate)}
+                    onPress={() => setShowEndPicker(true)}
+                    icon="time-outline"
+                  />
+                </View>
+              </View>
+              {showStartPicker && (
+                <View
+                  style={{
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: borderRadius.md,
+                    marginTop: 8,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <DateTimePicker
+                    value={startDate}
+                    mode="time"
+                    minuteInterval={15}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    themeVariant="light"
+                    textColor={colors.textPrimary}
+                    accentColor={colors.accent}
+                    onChange={(_, d) => {
+                      setShowStartPicker(Platform.OS === 'ios');
+                      if (d) applyStartTime(d);
+                    }}
+                  />
+                </View>
+              )}
+              {showEndPicker && (
+                <View
+                  style={{
+                    backgroundColor: colors.backgroundSecondary,
+                    borderRadius: borderRadius.md,
+                    marginTop: 8,
+                    paddingVertical: 4,
+                  }}
+                >
+                  <DateTimePicker
+                    value={endDate}
+                    mode="time"
+                    minuteInterval={15}
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    themeVariant="light"
+                    textColor={colors.textPrimary}
+                    accentColor={colors.accent}
+                    onChange={(_, d) => {
+                      setShowEndPicker(Platform.OS === 'ios');
+                      if (d) applyEndTime(d);
+                    }}
+                  />
+                </View>
+              )}
+            </Section>
+
+            {/* Training spezifisch */}
+            {category === 'TRAINING' && (
+              <>
+                <Section title="Trainings-Typ" colors={colors} typography={typography}>
+                  <View style={styles.pillRow}>
+                    {TRAINING_TYPES.map((t) => (
+                      <Pill
+                        key={t}
+                        label={TRAINING_TYPE_LABEL[t]}
+                        active={trainingType === t}
+                        onPress={() => setTrainingType(t)}
+                      />
+                    ))}
+                  </View>
+                </Section>
+
+                {trainingType === 'MANNSCHAFTSTRAINING' && (
+                  <Section title="Mannschaft" colors={colors} typography={typography}>
+                    {matchTeams.length === 0 ? (
+                      <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                        Keine Mannschaften verfügbar
+                      </Text>
+                    ) : (
+                      <View style={styles.pillRow}>
+                        {matchTeams.map(
+                          (t: { id: string; name: string; shortCode: string | null }) => (
+                            <Pill
+                              key={t.id}
+                              label={t.shortCode ? `${t.shortCode} · ${t.name}` : t.name}
+                              active={teamId === t.id}
+                              onPress={() => setTeamId(t.id)}
+                            />
+                          ),
+                        )}
+                      </View>
+                    )}
+                  </Section>
+                )}
+              </>
+            )}
+
+            {/* Medenspiel spezifisch */}
+            {category === 'MEDENSPIEL' && (
+              <>
+                <Section title="Gegner" colors={colors} typography={typography}>
+                  <TextInput
+                    value={opponentName}
+                    onChangeText={setOpponentName}
+                    placeholder="z.B. TC Hennef"
+                    placeholderTextColor={colors.textTertiary}
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: colors.backgroundSecondary,
+                        color: colors.textPrimary,
+                        borderRadius: borderRadius.md,
+                      },
+                    ]}
+                  />
+                </Section>
+
+                <Section title="Heim/Auswärts" colors={colors} typography={typography}>
+                  <View style={styles.pillRow}>
+                    <Pill
+                      label="Heimspiel"
+                      active={isHomeGame}
+                      onPress={() => setIsHomeGame(true)}
+                    />
+                    <Pill
+                      label="Auswärtsspiel"
+                      active={!isHomeGame}
+                      onPress={() => setIsHomeGame(false)}
+                    />
+                  </View>
+                </Section>
+
+                {matchTeams.length > 0 && (
+                  <Section
+                    title="Eigene Mannschaft (optional)"
+                    colors={colors}
+                    typography={typography}
+                  >
                     <View style={styles.pillRow}>
+                      <Pill
+                        label="Keine Angabe"
+                        active={teamId === null}
+                        onPress={() => setTeamId(null)}
+                      />
                       {matchTeams.map(
                         (t: { id: string; name: string; shortCode: string | null }) => (
                           <Pill
                             key={t.id}
-                            label={t.shortCode ? `${t.shortCode} · ${t.name}` : t.name}
+                            label={t.shortCode ? `${t.shortCode}` : t.name}
                             active={teamId === t.id}
                             onPress={() => setTeamId(t.id)}
                           />
                         ),
                       )}
                     </View>
-                  )}
-                </Section>
-              )}
-            </>
-          )}
+                  </Section>
+                )}
+              </>
+            )}
 
-          {/* Medenspiel spezifisch */}
-          {category === 'MEDENSPIEL' && (
-            <>
-              <Section title="Gegner" colors={colors} typography={typography}>
-                <TextInput
-                  value={opponentName}
-                  onChangeText={setOpponentName}
-                  placeholder="z.B. TC Hennef"
-                  placeholderTextColor={colors.textTertiary}
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.backgroundSecondary,
-                      color: colors.textPrimary,
-                      borderRadius: borderRadius.md,
-                    },
-                  ]}
-                />
-              </Section>
+            {/* Titel (optional, wird sonst generiert) */}
+            <Section title="Titel (optional)" colors={colors} typography={typography}>
+              <TextInput
+                value={title}
+                onChangeText={setTitle}
+                placeholder={defaultTitle}
+                placeholderTextColor={colors.textTertiary}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    color: colors.textPrimary,
+                    borderRadius: borderRadius.md,
+                  },
+                ]}
+              />
+            </Section>
 
-              <Section title="Heim/Auswärts" colors={colors} typography={typography}>
-                <View style={styles.pillRow}>
-                  <Pill label="Heimspiel" active={isHomeGame} onPress={() => setIsHomeGame(true)} />
-                  <Pill
-                    label="Auswärtsspiel"
-                    active={!isHomeGame}
-                    onPress={() => setIsHomeGame(false)}
-                  />
-                </View>
-              </Section>
-
-              {matchTeams.length > 0 && (
-                <Section
-                  title="Eigene Mannschaft (optional)"
-                  colors={colors}
-                  typography={typography}
-                >
-                  <View style={styles.pillRow}>
-                    <Pill
-                      label="Keine Angabe"
-                      active={teamId === null}
-                      onPress={() => setTeamId(null)}
-                    />
-                    {matchTeams.map((t: { id: string; name: string; shortCode: string | null }) => (
-                      <Pill
-                        key={t.id}
-                        label={t.shortCode ? `${t.shortCode}` : t.name}
-                        active={teamId === t.id}
-                        onPress={() => setTeamId(t.id)}
-                      />
-                    ))}
-                  </View>
-                </Section>
-              )}
-            </>
-          )}
-
-          {/* Titel (optional, wird sonst generiert) */}
-          <Section title="Titel (optional)" colors={colors} typography={typography}>
-            <TextInput
-              value={title}
-              onChangeText={setTitle}
-              placeholder={defaultTitle}
-              placeholderTextColor={colors.textTertiary}
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  color: colors.textPrimary,
-                  borderRadius: borderRadius.md,
-                },
-              ]}
-            />
-          </Section>
-
-          {/* Notiz */}
-          <Section title="Notiz (optional)" colors={colors} typography={typography}>
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              placeholder="z.B. Rasen gesprengt, Zeit verschoben"
-              placeholderTextColor={colors.textTertiary}
-              multiline
-              style={[
-                styles.input,
-                {
-                  backgroundColor: colors.backgroundSecondary,
-                  color: colors.textPrimary,
-                  borderRadius: borderRadius.md,
-                  minHeight: 80,
-                  textAlignVertical: 'top',
-                  paddingTop: 12,
-                },
-              ]}
-            />
-          </Section>
-        </ScrollView>
+            {/* Notiz */}
+            <Section title="Notiz (optional)" colors={colors} typography={typography}>
+              <TextInput
+                value={description}
+                onChangeText={setDescription}
+                placeholder="z.B. Rasen gesprengt, Zeit verschoben"
+                placeholderTextColor={colors.textTertiary}
+                multiline
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: colors.backgroundSecondary,
+                    color: colors.textPrimary,
+                    borderRadius: borderRadius.md,
+                    minHeight: 80,
+                    textAlignVertical: 'top',
+                    paddingTop: 12,
+                  },
+                ]}
+              />
+            </Section>
+          </ScrollView>
+        </GradientBackground>
       </SafeAreaView>
     </Modal>
   );
@@ -537,15 +582,19 @@ function FieldRow({
       style={{
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.backgroundSecondary,
+        backgroundColor: colors.backgroundTertiary,
+        borderWidth: 1,
+        borderColor: colors.borderLight,
         borderRadius: borderRadius.md,
         paddingHorizontal: 14,
         height: 48,
       }}
     >
-      <Ionicons name={icon} size={18} color={colors.textSecondary} style={{ marginRight: 10 }} />
-      <Text style={[typography.body, { color: colors.textPrimary, flex: 1 }]}>{label}</Text>
-      <Ionicons name="chevron-down" size={16} color={colors.textTertiary} />
+      <Ionicons name={icon} size={18} color={colors.accent} style={{ marginRight: 10 }} />
+      <Text style={[typography.body, { color: colors.textPrimary, flex: 1, fontWeight: '600' }]}>
+        {label}
+      </Text>
+      <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
     </Pressable>
   );
 }

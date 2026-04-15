@@ -10,6 +10,7 @@ export const HOUR_HEIGHT = 56;
 export const CATEGORY_LABEL: Record<CourtCategory, string> = {
   TRAINING: 'Training',
   MEDENSPIEL: 'Medenspiel',
+  WETTSPIEL: 'Wettspiel',
   CLUB_EVENT: 'Vereinsevent',
   OTHER: 'Sonstiges',
 };
@@ -34,6 +35,8 @@ export function getCategoryStyle(
     accent: string;
     warningSurface: string;
     warning: string;
+    infoSurface: string;
+    info: string;
     backgroundTertiary: string;
     textSecondary: string;
     textPrimary: string;
@@ -44,6 +47,8 @@ export function getCategoryStyle(
       return { bg: colors.accentSurface, text: colors.accent, border: colors.accent };
     case 'MEDENSPIEL':
       return { bg: colors.warningSurface, text: colors.warning, border: colors.warning };
+    case 'WETTSPIEL':
+      return { bg: colors.infoSurface, text: colors.info, border: colors.info };
     case 'CLUB_EVENT':
     case 'OTHER':
     default:

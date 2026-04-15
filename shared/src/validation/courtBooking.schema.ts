@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { trainingTypeEnum } from './event.schema';
 
-export const courtBookingCategoryEnum = z.enum(['TRAINING', 'MEDENSPIEL', 'CLUB_EVENT']);
+export const courtBookingCategoryEnum = z.enum([
+  'TRAINING',
+  'MEDENSPIEL',
+  'WETTSPIEL',
+  'CLUB_EVENT',
+]);
 
 export const createCourtBookingSchema = z
   .object({
