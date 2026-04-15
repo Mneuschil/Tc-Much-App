@@ -1,6 +1,7 @@
 import { subHours } from 'date-fns';
 import { prisma } from '../config/database';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 // Spec section 11: attendance (yes/no), deadline (5h before), reminder if no response
 
@@ -30,11 +31,11 @@ export async function getAttendanceForEvent(eventId: string) {
 export async function setAttendance(eventId: string, userId: string, attending: boolean) {
   // Check deadline (5h before event start)
   const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event) throw Object.assign(new Error('Training nicht gefunden'), { statusCode: 404 });
+  if (!event) throw AppError.notFound('Training nicht gefunden');
 
   const deadline = subHours(event.startDate, 5);
   if (new Date() > deadline) {
-    throw Object.assign(new Error('Anmeldefrist abgelaufen (5 Stunden vor Trainingsbeginn)'), { statusCode: 400 });
+    throw AppError.badRequest('Anmeldefrist abgelaufen (5 Stunden vor Trainingsbeginn)');
   }
 
   return prisma.trainingAttendance.upsert({
@@ -104,10 +105,10 @@ export async function sendReminders() {
   for (const training of trainings) {
     if (!training.team) continue;
 
-    const respondedIds = new Set(training.trainingAttendances.map(a => a.userId));
+    const respondedIds = new Set(training.trainingAttendances.map((a) => a.userId));
     const noResponseIds = training.team.members
-      .map(m => m.userId)
-      .filter(id => !respondedIds.has(id));
+      .map((m) => m.userId)
+      .filter((id) => !respondedIds.has(id));
 
     if (noResponseIds.length > 0) {
       await pushService.sendToUsers(noResponseIds, {

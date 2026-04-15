@@ -11,6 +11,7 @@ import { useAuth } from '../../src/hooks/useAuth';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { queryClient } from '../../src/lib/queryClient';
 import { UserRole } from '@tennis-club/shared';
+import { FEATURES, type FeatureKey } from '../../src/config/features';
 
 const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.MEMBER]: 'Mitglied',
@@ -22,15 +23,36 @@ const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.SYSTEM_ADMIN]: 'System-Admin',
 };
 
-const MENU_ITEMS = [
-  { title: 'Turniere', icon: 'trophy-outline' as const, route: '/(tabs)/tournaments' },
-  { title: 'Rangliste', icon: 'stats-chart-outline' as const, route: '/ranking' },
-  { title: 'Kanäle verwalten', icon: 'chatbubbles-outline' as const, route: '/channels-manage' },
-  { title: 'Aufgaben', icon: 'checkbox-outline' as const, route: '/todo' },
-  { title: 'Dateien', icon: 'folder-outline' as const, route: '/files' },
-  { title: 'Formulare', icon: 'document-text-outline' as const, route: '/forms' },
-  { title: 'Einstellungen', icon: 'settings-outline' as const, route: '/settings' },
+type MenuItem = {
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  route: string;
+  feature?: FeatureKey;
+};
+
+const ALL_MENU_ITEMS: MenuItem[] = [
+  {
+    title: 'Turniere',
+    icon: 'trophy-outline',
+    route: '/(tabs)/tournaments',
+    feature: 'tournaments',
+  },
+  { title: 'Rangliste', icon: 'stats-chart-outline', route: '/ranking', feature: 'ranking' },
+  {
+    title: 'Kanäle verwalten',
+    icon: 'chatbubbles-outline',
+    route: '/channels-manage',
+    feature: 'channelsManage',
+  },
+  { title: 'Aufgaben', icon: 'checkbox-outline', route: '/todo', feature: 'todos' },
+  { title: 'Dateien', icon: 'folder-outline', route: '/files', feature: 'files' },
+  { title: 'Formulare', icon: 'document-text-outline', route: '/forms', feature: 'forms' },
+  { title: 'Einstellungen', icon: 'settings-outline', route: '/settings', feature: 'settings' },
 ];
+
+const MENU_ITEMS: MenuItem[] = ALL_MENU_ITEMS.filter(
+  (item) => !item.feature || FEATURES[item.feature],
+);
 
 export default function MoreScreen() {
   const { colors, typography, spacing, radii } = useTheme();

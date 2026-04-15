@@ -3,6 +3,7 @@ import type { CreateMessageInput } from '@tennis-club/shared';
 import { SOCKET_ROOMS } from '@tennis-club/shared';
 import type { Server } from 'socket.io';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 const REACTION_TYPES = ['THUMBS_UP', 'HEART', 'CELEBRATE', 'THINKING'] as const;
 
@@ -40,7 +41,7 @@ export async function checkChannelAccess(channelId: string, userId: string, club
     where: { id: channelId, clubId },
   });
   if (!channel) {
-    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Channel nicht gefunden');
   }
 
   if (channel.visibility === 'PUBLIC') {
@@ -63,10 +64,7 @@ export async function checkChannelAccess(channelId: string, userId: string, club
     where: { channelId_userId: { channelId, userId } },
   });
   if (!membership) {
-    throw Object.assign(new Error('Kein Zugriff auf diesen Channel'), {
-      statusCode: 403,
-      code: 'CHANNEL_ACCESS_DENIED',
-    });
+    throw AppError.forbidden('Kein Zugriff auf diesen Channel', 'CHANNEL_ACCESS_DENIED');
   }
 
   return channel;
@@ -152,23 +150,17 @@ export async function createMessage(
 export async function deleteMessage(messageId: string, userId: string, isAdmin = false) {
   const message = await prisma.message.findUnique({ where: { id: messageId } });
   if (!message) {
-    throw Object.assign(new Error('Nachricht nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Nachricht nicht gefunden');
   }
   if (message.authorId !== userId && !isAdmin) {
-    throw Object.assign(new Error('Keine Berechtigung diese Nachricht zu löschen'), {
-      statusCode: 403,
-      code: 'FORBIDDEN',
-    });
+    throw AppError.forbidden('Keine Berechtigung diese Nachricht zu löschen');
   }
   return prisma.message.delete({ where: { id: messageId } });
 }
 
 export async function searchMessages(clubId: string, query: string, channelId?: string) {
   if (!query) {
-    throw Object.assign(new Error('Suchbegriff erforderlich'), {
-      statusCode: 400,
-      code: 'VALIDATION_ERROR',
-    });
+    throw AppError.badRequest('Suchbegriff erforderlich', 'VALIDATION_ERROR');
   }
 
   return prisma.message.findMany({

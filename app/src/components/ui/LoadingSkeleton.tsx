@@ -1,12 +1,5 @@
-import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useTheme } from '../../theme';
 
 interface LoadingSkeletonProps {
@@ -17,27 +10,35 @@ interface LoadingSkeletonProps {
 
 export function LoadingSkeleton({ width, height, borderRadius = 8 }: LoadingSkeletonProps) {
   const { colors } = useTheme();
-  const opacity = useSharedValue(0.3);
+  const opacity = useRef(new Animated.Value(0.3)).current;
 
   useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.3,
+          duration: 1000,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]),
     );
+    animation.start();
+    return () => animation.stop();
   }, [opacity]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
 
   return (
     <View style={[styles.container, { width: width as number, height, borderRadius }]}>
       <Animated.View
         style={[
           styles.shimmer,
-          { backgroundColor: colors.backgroundSecondary, borderRadius },
-          animatedStyle,
+          { backgroundColor: colors.backgroundSecondary, borderRadius, opacity },
         ]}
       />
     </View>

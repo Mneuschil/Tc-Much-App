@@ -40,7 +40,9 @@ export function TrainerOverviewModal({ visible, eventId, onClose }: TrainerOverv
             padding: spacing.xl,
           }}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Trainer-Übersicht</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Trainer-Übersicht
+          </Text>
           <Pressable
             onPress={onClose}
             hitSlop={12}

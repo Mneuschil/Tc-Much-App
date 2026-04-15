@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { FormSubmissionStatus, FormType } from '@tennis-club/shared';
 import type { CourtDamageInput, MediaUploadInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 // Spec section 14: Court Damage Report → creates todo for groundskeeper → status tracking
 
@@ -91,15 +92,14 @@ export async function updateFormStatus(
 ) {
   const form = await prisma.formSubmission.findFirst({ where: { id: formId, clubId } });
   if (!form) {
-    throw Object.assign(new Error('Formular nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Formular nicht gefunden');
   }
 
   const currentStatus = form.status as FormSubmissionStatus;
   const allowed = VALID_TRANSITIONS[currentStatus];
   if (!allowed || !allowed.includes(newStatus)) {
-    throw Object.assign(
-      new Error(`Statuswechsel von "${currentStatus}" zu "${newStatus}" nicht erlaubt`),
-      { statusCode: 400 },
+    throw AppError.badRequest(
+      `Statuswechsel von "${currentStatus}" zu "${newStatus}" nicht erlaubt`,
     );
   }
 

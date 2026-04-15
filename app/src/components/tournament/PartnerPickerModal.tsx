@@ -78,7 +78,9 @@ export function PartnerPickerModal({ visible, onClose, onSelect }: PartnerPicker
             paddingVertical: spacing.lg,
           }}
         >
-          <Text style={[typography.h2, { color: colors.textPrimary }]}>Partner waehlen</Text>
+          <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
+            Partner waehlen
+          </Text>
           <Pressable
             onPress={onClose}
             accessibilityLabel="Modal schließen"

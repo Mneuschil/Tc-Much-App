@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
+import { FEATURES } from '../../src/config/features';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { differenceInDays } from 'date-fns';
@@ -27,6 +28,13 @@ const CATEGORY_LABELS: Record<TournamentCategory, string> = {
 };
 
 export default function TournamentsScreen() {
+  if (!FEATURES.tournaments) {
+    return <Redirect href="/(tabs)/home" />;
+  }
+  return <TournamentsScreenInner />;
+}
+
+function TournamentsScreenInner() {
   const { colors, typography, spacing, radii } = useTheme();
   const router = useRouter();
   const { data: tournaments, isLoading, refetch } = useTournaments();

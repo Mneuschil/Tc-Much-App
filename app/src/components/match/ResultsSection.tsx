@@ -75,7 +75,10 @@ export function ResultsSection({
       {/* Existing results */}
       {results.length > 0 && results[0].status !== 'SCHEDULED' && (
         <View style={{ marginTop: spacing.xxl }}>
-          <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          <Text
+            style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            accessibilityRole="header"
+          >
             Ergebnisse
           </Text>
           {results.map((r) => (
@@ -118,7 +121,10 @@ export function ResultsSection({
       {/* Score submit */}
       {canSubmitResult && (
         <View style={{ marginTop: spacing.xxl }}>
-          <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          <Text
+            style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            accessibilityRole="header"
+          >
             Ergebnis melden
           </Text>
           <ScoreInput sets={sets} onUpdateSet={updateSet} onAddSet={addSet} readOnly={false} />
@@ -145,7 +151,10 @@ export function ResultsSection({
       {/* Confirm / reject */}
       {canConfirm && (
         <View style={{ marginTop: spacing.xxl }}>
-          <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          <Text
+            style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            accessibilityRole="header"
+          >
             Ergebnis bestaetigen
           </Text>
           <View style={{ flexDirection: 'row', gap: spacing.md }}>
@@ -180,7 +189,10 @@ export function ResultsSection({
       {/* Completed readonly */}
       {isCompleted && results.length > 0 && (
         <View style={{ marginTop: spacing.xxl }}>
-          <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+          <Text
+            style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            accessibilityRole="header"
+          >
             Endergebnis
           </Text>
           <ScoreInput sets={results[0].sets} onUpdateSet={() => {}} onAddSet={() => {}} readOnly />

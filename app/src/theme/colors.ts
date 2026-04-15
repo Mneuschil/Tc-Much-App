@@ -9,12 +9,12 @@ export const lightColors = {
   // Text
   textPrimary: '#1A1A1A',
   textSecondary: '#636366',
-  textTertiary: '#C4C4C6',
+  textTertiary: '#6D6D70',
   textInverse: '#FFFFFF',
 
   // Accent (Vereinsgrün)
   accent: '#023320',
-  accentLight: '#0EA65A',
+  accentLight: '#097A43',
   accentSurface: '#D1F2EC',
   accentSubtle: '#EDF9F6',
 
@@ -23,11 +23,11 @@ export const lightColors = {
   buttonPrimaryText: '#FFFFFF',
 
   // Status
-  success: '#0EA65A',
+  success: '#097A43',
   successSurface: '#EDF9F6',
-  danger: '#FF3B30',
+  danger: '#D32F2F',
   dangerSurface: '#FFEBEB',
-  warning: '#FF9500',
+  warning: '#A06000',
   warningSurface: '#FFF4E5',
   info: '#007AFF',
 
@@ -44,14 +44,14 @@ export const lightColors = {
   surfaceVariant: '#EDF9F6',
   cardBackground: '#FFFFFF',
   inputBackground: '#F5F6F7',
-  primary: '#0EA65A',
+  primary: '#097A43',
   primaryDark: '#023320',
-  primaryLight: '#0EA65A',
+  primaryLight: '#097A43',
   highlight: '#D1F2EC',
   chipActive: '#1A1A1A',
   chipInactive: '#F5F6F7',
   tabBarBackground: '#FFFFFF',
-  tabBarInactive: '#C4C4C6',
+  tabBarInactive: '#6D6D70',
 } as const;
 
 export const darkColors = {
@@ -63,7 +63,7 @@ export const darkColors = {
   // Text
   textPrimary: '#F5F5F7',
   textSecondary: '#98989D',
-  textTertiary: '#48484A',
+  textTertiary: '#8E8E93',
   textInverse: '#0A0A0A',
 
   // Accent
@@ -105,7 +105,7 @@ export const darkColors = {
   chipActive: '#F5F5F7',
   chipInactive: '#1C1C1E',
   tabBarBackground: '#0A0A0A',
-  tabBarInactive: '#48484A',
+  tabBarInactive: '#8E8E93',
 } as const;
 
 // Use mutable type so dark/light variants are assignable

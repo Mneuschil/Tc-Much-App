@@ -23,17 +23,22 @@ export default function LoginScreen() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [clubCode, setClubCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Fehler', 'Bitte E-Mail und Passwort eingeben');
+    if (!email.trim() || !password.trim() || !clubCode.trim()) {
+      Alert.alert('Fehler', 'Bitte alle Felder ausfuellen');
       return;
     }
 
     setLoading(true);
     try {
-      await login({ email: email.trim().toLowerCase(), password });
+      await login({
+        email: email.trim().toLowerCase(),
+        password,
+        clubCode: clubCode.trim().toUpperCase(),
+      });
       AccessibilityInfo.announceForAccessibility('Erfolgreich angemeldet');
       router.replace('/(tabs)/home');
     } catch (err: unknown) {
@@ -55,6 +60,37 @@ export default function LoginScreen() {
           <Text style={[typography.h2, { color: colors.textPrimary, marginBottom: spacing.xxl }]}>
             Anmelden
           </Text>
+
+          <Text
+            nativeID="login-clubcode-label"
+            style={[
+              typography.bodySmall,
+              { color: colors.textSecondary, marginBottom: spacing.xs },
+            ]}
+          >
+            Club-Code
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: colors.backgroundSecondary,
+                borderRadius: borderRadius.md,
+                color: colors.textPrimary,
+                padding: spacing.md,
+                marginBottom: spacing.lg,
+                fontSize: typography.body.fontSize,
+              },
+            ]}
+            value={clubCode}
+            onChangeText={setClubCode}
+            placeholder="z.B. TCM026"
+            placeholderTextColor={colors.textSecondary}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            accessibilityLabel="Club-Code"
+            accessibilityLabelledBy="login-clubcode-label"
+          />
 
           <Text
             nativeID="login-email-label"

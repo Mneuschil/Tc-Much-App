@@ -2,12 +2,12 @@ import React from 'react';
 import {
   Pressable,
   Text,
+  View,
   StyleSheet,
   ActivityIndicator,
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../theme';
 
 type ButtonVariant =
@@ -37,19 +37,6 @@ export function Button({
   fullWidth = false,
 }: ButtonProps) {
   const { colors, radii } = useTheme();
-  const scale = useSharedValue(1);
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.97);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1);
-  };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
 
   const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
     primary: {
@@ -86,21 +73,20 @@ export function Button({
   const vs = variantStyles[variant];
 
   return (
-    <Animated.View style={[animatedStyle, fullWidth ? styles.fullWidth : undefined]}>
+    <View style={fullWidth ? styles.fullWidth : undefined}>
       <Pressable
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
         disabled={isDisabled}
         accessibilityLabel={title}
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
-        style={[
+        style={({ pressed }) => [
           styles.base,
           { borderRadius: radii.md },
           vs.container,
           fullWidth && styles.fullWidth,
           isDisabled && styles.disabled,
+          pressed && styles.pressed,
         ]}
       >
         {loading ? (
@@ -109,7 +95,7 @@ export function Button({
           <Text style={[styles.text, vs.text]}>{title}</Text>
         )}
       </Pressable>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -123,5 +109,6 @@ const styles = StyleSheet.create({
   },
   fullWidth: { width: '100%' },
   disabled: { opacity: 0.4 },
+  pressed: { opacity: 0.7 },
   text: { fontSize: 16, fontWeight: '600', textAlign: 'center' },
 });

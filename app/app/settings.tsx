@@ -48,12 +48,18 @@ export default function SettingsScreen() {
           paddingBottom: 100,
         }}
       >
-        <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xxl }]}>
+        <Text
+          accessibilityRole="header"
+          style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xxl }]}
+        >
           Einstellungen
         </Text>
 
         {/* Benachrichtigungen */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+        <Text
+          accessibilityRole="header"
+          style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        >
           Benachrichtigungen
         </Text>
         <View
@@ -78,7 +84,10 @@ export default function SettingsScreen() {
         </View>
 
         {/* Darstellung */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+        <Text
+          accessibilityRole="header"
+          style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        >
           Darstellung
         </Text>
         <View style={[styles.themeRow, { marginBottom: spacing.xxl }]}>
@@ -96,7 +105,10 @@ export default function SettingsScreen() {
         </View>
 
         {/* App Info */}
-        <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+        <Text
+          accessibilityRole="header"
+          style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        >
           App
         </Text>
 

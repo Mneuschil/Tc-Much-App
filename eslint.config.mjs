@@ -74,11 +74,12 @@ export default [
 
   // Test files - relax rules
   {
-    files: ['**/__tests__/**/*.ts', '**/*.test.ts', '**/*.test.tsx', '**/__mocks__/**/*.ts'],
+    files: ['**/__tests__/**/*.ts', '**/__tests__/**/*.tsx', '**/*.test.ts', '**/*.test.tsx', '**/__mocks__/**/*.ts', '**/__mocks__/**/*.tsx'],
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

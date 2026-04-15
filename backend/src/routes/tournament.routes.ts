@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { requireBoard } from '../middleware/roles';
 import { validate } from '../middleware/validate';
@@ -7,90 +7,74 @@ import * as tournamentService from '../services/tournament.service';
 import { success } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
 import { tournamentIdParams } from '../utils/requestSchemas';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
 router.use(requireAuth);
 
 // GET / – Alle Turniere des Vereins
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.get(
+  '/',
+  asyncHandler(async (req, res) => {
     const tournaments = await tournamentService.getTournaments(req.user!.clubId);
     success(res, tournaments);
-  } catch (err) {
-    next(err);
-  }
-});
+  }),
+);
 
 // POST / – Neues Turnier erstellen (AC-01: KNOCKOUT, category, deadline, maxParticipants)
 router.post(
   '/',
   requireBoard,
   validate(createTournamentSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const tournament = await tournamentService.createTournament(
-        req.body,
-        req.user!.clubId,
-        req.user!.userId,
-      );
-      logAudit('TOURNAMENT_CREATED', req.user!.userId, req.user!.clubId, {
-        tournamentId: tournament.id,
-      });
-      success(res, tournament, 201);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const tournament = await tournamentService.createTournament(
+      req.body,
+      req.user!.clubId,
+      req.user!.userId,
+    );
+    logAudit('TOURNAMENT_CREATED', req.user!.userId, req.user!.clubId, {
+      tournamentId: tournament.id,
+    });
+    success(res, tournament, 201);
+  }),
 );
 
 // GET /:tournamentId – Turnier-Details
 router.get(
   '/:tournamentId',
   validate(tournamentIdParams, 'params'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const tournament = await tournamentService.getTournamentById(
-        req.params.tournamentId as string,
-        req.user!.clubId,
-      );
-      success(res, tournament);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const tournament = await tournamentService.getTournamentById(
+      req.params.tournamentId as string,
+      req.user!.clubId,
+    );
+    success(res, tournament);
+  }),
 );
 
 // POST /:tournamentId/register – Anmelden (AC-02: DOUBLES mit partnerId)
 router.post(
   '/:tournamentId/register',
   validate(tournamentIdParams, 'params'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const reg = await tournamentService.registerPlayer(
-        req.params.tournamentId as string,
-        req.user!.userId,
-        req.body.partnerId,
-      );
-      success(res, reg, 201);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const reg = await tournamentService.registerPlayer(
+      req.params.tournamentId as string,
+      req.user!.userId,
+      req.body.partnerId,
+    );
+    success(res, reg, 201);
+  }),
 );
 
 // GET /:tournamentId/registrations – Alle Anmeldungen (AC-03)
 router.get(
   '/:tournamentId/registrations',
   validate(tournamentIdParams, 'params'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const regs = await tournamentService.getRegistrations(req.params.tournamentId as string);
-      success(res, regs);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const regs = await tournamentService.getRegistrations(req.params.tournamentId as string);
+    success(res, regs);
+  }),
 );
 
 // POST /:tournamentId/draw – Auslosung (AC-04, AC-05)
@@ -98,34 +82,26 @@ router.post(
   '/:tournamentId/draw',
   requireBoard,
   validate(tournamentIdParams, 'params'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const bracket = await tournamentService.startDraw(
-        req.params.tournamentId as string,
-        req.user!.clubId,
-      );
-      logAudit('TOURNAMENT_DRAW', req.user!.userId, req.user!.clubId, {
-        tournamentId: req.params.tournamentId as string,
-      });
-      success(res, bracket, 201);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const bracket = await tournamentService.startDraw(
+      req.params.tournamentId as string,
+      req.user!.clubId,
+    );
+    logAudit('TOURNAMENT_DRAW', req.user!.userId, req.user!.clubId, {
+      tournamentId: req.params.tournamentId as string,
+    });
+    success(res, bracket, 201);
+  }),
 );
 
 // GET /:tournamentId/bracket – KO-Tableau (AC-06, AC-07)
 router.get(
   '/:tournamentId/bracket',
   validate(tournamentIdParams, 'params'),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const bracket = await tournamentService.getBracket(req.params.tournamentId as string);
-      success(res, bracket);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const bracket = await tournamentService.getBracket(req.params.tournamentId as string);
+    success(res, bracket);
+  }),
 );
 
 // POST /:tournamentId/result – Ergebnis melden (AC-08, AC-09)
@@ -133,25 +109,21 @@ router.post(
   '/:tournamentId/result',
   validate(tournamentIdParams, 'params'),
   validate(reportResultSchema),
-  async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const result = await tournamentService.reportResult(
-        req.params.tournamentId as string,
-        req.body.matchId,
-        req.body.winnerId,
-        req.body.score,
-        req.user!.clubId,
-      );
-      logAudit('TOURNAMENT_RESULT_REPORTED', req.user!.userId, req.user!.clubId, {
-        tournamentId: req.params.tournamentId as string,
-        matchId: req.body.matchId,
-        winnerId: req.body.winnerId,
-      });
-      success(res, result);
-    } catch (err) {
-      next(err);
-    }
-  },
+  asyncHandler(async (req, res) => {
+    const result = await tournamentService.reportResult(
+      req.params.tournamentId as string,
+      req.body.matchId,
+      req.body.winnerId,
+      req.body.score,
+      req.user!.clubId,
+    );
+    logAudit('TOURNAMENT_RESULT_REPORTED', req.user!.userId, req.user!.clubId, {
+      tournamentId: req.params.tournamentId as string,
+      matchId: req.body.matchId,
+      winnerId: req.body.winnerId,
+    });
+    success(res, result);
+  }),
 );
 
 export default router;

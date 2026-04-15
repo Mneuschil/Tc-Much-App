@@ -95,7 +95,9 @@ export function SpieleTab({ teamId }: SpieleTabProps) {
       if (item.type === 'header') {
         return (
           <View style={[styles.sectionHeader, { backgroundColor: colors.background }]}>
-            <Text style={[typography.h4, { color: colors.textPrimary }]}>{item.title}</Text>
+            <Text style={[typography.h4, { color: colors.textPrimary }]} accessibilityRole="header">
+              {item.title}
+            </Text>
           </View>
         );
       }

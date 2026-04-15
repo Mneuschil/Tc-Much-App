@@ -5,17 +5,22 @@ import { Platform } from 'react-native';
  * Resolves the backend base host (protocol + host + port) at runtime.
  *
  * Priority:
- * 1. `EXPO_PUBLIC_API_HOST` env override (z.B. fuer Staging/Tunnel)
- * 2. Physisches Geraet via Expo Go: leite Host aus `Constants.expoConfig.hostUri`
- *    ab — das ist die IP, ueber die Metro den Bundle ausliefert. Damit ist
- *    der Backend-Host garantiert erreichbar, wenn die App geladen werden konnte.
- * 3. Fallback: localhost (Simulator, Web, Android Emulator → 10.0.2.2)
+ * 1. Production-Build (kein __DEV__) → app-api.tcmuch.de
+ * 2. `EXPO_PUBLIC_API_HOST` env override (z.B. fuer Staging/Tunnel)
+ * 3. Physisches Geraet via Expo Go: leite Host aus `Constants.expoConfig.hostUri`
+ *    ab — das ist die IP, ueber die Metro den Bundle ausliefert.
+ * 4. Fallback: localhost (Simulator, Web, Android Emulator → 10.0.2.2)
  *
- * Backend laeuft immer auf Port 3000.
+ * Dev-Backend laeuft auf Port 3000, Production auf 3001 hinter Nginx (443).
  */
 const BACKEND_PORT = 3000;
+const PRODUCTION_HOST = 'https://app-api.tcmuch.de';
 
 function resolveBackendHost(): string {
+  if (!__DEV__) {
+    return PRODUCTION_HOST;
+  }
+
   const override = process.env.EXPO_PUBLIC_API_HOST;
   if (override) {
     return override.replace(/\/$/, '');

@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import type { CreateTeamInput } from '@tennis-club/shared';
+import { AppError } from '../utils/AppError';
 
 export async function getTeamsForClub(clubId: string, type?: string) {
   return prisma.team.findMany({
@@ -50,7 +51,7 @@ export async function getTeamById(teamId: string, clubId: string) {
     },
   });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404, code: 'NOT_FOUND' });
+    throw AppError.notFound('Team nicht gefunden');
   }
   return team;
 }
@@ -92,7 +93,7 @@ export async function updateTeam(
 ) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   return prisma.team.update({
@@ -108,7 +109,7 @@ export async function updateTeam(
 export async function deleteTeam(teamId: string, clubId: string) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   // Delete associated channel(s) first
@@ -124,7 +125,7 @@ export async function addTeamMember(
 ) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   const member = await prisma.teamMember.create({
@@ -150,7 +151,7 @@ export async function addTeamMember(
 export async function removeTeamMember(teamId: string, userId: string, clubId: string) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   await prisma.teamMember.deleteMany({ where: { teamId, userId } });
@@ -165,7 +166,7 @@ export async function removeTeamMember(teamId: string, userId: string, clubId: s
 export async function ensureTeamChannel(teamId: string, clubId: string, createdById: string) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   const existing = await prisma.channel.findFirst({
@@ -209,12 +210,12 @@ export async function updateMemberPosition(
 ) {
   const team = await prisma.team.findFirst({ where: { id: teamId, clubId } });
   if (!team) {
-    throw Object.assign(new Error('Team nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Team nicht gefunden');
   }
 
   const member = await prisma.teamMember.findFirst({ where: { teamId, userId } });
   if (!member) {
-    throw Object.assign(new Error('Mitglied nicht im Team'), { statusCode: 404 });
+    throw AppError.notFound('Mitglied nicht im Team');
   }
 
   return prisma.teamMember.update({

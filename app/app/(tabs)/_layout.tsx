@@ -4,6 +4,7 @@ import { useTheme } from '../../src/theme';
 import { useSocketEvents } from '../../src/hooks/useSocketEvents';
 import { useClub } from '../../src/hooks/useClub';
 import { useProfile } from '../../src/hooks/useProfile';
+import { FEATURES } from '../../src/config/features';
 
 export default function TabLayout() {
   const { colors } = useTheme();
@@ -63,6 +64,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="courts"
+        options={{
+          href: FEATURES.courtView ? '/(tabs)/courts' : null,
+          title: 'Plätze',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="tennisball-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="more"
         options={{
           title: 'Mehr',
@@ -71,7 +82,10 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen name="tournaments" options={{ href: null }} />
+      <Tabs.Screen
+        name="tournaments"
+        options={{ href: FEATURES.tournaments ? '/(tabs)/tournaments' : null }}
+      />
     </Tabs>
   );
 }

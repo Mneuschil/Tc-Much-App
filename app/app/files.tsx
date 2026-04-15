@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
-import { Stack } from 'expo-router';
+import { Stack, Redirect } from 'expo-router';
+import { FEATURES } from '../src/config/features';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,6 +41,13 @@ function formatFileSize(bytes: number): string {
 }
 
 export default function FilesScreen() {
+  if (!FEATURES.files) {
+    return <Redirect href="/(tabs)/home" />;
+  }
+  return <FilesScreenInner />;
+}
+
+function FilesScreenInner() {
   const { colors, typography, spacing, radii } = useTheme();
   const { data, isLoading, refetch } = useChannelFiles(DEFAULT_CHANNEL_ID);
   const files = (data ?? []) as ClubFile[];

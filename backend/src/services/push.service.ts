@@ -1,6 +1,7 @@
 import { Expo, ExpoPushMessage, ExpoPushTicket, ExpoPushReceiptId } from 'expo-server-sdk';
 import { prisma } from '../config/database';
 import { logger } from '../utils/logger';
+import { AppError } from '../utils/AppError';
 
 const expo = new Expo();
 
@@ -14,7 +15,7 @@ export interface PushPayload {
 
 export async function registerToken(userId: string, token: string, platform: 'IOS' | 'ANDROID') {
   if (!Expo.isExpoPushToken(token)) {
-    throw Object.assign(new Error('Ungueltiger Push-Token'), { statusCode: 400, code: 'INVALID_TOKEN' });
+    throw AppError.badRequest('Ungueltiger Push-Token', 'INVALID_TOKEN');
   }
 
   return prisma.pushToken.upsert({
@@ -27,7 +28,7 @@ export async function registerToken(userId: string, token: string, platform: 'IO
 export async function deactivateToken(token: string) {
   const existing = await prisma.pushToken.findUnique({ where: { token } });
   if (!existing) {
-    throw Object.assign(new Error('Token nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Token nicht gefunden');
   }
   return prisma.pushToken.delete({ where: { token } });
 }
@@ -37,15 +38,15 @@ async function getTokensForUsers(userIds: string[]): Promise<string[]> {
     where: { userId: { in: userIds } },
     select: { token: true },
   });
-  return tokens.map(t => t.token);
+  return tokens.map((t) => t.token);
 }
 
 async function sendPush(tokens: string[], payload: PushPayload): Promise<ExpoPushTicket[]> {
   if (tokens.length === 0) return [];
 
   const messages: ExpoPushMessage[] = tokens
-    .filter(token => Expo.isExpoPushToken(token))
-    .map(token => ({
+    .filter((token) => Expo.isExpoPushToken(token))
+    .map((token) => ({
       to: token,
       sound: 'default' as const,
       title: payload.title,
@@ -75,7 +76,10 @@ export async function sendToUser(userId: string, payload: PushPayload): Promise<
   return sendPush(tokens, payload);
 }
 
-export async function sendToUsers(userIds: string[], payload: PushPayload): Promise<ExpoPushTicket[]> {
+export async function sendToUsers(
+  userIds: string[],
+  payload: PushPayload,
+): Promise<ExpoPushTicket[]> {
   const tokens = await getTokensForUsers(userIds);
   return sendPush(tokens, payload);
 }
@@ -96,7 +100,7 @@ export async function sendToChannel(
     where: { channelId },
     select: { userId: true },
   });
-  const mutedIds = new Set(mutes.map(m => m.userId));
+  const mutedIds = new Set(mutes.map((m) => m.userId));
 
   let userIds: string[];
 
@@ -105,7 +109,7 @@ export async function sendToChannel(
       where: { clubId: channel.clubId, isActive: true },
       select: { id: true },
     });
-    userIds = users.map(u => u.id);
+    userIds = users.map((u) => u.id);
   } else {
     const [members, privileged] = await Promise.all([
       prisma.channelMember.findMany({
@@ -120,11 +124,11 @@ export async function sendToChannel(
         select: { userId: true },
       }),
     ]);
-    const ids = new Set([...members.map(m => m.userId), ...privileged.map(p => p.userId)]);
+    const ids = new Set([...members.map((m) => m.userId), ...privileged.map((p) => p.userId)]);
     userIds = [...ids];
   }
 
-  const filteredIds = userIds.filter(id => id !== excludeUserId && !mutedIds.has(id));
+  const filteredIds = userIds.filter((id) => id !== excludeUserId && !mutedIds.has(id));
   const tokens = await getTokensForUsers(filteredIds);
   return sendPush(tokens, payload);
 }
@@ -138,12 +142,14 @@ export async function sendToTeam(
     where: { teamId },
     select: { userId: true },
   });
-  const userIds = members.map(m => m.userId).filter(id => id !== excludeUserId);
+  const userIds = members.map((m) => m.userId).filter((id) => id !== excludeUserId);
   const tokens = await getTokensForUsers(userIds);
   return sendPush(tokens, payload);
 }
 
-export async function handlePushReceipts(ticketIds: ExpoPushReceiptId[]): Promise<{ deactivated: number }> {
+export async function handlePushReceipts(
+  ticketIds: ExpoPushReceiptId[],
+): Promise<{ deactivated: number }> {
   if (ticketIds.length === 0) return { deactivated: 0 };
 
   let deactivated = 0;

@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import type { CreateTournamentInput } from '@tennis-club/shared';
 import * as bracketService from './bracket.service';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 export async function getTournaments(clubId: string) {
   return prisma.tournament.findMany({
@@ -36,7 +37,7 @@ export async function getTournamentById(tournamentId: string, clubId: string) {
     },
   });
   if (!tournament || tournament.clubId !== clubId) {
-    throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Turnier nicht gefunden');
   }
   return tournament;
 }
@@ -66,16 +67,16 @@ export async function createTournament(
 
 export async function registerPlayer(tournamentId: string, userId: string, partnerId?: string) {
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
-  if (!tournament) throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
+  if (!tournament) throw AppError.notFound('Turnier nicht gefunden');
   if (tournament.status !== 'REGISTRATION_OPEN') {
-    throw Object.assign(new Error('Anmeldung nicht mehr moeglich'), { statusCode: 400 });
+    throw AppError.badRequest('Anmeldung nicht mehr moeglich');
   }
 
   // Check max participants
   if (tournament.maxParticipants) {
     const count = await prisma.tournamentRegistration.count({ where: { tournamentId } });
     if (count >= tournament.maxParticipants) {
-      throw Object.assign(new Error('Maximale Teilnehmerzahl erreicht'), { statusCode: 400 });
+      throw AppError.badRequest('Maximale Teilnehmerzahl erreicht');
     }
   }
 
@@ -112,15 +113,13 @@ export async function startDraw(tournamentId: string, clubId: string) {
     },
   });
   if (!tournament || tournament.clubId !== clubId) {
-    throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Turnier nicht gefunden');
   }
   if (tournament.status !== 'REGISTRATION_OPEN') {
-    throw Object.assign(new Error('Auslosung nur bei offener Registrierung moeglich'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Auslosung nur bei offener Registrierung moeglich');
   }
   if (tournament.registrations.length < 2) {
-    throw Object.assign(new Error('Mindestens 2 Teilnehmer erforderlich'), { statusCode: 400 });
+    throw AppError.badRequest('Mindestens 2 Teilnehmer erforderlich');
   }
 
   // Generate bracket
@@ -160,22 +159,19 @@ export async function reportResult(
 ) {
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament || tournament.clubId !== clubId) {
-    throw Object.assign(new Error('Turnier nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Turnier nicht gefunden');
   }
 
   // H-06: Validate winnerId is actually a player in the match
   const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
   if (!match) {
-    throw Object.assign(new Error('Match nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Match nicht gefunden');
   }
   if (match.winnerId) {
-    throw Object.assign(new Error('Match bereits abgeschlossen'), { statusCode: 400 });
+    throw AppError.badRequest('Match bereits abgeschlossen');
   }
   if (winnerId !== match.player1Id && winnerId !== match.player2Id) {
-    throw Object.assign(new Error('Winner muss ein Spieler des Matches sein'), {
-      statusCode: 400,
-      code: 'INVALID_WINNER',
-    });
+    throw AppError.badRequest('Winner muss ein Spieler des Matches sein', 'INVALID_WINNER');
   }
 
   const result = await bracketService.advanceWinner(matchId, winnerId, score);
@@ -189,32 +185,37 @@ export async function reportResult(
       player2Id: { not: null },
     },
   });
-  // Also check if there's a winner of the last round
+  // C-06: Check if tournament is complete — guard against empty matches array
   const allMatches = await prisma.tournamentMatch.findMany({
     where: { tournamentId },
     orderBy: { round: 'desc' },
   });
-  const finalMatch = allMatches[0];
-  if (finalMatch?.winnerId) {
-    await prisma.tournament.update({
-      where: { id: tournamentId },
-      data: { status: 'COMPLETED' },
-    });
+  if (allMatches.length > 0) {
+    const finalMatch = allMatches[0];
+    if (finalMatch.winnerId) {
+      await prisma.tournament.update({
+        where: { id: tournamentId },
+        data: { status: 'COMPLETED' },
+      });
+    }
   }
 
   // Push to next opponent if advanced
   if (result) {
     const nextOpponentId = result.player1Id === winnerId ? result.player2Id : result.player1Id;
     if (nextOpponentId) {
+      // C-07: Guard against deleted/missing winner user
       const winner = await prisma.user.findUnique({
         where: { id: winnerId },
         select: { firstName: true, lastName: true },
       });
-      await pushService.sendToUsers([nextOpponentId], {
-        title: 'Naechster Gegner!',
-        body: `Dein naechster Gegner im "${tournament.name}" ist ${winner?.firstName} ${winner?.lastName}.`,
-        data: { tournamentId, matchId: result.id },
-      });
+      if (winner) {
+        await pushService.sendToUsers([nextOpponentId], {
+          title: 'Naechster Gegner!',
+          body: `Dein naechster Gegner im "${tournament.name}" ist ${winner.firstName} ${winner.lastName}.`,
+          data: { tournamentId, matchId: result.id },
+        });
+      }
     }
   }
 

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -8,23 +7,13 @@ import {
   TextInput,
   ScrollView,
   Platform,
-  AccessibilityInfo,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../theme';
 import { Avatar } from '../ui';
-import { useCreateTodo } from '../../features/todo/hooks/useTodos';
-import { useClubMembers } from '../../hooks/useProfile';
-import type { CreateTodoInput } from '@tennis-club/shared';
-
-interface MemberItem {
-  id: string;
-  firstName: string;
-  lastName: string;
-  avatarUrl: string | null;
-}
+import { useTodoForm, formatDisplayDate } from '../../features/todo/hooks/useTodoForm';
 
 interface CreateTodoModalProps {
   visible: boolean;
@@ -34,55 +23,7 @@ interface CreateTodoModalProps {
 
 export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalProps) {
   const { colors, typography, spacing, borderRadius, isDark } = useTheme();
-  const createTodo = useCreateTodo();
-  const { data: membersData } = useClubMembers();
-  const members = (membersData ?? []) as MemberItem[];
-
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
-  const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [scope, setScope] = useState<'BOARD' | 'TRAINERS' | 'TEAM'>('BOARD');
-  const [showPicker, setShowPicker] = useState(false);
-
-  const selectedMember = members.find((m) => m.id === assigneeId);
-
-  const formatDisplayDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}.${month}.${year}`;
-  };
-
-  const formatISODate = (date: Date) => date.toISOString();
-
-  const handleDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') setShowDatePicker(false);
-    if (selected) setDueDate(selected);
-  };
-
-  const handleCreate = () => {
-    if (!title.trim() || !assigneeId) return;
-    const input: CreateTodoInput = {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      assigneeId,
-      scope: teamId ? 'TEAM' : scope,
-      teamId,
-      dueDate: dueDate ? formatISODate(dueDate) : undefined,
-    };
-    createTodo.mutate(input, {
-      onSuccess: () => {
-        AccessibilityInfo.announceForAccessibility('Aufgabe erfolgreich erstellt');
-        setTitle('');
-        setDescription('');
-        setAssigneeId('');
-        setDueDate(null);
-        onClose();
-      },
-    });
-  };
+  const form = useTodoForm({ teamId, onSuccess: onClose });
 
   return (
     <Modal
@@ -92,14 +33,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
       onRequestClose={onClose}
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: spacing.xl,
-          }}
-        >
+        <View style={[styles.header, { padding: spacing.xl }]}>
           <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
             Neues Todo
           </Text>
@@ -113,6 +47,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
           </Pressable>
         </View>
         <ScrollView contentContainerStyle={{ padding: spacing.xl, paddingTop: 0 }}>
+          {/* Titel */}
           <Text
             nativeID="todo-title-label"
             style={[
@@ -131,14 +66,15 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
                 color: colors.textPrimary,
               },
             ]}
-            value={title}
-            onChangeText={setTitle}
+            value={form.title}
+            onChangeText={form.setTitle}
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
             accessibilityLabel="Titel"
             accessibilityLabelledBy="todo-title-label"
           />
 
+          {/* Beschreibung */}
           <Text
             nativeID="todo-desc-label"
             style={[
@@ -158,8 +94,8 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
                 color: colors.textPrimary,
               },
             ]}
-            value={description}
-            onChangeText={setDescription}
+            value={form.description}
+            onChangeText={form.setDescription}
             placeholder="Beschreibung (optional)"
             placeholderTextColor={colors.textTertiary}
             multiline
@@ -169,6 +105,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             accessibilityLabelledBy="todo-desc-label"
           />
 
+          {/* Bereich */}
           <Text
             style={[
               typography.captionMedium,
@@ -181,14 +118,15 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             {(['BOARD', 'TRAINERS', 'TEAM'] as const).map((s) => (
               <Pressable
                 key={s}
-                onPress={() => setScope(s)}
+                onPress={() => form.setScope(s)}
                 accessibilityLabel={s}
                 accessibilityRole="button"
-                accessibilityState={{ selected: scope === s }}
+                accessibilityState={{ selected: form.scope === s }}
                 style={[
                   styles.scopePill,
                   {
-                    backgroundColor: scope === s ? colors.chipActive : colors.backgroundSecondary,
+                    backgroundColor:
+                      form.scope === s ? colors.chipActive : colors.backgroundSecondary,
                     borderRadius: borderRadius.full,
                   },
                 ]}
@@ -197,7 +135,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
                   style={[
                     typography.caption,
                     {
-                      color: scope === s ? colors.textInverse : colors.textPrimary,
+                      color: form.scope === s ? colors.textInverse : colors.textPrimary,
                       fontWeight: '600',
                     },
                   ]}
@@ -208,6 +146,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             ))}
           </View>
 
+          {/* Zugewiesen an */}
           <Text
             style={[
               typography.captionMedium,
@@ -217,10 +156,10 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             Zugewiesen an
           </Text>
           <Pressable
-            onPress={() => setShowPicker(true)}
+            onPress={() => form.setShowMemberPicker(true)}
             accessibilityLabel={
-              selectedMember
-                ? `Zugewiesen an: ${selectedMember.firstName} ${selectedMember.lastName}`
+              form.selectedMember
+                ? `Zugewiesen an: ${form.selectedMember.firstName} ${form.selectedMember.lastName}`
                 : 'Mitglied auswählen'
             }
             accessibilityRole="button"
@@ -234,17 +173,17 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               },
             ]}
           >
-            {selectedMember ? (
+            {form.selectedMember ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                 <Avatar
-                  firstName={selectedMember.firstName}
-                  lastName={selectedMember.lastName}
+                  firstName={form.selectedMember.firstName}
+                  lastName={form.selectedMember.lastName}
                   size="xs"
                 />
                 <Text
                   style={[typography.body, { color: colors.textPrimary, marginLeft: spacing.sm }]}
                 >
-                  {selectedMember.firstName} {selectedMember.lastName}
+                  {form.selectedMember.firstName} {form.selectedMember.lastName}
                 </Text>
               </View>
             ) : (
@@ -254,8 +193,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             )}
             <Ionicons name="chevron-down" size={18} color={colors.textTertiary} />
           </Pressable>
-
-          {showPicker && (
+          {form.showMemberPicker && (
             <View
               style={{
                 backgroundColor: colors.backgroundSecondary,
@@ -265,12 +203,12 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               }}
             >
               <ScrollView>
-                {members.map((m) => (
+                {form.members.map((m) => (
                   <Pressable
                     key={m.id}
                     onPress={() => {
-                      setAssigneeId(m.id);
-                      setShowPicker(false);
+                      form.setAssigneeId(m.id);
+                      form.setShowMemberPicker(false);
                     }}
                     accessibilityLabel={`${m.firstName} ${m.lastName} zuweisen`}
                     accessibilityRole="button"
@@ -278,7 +216,8 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
                       flexDirection: 'row',
                       alignItems: 'center',
                       padding: spacing.md,
-                      backgroundColor: assigneeId === m.id ? colors.accentSubtle : 'transparent',
+                      backgroundColor:
+                        form.assigneeId === m.id ? colors.accentSubtle : 'transparent',
                     }}
                   >
                     <Avatar
@@ -301,6 +240,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             </View>
           )}
 
+          {/* Faelligkeitsdatum */}
           <Text
             style={[
               typography.captionMedium,
@@ -310,9 +250,11 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             Fällig am (optional)
           </Text>
           <Pressable
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => form.setShowDatePicker(true)}
             accessibilityLabel={
-              dueDate ? `Fällig am: ${formatDisplayDate(dueDate)}` : 'Fälligkeitsdatum auswählen'
+              form.dueDate
+                ? `Fällig am: ${formatDisplayDate(form.dueDate)}`
+                : 'Fälligkeitsdatum auswählen'
             }
             accessibilityRole="button"
             style={[
@@ -328,20 +270,20 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             <Ionicons
               name="calendar-outline"
               size={18}
-              color={dueDate ? colors.textPrimary : colors.textTertiary}
+              color={form.dueDate ? colors.textPrimary : colors.textTertiary}
               style={{ marginRight: spacing.sm }}
             />
             <Text
               style={[
                 typography.body,
-                { color: dueDate ? colors.textPrimary : colors.textTertiary, flex: 1 },
+                { color: form.dueDate ? colors.textPrimary : colors.textTertiary, flex: 1 },
               ]}
             >
-              {dueDate ? formatDisplayDate(dueDate) : 'Datum auswählen'}
+              {form.dueDate ? formatDisplayDate(form.dueDate) : 'Datum auswählen'}
             </Text>
-            {dueDate && (
+            {form.dueDate && (
               <Pressable
-                onPress={() => setDueDate(null)}
+                onPress={() => form.setDueDate(null)}
                 hitSlop={12}
                 accessibilityLabel="Fälligkeitsdatum entfernen"
                 accessibilityRole="button"
@@ -350,7 +292,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               </Pressable>
             )}
           </Pressable>
-          {showDatePicker && (
+          {form.showDatePicker && (
             <View
               style={{
                 backgroundColor: colors.backgroundSecondary,
@@ -360,22 +302,22 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
               }}
             >
               <DateTimePicker
-                value={dueDate ?? new Date()}
+                value={form.dueDate ?? new Date()}
                 mode="date"
                 display={Platform.OS === 'ios' ? 'inline' : 'default'}
                 minimumDate={new Date()}
                 locale="de-DE"
                 themeVariant={isDark ? 'dark' : 'light'}
                 accentColor={colors.accent}
-                onChange={handleDateChange}
+                onChange={form.handleDateChange}
               />
               {Platform.OS === 'ios' && (
                 <Pressable
-                  onPress={() => setShowDatePicker(false)}
+                  onPress={() => form.setShowDatePicker(false)}
                   accessibilityLabel="Datum bestätigen"
                   accessibilityRole="button"
                   style={[
-                    styles.createBtn,
+                    styles.actionBtn,
                     {
                       backgroundColor: colors.accent,
                       borderRadius: borderRadius.md,
@@ -391,19 +333,17 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             </View>
           )}
 
+          {/* Erstellen Button */}
           <Pressable
-            onPress={handleCreate}
-            disabled={!title.trim() || !assigneeId || createTodo.isPending}
+            onPress={form.handleCreate}
+            disabled={!form.canSubmit}
             accessibilityLabel="Aufgabe erstellen"
             accessibilityRole="button"
-            accessibilityState={{
-              disabled: !title.trim() || !assigneeId,
-              busy: createTodo.isPending,
-            }}
+            accessibilityState={{ disabled: !form.canSubmit, busy: form.isPending }}
             style={[
-              styles.createBtn,
+              styles.actionBtn,
               {
-                backgroundColor: title.trim() && assigneeId ? colors.accent : colors.surface,
+                backgroundColor: form.canSubmit ? colors.accent : colors.surface,
                 borderRadius: borderRadius.md,
                 marginTop: spacing.xxl,
               },
@@ -412,7 +352,7 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
             <Text
               style={[
                 typography.buttonSmall,
-                { color: title.trim() && assigneeId ? colors.textInverse : colors.textTertiary },
+                { color: form.canSubmit ? colors.textInverse : colors.textTertiary },
               ]}
             >
               Erstellen
@@ -426,8 +366,9 @@ export function CreateTodoModal({ visible, onClose, teamId }: CreateTodoModalPro
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   input: { height: 48, paddingHorizontal: 16, fontSize: 15, justifyContent: 'center' },
   multiline: { height: 100, paddingTop: 12, paddingBottom: 12 },
   scopePill: { paddingHorizontal: 14, paddingVertical: 8 },
-  createBtn: { height: 48, alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { height: 48, alignItems: 'center', justifyContent: 'center' },
 });

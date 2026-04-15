@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import { SOCKET_ROOMS } from '@tennis-club/shared';
 import type { Server } from 'socket.io';
+import { AppError } from '../utils/AppError';
 
 type ReactionType = 'THUMBS_UP' | 'HEART' | 'CELEBRATE' | 'THINKING';
 
@@ -17,7 +18,7 @@ export async function removeReaction(messageId: string, userId: string, type: Re
     where: { messageId_userId_type: { messageId, userId, type } },
   });
   if (!reaction) {
-    throw Object.assign(new Error('Reaction nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Reaction nicht gefunden');
   }
   return prisma.messageReaction.delete({ where: { id: reaction.id } });
 }

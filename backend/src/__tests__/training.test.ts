@@ -3,6 +3,7 @@ import { prisma } from '../config/database';
 import app from '../app';
 import { hashPassword, generateAccessToken } from '../services/auth.service';
 import * as pushService from '../services/push.service';
+import { env } from '../config/env';
 import type { UserRole } from '@tennis-club/shared';
 
 const CLUB_CODE = 'TRAINTST';
@@ -19,28 +20,52 @@ let trainingGroupId: string;
 beforeAll(async () => {
   const passwordHash = await hashPassword('password123');
 
-  const club = await prisma.club.create({ data: { name: 'Training Test Club', clubCode: CLUB_CODE } });
+  const club = await prisma.club.create({
+    data: { name: 'Training Test Club', clubCode: CLUB_CODE },
+  });
   clubId = club.id;
 
   const trainer = await prisma.user.create({
     data: {
-      email: 'traintrainer@test.de', passwordHash, firstName: 'Trainer', lastName: 'Test', clubId,
-      roles: { create: [{ role: 'TRAINER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'traintrainer@test.de',
+      passwordHash,
+      firstName: 'Trainer',
+      lastName: 'Test',
+      clubId,
+      roles: {
+        create: [
+          { role: 'TRAINER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   trainerId = trainer.id;
 
   const boardUser = await prisma.user.create({
     data: {
-      email: 'trainboard@test.de', passwordHash, firstName: 'Board', lastName: 'Test', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'trainboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'Test',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   boardUserId = boardUser.id;
 
   const m1 = await prisma.user.create({
     data: {
-      email: 'trainm1@test.de', passwordHash, firstName: 'Mitglied1', lastName: 'Test', clubId,
+      email: 'trainm1@test.de',
+      passwordHash,
+      firstName: 'Mitglied1',
+      lastName: 'Test',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -48,7 +73,11 @@ beforeAll(async () => {
 
   const m2 = await prisma.user.create({
     data: {
-      email: 'trainm2@test.de', passwordHash, firstName: 'Mitglied2', lastName: 'Test', clubId,
+      email: 'trainm2@test.de',
+      passwordHash,
+      firstName: 'Mitglied2',
+      lastName: 'Test',
+      clubId,
       roles: { create: [{ role: 'MEMBER', clubId }] },
     },
   });
@@ -57,19 +86,26 @@ beforeAll(async () => {
   // Create training group
   const group = await prisma.team.create({
     data: {
-      name: 'Testgruppe', type: 'TRAINING_GROUP', clubId,
+      name: 'Testgruppe',
+      type: 'TRAINING_GROUP',
+      clubId,
       members: {
-        create: [
-          { userId: member1Id },
-          { userId: member2Id },
-        ],
+        create: [{ userId: member1Id }, { userId: member2Id }],
       },
     },
   });
   trainingGroupId = group.id;
 
-  trainerToken = generateAccessToken({ userId: trainerId, clubId, roles: ['TRAINER', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUserId, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
+  trainerToken = generateAccessToken({
+    userId: trainerId,
+    clubId,
+    roles: ['TRAINER', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUserId,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
   memberToken = generateAccessToken({ userId: member1Id, clubId, roles: ['MEMBER'] as UserRole[] });
 });
 
@@ -237,6 +273,40 @@ describe('GET /api/v1/training/overview (AC-04)', () => {
   });
 });
 
+// ─── C-05: Training without team does not crash sendReminders ─────
+describe('sendReminders with teamless training (C-05)', () => {
+  let teamlessEventId: string;
+
+  beforeAll(async () => {
+    // Create a training WITHOUT team assignment — this is the C-05 crash path
+    const event = await prisma.event.create({
+      data: {
+        title: 'Teamloses Training',
+        type: 'TRAINING',
+        startDate: new Date(Date.now() + 10 * 60 * 60 * 1000),
+        clubId,
+        createdById: trainerId,
+        // teamId deliberately omitted
+      },
+    });
+    teamlessEventId = event.id;
+  });
+
+  afterAll(async () => {
+    await prisma.trainingAttendance.deleteMany({ where: { eventId: teamlessEventId } });
+    await prisma.event.delete({ where: { id: teamlessEventId } });
+  });
+
+  it('does not crash when training.team is null (C-05)', async () => {
+    const res = await request(app)
+      .post('/api/v1/webhooks/training-reminder')
+      .set('Authorization', `Bearer ${env.WEBHOOK_SECRET}`);
+
+    // Should succeed — the teamless training is simply skipped
+    expect(res.status).toBe(200);
+  });
+});
+
 // ─── AC-05: Reminder webhook ──────────────────────────────────────
 describe('POST /api/v1/webhooks/training-reminder (AC-05)', () => {
   beforeAll(async () => {
@@ -257,7 +327,8 @@ describe('POST /api/v1/webhooks/training-reminder (AC-05)', () => {
     const spy = jest.spyOn(pushService, 'sendToUsers');
 
     const res = await request(app)
-      .post('/api/v1/webhooks/training-reminder');
+      .post('/api/v1/webhooks/training-reminder')
+      .set('Authorization', `Bearer ${env.WEBHOOK_SECRET}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.reminded).toBeGreaterThanOrEqual(1);

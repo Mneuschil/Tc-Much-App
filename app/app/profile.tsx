@@ -98,6 +98,7 @@ export default function ProfileScreen() {
         {!editing ? (
           <>
             <Text
+              accessibilityRole="header"
               style={[
                 typography.h1,
                 { color: colors.textPrimary, marginTop: spacing.lg, textAlign: 'center' },
@@ -182,7 +183,10 @@ export default function ProfileScreen() {
         {/* Teams */}
         {teams && teams.length > 0 && (
           <View style={{ width: '100%', marginTop: spacing.xxxl }}>
-            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+            <Text
+              accessibilityRole="header"
+              style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            >
               Meine Teams
             </Text>
             {teams.map((team: Team) => (

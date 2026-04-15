@@ -3,6 +3,7 @@ import { prisma } from '../config/database';
 import app from '../app';
 import { hashPassword, generateAccessToken } from '../services/auth.service';
 import * as pushService from '../services/push.service';
+import { env } from '../config/env';
 import type { UserRole } from '@tennis-club/shared';
 
 const CLUB_CODE = 'RANKTST';
@@ -23,21 +24,41 @@ let player5Id: string;
 beforeAll(async () => {
   const passwordHash = await hashPassword('password123');
 
-  const club = await prisma.club.create({ data: { name: 'Ranking Test Club', clubCode: CLUB_CODE } });
+  const club = await prisma.club.create({
+    data: { name: 'Ranking Test Club', clubCode: CLUB_CODE },
+  });
   clubId = club.id;
 
   const adminUser = await prisma.user.create({
     data: {
-      email: 'rankadmin@test.de', passwordHash, firstName: 'Admin', lastName: 'Ranking', clubId,
-      roles: { create: [{ role: 'CLUB_ADMIN', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'rankadmin@test.de',
+      passwordHash,
+      firstName: 'Admin',
+      lastName: 'Ranking',
+      clubId,
+      roles: {
+        create: [
+          { role: 'CLUB_ADMIN', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   adminUserId = adminUser.id;
 
   const boardUser = await prisma.user.create({
     data: {
-      email: 'rankboard@test.de', passwordHash, firstName: 'Board', lastName: 'Ranking', clubId,
-      roles: { create: [{ role: 'BOARD_MEMBER', clubId }, { role: 'MEMBER', clubId }] },
+      email: 'rankboard@test.de',
+      passwordHash,
+      firstName: 'Board',
+      lastName: 'Ranking',
+      clubId,
+      roles: {
+        create: [
+          { role: 'BOARD_MEMBER', clubId },
+          { role: 'MEMBER', clubId },
+        ],
+      },
     },
   });
   boardUserId = boardUser.id;
@@ -46,19 +67,43 @@ beforeAll(async () => {
   for (let i = 1; i <= 5; i++) {
     const p = await prisma.user.create({
       data: {
-        email: `rankp${i}@test.de`, passwordHash, firstName: `Spieler${i}`, lastName: 'Ranking', clubId,
+        email: `rankp${i}@test.de`,
+        passwordHash,
+        firstName: `Spieler${i}`,
+        lastName: 'Ranking',
+        clubId,
         roles: { create: [{ role: 'MEMBER', clubId }] },
       },
     });
     players.push(p);
   }
-  [player1Id, player2Id, player3Id, player4Id, player5Id] = players.map(p => p.id);
+  [player1Id, player2Id, player3Id, player4Id, player5Id] = players.map((p) => p.id);
 
-  adminToken = generateAccessToken({ userId: adminUserId, clubId, roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[] });
-  boardToken = generateAccessToken({ userId: boardUserId, clubId, roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[] });
-  player1Token = generateAccessToken({ userId: player1Id, clubId, roles: ['MEMBER'] as UserRole[] });
-  player2Token = generateAccessToken({ userId: player2Id, clubId, roles: ['MEMBER'] as UserRole[] });
-  player3Token = generateAccessToken({ userId: player3Id, clubId, roles: ['MEMBER'] as UserRole[] });
+  adminToken = generateAccessToken({
+    userId: adminUserId,
+    clubId,
+    roles: ['CLUB_ADMIN', 'MEMBER'] as UserRole[],
+  });
+  boardToken = generateAccessToken({
+    userId: boardUserId,
+    clubId,
+    roles: ['BOARD_MEMBER', 'MEMBER'] as UserRole[],
+  });
+  player1Token = generateAccessToken({
+    userId: player1Id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
+  player2Token = generateAccessToken({
+    userId: player2Id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
+  player3Token = generateAccessToken({
+    userId: player3Id,
+    clubId,
+    roles: ['MEMBER'] as UserRole[],
+  });
 });
 
 afterAll(async () => {
@@ -120,9 +165,36 @@ describe('GET /api/v1/rankings', () => {
     // Create rankings with previousRank for movement test
     await prisma.ranking.createMany({
       data: [
-        { clubId, userId: player1Id, category: 'HERREN', rank: 1, previousRank: 2, wins: 5, losses: 1, points: 100 },
-        { clubId, userId: player2Id, category: 'HERREN', rank: 2, previousRank: 1, wins: 4, losses: 2, points: 80 },
-        { clubId, userId: player3Id, category: 'HERREN', rank: 3, previousRank: 3, wins: 3, losses: 3, points: 60 },
+        {
+          clubId,
+          userId: player1Id,
+          category: 'HERREN',
+          rank: 1,
+          previousRank: 2,
+          wins: 5,
+          losses: 1,
+          points: 100,
+        },
+        {
+          clubId,
+          userId: player2Id,
+          category: 'HERREN',
+          rank: 2,
+          previousRank: 1,
+          wins: 4,
+          losses: 2,
+          points: 80,
+        },
+        {
+          clubId,
+          userId: player3Id,
+          category: 'HERREN',
+          rank: 3,
+          previousRank: 3,
+          wins: 3,
+          losses: 3,
+          points: 60,
+        },
         { clubId, userId: player4Id, category: 'DAMEN', rank: 1, wins: 2, losses: 0, points: 50 },
       ],
     });
@@ -197,7 +269,9 @@ describe('Ranking auto-update (AC-03)', () => {
     });
 
     // Create team + match for result submission
-    const team = await prisma.team.create({ data: { name: 'Ranking Team', type: 'MATCH_TEAM', clubId } });
+    const team = await prisma.team.create({
+      data: { name: 'Ranking Team', type: 'MATCH_TEAM', clubId },
+    });
     teamId = team.id;
     await prisma.teamMember.createMany({
       data: [
@@ -249,8 +323,8 @@ describe('Ranking auto-update (AC-03)', () => {
       orderBy: { rank: 'asc' },
     });
 
-    const p1Ranking = rankings.find(r => r.userId === player1Id);
-    const p2Ranking = rankings.find(r => r.userId === player2Id);
+    const p1Ranking = rankings.find((r) => r.userId === player1Id);
+    const p2Ranking = rankings.find((r) => r.userId === player2Id);
 
     // Player2 should now be rank 1, Player1 rank 2
     expect(p2Ranking!.rank).toBe(1);
@@ -327,7 +401,10 @@ describe('POST /api/v1/rankings/challenge', () => {
     // Player5 (rank 5) challenges Player1 (rank 1) → 4 places = exceeds max 3
     const res = await request(app)
       .post('/api/v1/rankings/challenge')
-      .set('Authorization', `Bearer ${generateAccessToken({ userId: player5Id, clubId, roles: ['MEMBER'] as UserRole[] })}`)
+      .set(
+        'Authorization',
+        `Bearer ${generateAccessToken({ userId: player5Id, clubId, roles: ['MEMBER'] as UserRole[] })}`,
+      )
       .send({ challengedId: player1Id });
 
     expect(res.status).toBe(400);
@@ -480,7 +557,8 @@ describe('POST /api/v1/webhooks/ranking-auto-accept', () => {
     });
 
     const res = await request(app)
-      .post('/api/v1/webhooks/ranking-auto-accept');
+      .post('/api/v1/webhooks/ranking-auto-accept')
+      .set('Authorization', `Bearer ${env.WEBHOOK_SECRET}`);
 
     expect(res.status).toBe(200);
     expect(res.body.data.accepted).toBe(1);
@@ -491,8 +569,8 @@ describe('POST /api/v1/webhooks/ranking-auto-accept', () => {
       orderBy: { deadline: 'asc' },
     });
 
-    const expired = challenges.find(c => c.challengerId === player3Id);
-    const active = challenges.find(c => c.challengerId === player2Id);
+    const expired = challenges.find((c) => c.challengerId === player3Id);
+    const active = challenges.find((c) => c.challengerId === player2Id);
     expect(expired!.status).toBe('ACCEPTED');
     expect(active!.status).toBe('PENDING');
   });

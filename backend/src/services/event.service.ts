@@ -4,7 +4,9 @@ import { SOCKET_ROOMS } from '@tennis-club/shared';
 import * as pushService from './push.service';
 import * as lineupService from './lineup.service';
 import { logAudit } from '../utils/audit';
+import { parsePagination, safeTotalPages } from '../utils/pagination';
 import type { Server } from 'socket.io';
+import { AppError } from '../utils/AppError';
 
 export async function getEventsForClub(
   clubId: string,
@@ -17,8 +19,7 @@ export async function getEventsForClub(
     limit?: number;
   },
 ) {
-  const page = opts?.page ?? 1;
-  const limit = opts?.limit ?? 50;
+  const { page, limit } = parsePagination(opts?.page, opts?.limit);
 
   const where = {
     clubId,
@@ -49,7 +50,7 @@ export async function getEventsForClub(
     prisma.event.count({ where }),
   ]);
 
-  return { events, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  return { events, pagination: { page, limit, total, totalPages: safeTotalPages(total, limit) } };
 }
 
 export async function getEventById(eventId: string, clubId: string) {
@@ -103,7 +104,7 @@ export async function updateEvent(
 ) {
   const event = await prisma.event.findFirst({ where: { id: eventId, clubId } });
   if (!event) {
-    throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Event nicht gefunden');
   }
 
   const updated = await prisma.event.update({
@@ -138,7 +139,7 @@ export async function getAvailabilityUserIds(eventId: string): Promise<string[]>
 export async function deleteEvent(eventId: string, clubId: string) {
   const event = await prisma.event.findFirst({ where: { id: eventId, clubId } });
   if (!event) {
-    throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Event nicht gefunden');
   }
   return prisma.event.delete({ where: { id: eventId } });
 }
@@ -212,7 +213,7 @@ export async function saveLineupForEvent(
 ) {
   const event = await getEventById(eventId, clubId);
   if (!event) {
-    throw Object.assign(new Error('Event nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Event nicht gefunden');
   }
 
   const lineup = await lineupService.saveLineup(eventId, event.team?.id || '', lineupData);

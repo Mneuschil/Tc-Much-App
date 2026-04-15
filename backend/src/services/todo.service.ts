@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { UserRole, ROLE_HIERARCHY } from '@tennis-club/shared';
 import type { CreateTodoInput, UpdateTodoInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 // Spec section 12: Todos only for board, trainers, teams
 
@@ -80,7 +81,7 @@ export async function createTodo(input: CreateTodoInput, clubId: string, created
 export async function toggleStatus(todoId: string, clubId: string, status: 'OPEN' | 'DONE') {
   const todo = await prisma.todo.findFirst({ where: { id: todoId, clubId } });
   if (!todo) {
-    throw Object.assign(new Error('Todo nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Todo nicht gefunden');
   }
 
   return prisma.todo.update({

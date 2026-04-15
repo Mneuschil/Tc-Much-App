@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import type { InitializeRankingInput } from '@tennis-club/shared';
 import * as pushService from './push.service';
+import { AppError } from '../utils/AppError';
 
 const DEFAULT_CATEGORY = 'HERREN';
 const CHALLENGE_MAX_RANGE = 3;
@@ -132,23 +133,18 @@ export async function createChallenge(
   });
 
   if (!challengerRanking || !challengedRanking) {
-    throw Object.assign(new Error('Beide Spieler muessen in der Rangliste sein'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Beide Spieler muessen in der Rangliste sein');
   }
 
   // Challenger must be lower-ranked (higher number) and within range
   if (challengerRanking.rank <= challengedRanking.rank) {
-    throw Object.assign(new Error('Du kannst nur hoeher platzierte Spieler herausfordern'), {
-      statusCode: 400,
-    });
+    throw AppError.badRequest('Du kannst nur hoeher platzierte Spieler herausfordern');
   }
 
   const rankDiff = challengerRanking.rank - challengedRanking.rank;
   if (rankDiff > CHALLENGE_MAX_RANGE) {
-    throw Object.assign(
-      new Error(`Maximale Herausforderungsreichweite: ${CHALLENGE_MAX_RANGE} Plaetze`),
-      { statusCode: 400 },
+    throw AppError.badRequest(
+      `Maximale Herausforderungsreichweite: ${CHALLENGE_MAX_RANGE} Plaetze`,
     );
   }
 
@@ -163,9 +159,7 @@ export async function createChallenge(
     },
   });
   if (existing) {
-    throw Object.assign(new Error('Es gibt bereits eine offene Herausforderung'), {
-      statusCode: 409,
-    });
+    throw AppError.conflict('Es gibt bereits eine offene Herausforderung');
   }
 
   const deadline = new Date();
@@ -223,15 +217,15 @@ export async function respondToChallenge(
   });
 
   if (!challenge) {
-    throw Object.assign(new Error('Herausforderung nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Herausforderung nicht gefunden');
   }
 
   if (challenge.challengedId !== userId) {
-    throw Object.assign(new Error('Nur der Herausgeforderte kann antworten'), { statusCode: 403 });
+    throw AppError.forbidden('Nur der Herausgeforderte kann antworten');
   }
 
   if (challenge.status !== 'PENDING') {
-    throw Object.assign(new Error('Herausforderung ist nicht mehr offen'), { statusCode: 400 });
+    throw AppError.badRequest('Herausforderung ist nicht mehr offen');
   }
 
   const newStatus = action === 'ACCEPT' ? 'ACCEPTED' : 'DECLINED';

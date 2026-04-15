@@ -20,7 +20,10 @@ export function NewsFeed({ items }: NewsFeedProps) {
 
   return (
     <View>
-      <Text style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+      <Text
+        style={[typography.h4, { color: colors.textPrimary, marginBottom: spacing.md }]}
+        accessibilityRole="header"
+      >
         Neuigkeiten
       </Text>
       <ScrollView

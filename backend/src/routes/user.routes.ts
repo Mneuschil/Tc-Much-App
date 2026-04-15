@@ -9,6 +9,7 @@ import { UserError } from '../services/user.service';
 import { success, error, paginated } from '../utils/apiResponse';
 import { logAudit } from '../utils/audit';
 import { userIdParams, userListQuery } from '../utils/requestSchemas';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
 
@@ -33,14 +34,13 @@ router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 // GET /me/teams – eigene Teams
-router.get('/me/teams', async (req: Request, res: Response, next: NextFunction) => {
-  try {
+router.get(
+  '/me/teams',
+  asyncHandler(async (req, res) => {
     const teams = await teamService.getMyTeams(req.user!.userId, req.user!.clubId);
     success(res, teams);
-  } catch (err) {
-    next(err);
-  }
-});
+  }),
+);
 
 // PUT /me – eigenes Profil bearbeiten
 router.put(

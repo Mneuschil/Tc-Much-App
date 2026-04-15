@@ -6,6 +6,7 @@ import type {
   UpdateChannelInput,
 } from '@tennis-club/shared';
 import { logAudit } from '../utils/audit';
+import { AppError } from '../utils/AppError';
 
 export async function getChannelsForClub(clubId: string, userId: string, page = 1, limit = 50) {
   // Check if user is admin/board (should see all channels)
@@ -76,7 +77,7 @@ export async function getChannelById(channelId: string, clubId: string) {
 export async function getChannelByIdOrFail(channelId: string, clubId: string) {
   const channel = await getChannelById(channelId, clubId);
   if (!channel) {
-    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Channel nicht gefunden');
   }
   return channel;
 }
@@ -132,7 +133,7 @@ export async function seedDefaultChannels(clubId: string, createdById: string) {
 export async function updateChannel(channelId: string, clubId: string, data: UpdateChannelInput) {
   const channel = await prisma.channel.findFirst({ where: { id: channelId, clubId } });
   if (!channel) {
-    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Channel nicht gefunden');
   }
 
   return prisma.channel.update({
@@ -144,13 +145,13 @@ export async function updateChannel(channelId: string, clubId: string, data: Upd
 export async function deleteChannel(channelId: string, clubId: string, userId: string) {
   const channel = await prisma.channel.findFirst({ where: { id: channelId, clubId } });
   if (!channel) {
-    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Channel nicht gefunden');
   }
   if (channel.isDefault) {
-    throw Object.assign(new Error('Default-Channels koennen nicht geloescht werden'), {
-      statusCode: 400,
-      code: 'CANNOT_DELETE_DEFAULT',
-    });
+    throw AppError.badRequest(
+      'Default-Channels koennen nicht geloescht werden',
+      'CANNOT_DELETE_DEFAULT',
+    );
   }
 
   // Archive subchannels first, then archive channel (Soft Delete)
@@ -170,7 +171,7 @@ export async function toggleMute(channelId: string, userId: string, clubId: stri
   // Verify channel belongs to club
   const channel = await prisma.channel.findFirst({ where: { id: channelId, clubId } });
   if (!channel) {
-    throw Object.assign(new Error('Channel nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Channel nicht gefunden');
   }
 
   const existing = await prisma.channelMute.findUnique({

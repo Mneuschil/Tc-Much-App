@@ -4,6 +4,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { env } from '../config/env';
 import { prisma } from '../config/database';
+import { AppError } from '../utils/AppError';
 
 const MAX_IMAGE_WIDTH = 1920;
 const IMAGE_MIMETYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -27,10 +28,7 @@ export const upload = multer({
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(
-        Object.assign(new Error('Dateityp nicht erlaubt'), { statusCode: 400 }) as unknown as null,
-        false,
-      );
+      cb(new AppError('Dateityp nicht erlaubt', 400) as unknown as null, false);
     }
   },
 });
@@ -101,13 +99,11 @@ export async function deleteFileWithAuth(
 ) {
   const file = await prisma.file.findFirst({ where: { id: fileId, clubId } });
   if (!file) {
-    throw Object.assign(new Error('Datei nicht gefunden'), { statusCode: 404 });
+    throw AppError.notFound('Datei nicht gefunden');
   }
 
   if (file.uploadedById !== userId && !isAdmin) {
-    throw Object.assign(new Error('Nur der Uploader oder ein Admin kann diese Datei loeschen'), {
-      statusCode: 403,
-    });
+    throw AppError.forbidden('Nur der Uploader oder ein Admin kann diese Datei loeschen');
   }
 
   // Delete physical file (best effort)

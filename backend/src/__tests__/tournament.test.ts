@@ -363,6 +363,110 @@ describe('Tournament status flow (AC-12)', () => {
   });
 });
 
+// ─── C-06/C-07: reportResult with empty matches / null winner ──────
+describe('reportResult defensive guards (C-06, C-07)', () => {
+  it('does not crash when tournament has no matches (C-06)', async () => {
+    // Create a tournament with no matches (IN_PROGRESS but empty bracket)
+    const t = await prisma.tournament.create({
+      data: {
+        name: 'Empty Bracket',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'IN_PROGRESS',
+      },
+    });
+
+    // Create a single match to report on, but no other matches exist
+    const match = await prisma.tournamentMatch.create({
+      data: {
+        tournamentId: t.id,
+        round: 1,
+        position: 1,
+        player1Id: playerIds[0],
+        player2Id: playerIds[1],
+        status: 'SCHEDULED',
+        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/tournaments/${t.id}/result`)
+      .set('Authorization', `Bearer ${boardToken}`)
+      .send({
+        matchId: match.id,
+        winnerId: playerIds[0],
+        score: '6:2 6:3',
+      });
+
+    // Should succeed, not crash with TypeError
+    expect(res.status).toBe(200);
+
+    await prisma.tournamentMatch.deleteMany({ where: { tournamentId: t.id } });
+    await prisma.tournament.delete({ where: { id: t.id } });
+  });
+
+  it('handles deleted winner user gracefully (C-07)', async () => {
+    // Create tournament with match where winner's user record could be missing
+    const t = await prisma.tournament.create({
+      data: {
+        name: 'Winner Guard Test',
+        type: 'KNOCKOUT',
+        category: 'SINGLES',
+        startDate: new Date(),
+        clubId,
+        createdById: adminUserId,
+        status: 'IN_PROGRESS',
+      },
+    });
+
+    // Round 1 match + round 2 match (so winner advances)
+    await prisma.tournamentMatch.createMany({
+      data: [
+        {
+          tournamentId: t.id,
+          round: 1,
+          position: 1,
+          player1Id: playerIds[0],
+          player2Id: playerIds[1],
+          status: 'SCHEDULED',
+          deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+        {
+          tournamentId: t.id,
+          round: 2,
+          position: 1,
+          player1Id: null,
+          player2Id: playerIds[2],
+          status: 'SCHEDULED',
+          deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        },
+      ],
+    });
+
+    const match = await prisma.tournamentMatch.findFirst({
+      where: { tournamentId: t.id, round: 1 },
+    });
+
+    const res = await request(app)
+      .post(`/api/v1/tournaments/${t.id}/result`)
+      .set('Authorization', `Bearer ${boardToken}`)
+      .send({
+        matchId: match!.id,
+        winnerId: playerIds[0],
+        score: '6:1 6:0',
+      });
+
+    // Should succeed without TypeError on winner access
+    expect(res.status).toBe(200);
+
+    await prisma.tournamentMatch.deleteMany({ where: { tournamentId: t.id } });
+    await prisma.tournament.delete({ where: { id: t.id } });
+  });
+});
+
 // ─── Bracket algorithm with different sizes ────────────────────────
 describe('Bracket algorithm edge cases', () => {
   it('handles 4 players (perfect bracket)', async () => {

@@ -1,5 +1,6 @@
 import { prisma } from '../config/database';
 import type { Prisma } from '@prisma/client';
+import { AppError } from '../utils/AppError';
 
 interface Registration {
   userId: string;
@@ -181,9 +182,8 @@ async function placeInNextRound(
 
 export async function advanceWinner(matchId: string, winnerId: string, score: string) {
   const match = await prisma.tournamentMatch.findUnique({ where: { id: matchId } });
-  if (!match) throw Object.assign(new Error('Match nicht gefunden'), { statusCode: 404 });
-  if (match.status === 'COMPLETED')
-    throw Object.assign(new Error('Match bereits abgeschlossen'), { statusCode: 400 });
+  if (!match) throw AppError.notFound('Match nicht gefunden');
+  if (match.status === 'COMPLETED') throw AppError.badRequest('Match bereits abgeschlossen');
 
   // Update current match
   await prisma.tournamentMatch.update({

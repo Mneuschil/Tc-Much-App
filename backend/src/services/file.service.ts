@@ -1,4 +1,5 @@
 import { prisma } from '../config/database';
+import { AppError } from '../utils/AppError';
 
 // Spec section 13: channel-based storage, folder creation (board/admin only)
 
@@ -27,7 +28,12 @@ export async function getFoldersForChannel(channelId: string) {
   });
 }
 
-export async function createFolder(name: string, clubId: string, createdById: string, channelId?: string) {
+export async function createFolder(
+  name: string,
+  clubId: string,
+  createdById: string,
+  channelId?: string,
+) {
   return prisma.fileFolder.create({
     data: { name, channelId, clubId, createdById },
   });
@@ -48,6 +54,21 @@ export async function createFileRecord(
   });
 }
 
-export async function deleteFile(fileId: string, clubId: string) {
-  return prisma.file.deleteMany({ where: { id: fileId, clubId } });
+export async function deleteFile(
+  fileId: string,
+  clubId: string,
+  userId: string,
+  isBoardOrAbove: boolean,
+) {
+  const file = await prisma.file.findFirst({ where: { id: fileId, clubId } });
+
+  if (!file) {
+    throw AppError.notFound('Datei nicht gefunden');
+  }
+
+  if (file.uploadedById !== userId && !isBoardOrAbove) {
+    throw AppError.forbidden('Nur der Uploader oder Vorstand kann diese Datei loeschen');
+  }
+
+  return prisma.file.delete({ where: { id: fileId } });
 }

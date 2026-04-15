@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   View,
   Text,
@@ -11,20 +10,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from '../../theme';
-import { useCreateEvent } from '../../features/calendar/hooks/useEvents';
-import type { CreateEventInput } from '@tennis-club/shared';
-
-const EVENT_TYPES: { value: CreateEventInput['type']; label: string }[] = [
-  { value: 'TRAINING', label: 'Training' },
-  { value: 'LEAGUE_MATCH', label: 'Ligaspiel' },
-  { value: 'CUP_MATCH', label: 'Pokalspiel' },
-  { value: 'CLUB_EVENT', label: 'Vereinsevent' },
-  { value: 'CLUB_CHAMPIONSHIP', label: 'Clubmeisterschaft' },
-  { value: 'RANKING_MATCH', label: 'Ranglistenspiel' },
-  { value: 'TOURNAMENT', label: 'Turnier' },
-];
+import {
+  useEventForm,
+  EVENT_TYPES,
+  formatDisplayDateTime,
+} from '../../features/calendar/hooks/useEventForm';
 
 interface CreateEventModalProps {
   visible: boolean;
@@ -34,86 +26,7 @@ interface CreateEventModalProps {
 
 export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEventModalProps) {
   const { colors, typography, spacing, borderRadius, isDark } = useTheme();
-  const createEvent = useCreateEvent();
-
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [type, setType] = useState<CreateEventInput['type']>('CLUB_EVENT');
-  const [location, setLocation] = useState('');
-  const [court, setCourt] = useState('');
-  const [startDate, setStartDate] = useState<Date>(() => {
-    if (preselectedDate) {
-      const d = new Date(preselectedDate);
-      d.setHours(10, 0, 0, 0);
-      return d;
-    }
-    const d = new Date();
-    d.setHours(d.getHours() + 1, 0, 0, 0);
-    return d;
-  });
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
-  const [startPickerMode, setStartPickerMode] = useState<'date' | 'time'>('date');
-
-  const formatDisplayDateTime = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
-  };
-
-  const handleStartDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') {
-      setShowStartPicker(false);
-      if (selected && startPickerMode === 'date') {
-        setStartDate(selected);
-        setStartPickerMode('time');
-        setShowStartPicker(true);
-        return;
-      }
-    }
-    if (selected) setStartDate(selected);
-  };
-
-  const handleEndDateChange = (_event: DateTimePickerEvent, selected?: Date) => {
-    if (Platform.OS === 'android') setShowEndPicker(false);
-    if (selected) setEndDate(selected);
-  };
-
-  const resetForm = () => {
-    setTitle('');
-    setDescription('');
-    setType('CLUB_EVENT');
-    setLocation('');
-    setCourt('');
-    setEndDate(null);
-    setShowStartPicker(false);
-    setShowEndPicker(false);
-  };
-
-  const handleCreate = () => {
-    if (!title.trim()) return;
-    const input: CreateEventInput = {
-      title: title.trim(),
-      description: description.trim() || undefined,
-      type,
-      location: location.trim() || undefined,
-      court: court.trim() || undefined,
-      startDate: startDate.toISOString(),
-      endDate: endDate ? endDate.toISOString() : undefined,
-    };
-    createEvent.mutate(input, {
-      onSuccess: () => {
-        resetForm();
-        onClose();
-      },
-    });
-  };
-
-  const canSubmit = title.trim().length > 0 && !createEvent.isPending;
+  const form = useEventForm({ preselectedDate, onSuccess: onClose });
 
   return (
     <Modal
@@ -123,14 +36,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
       onRequestClose={onClose}
     >
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-        <View
-          style={{
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            padding: spacing.xl,
-          }}
-        >
+        <View style={[styles.header, { padding: spacing.xl }]}>
           <Text style={[typography.h2, { color: colors.textPrimary }]} accessibilityRole="header">
             Neues Event
           </Text>
@@ -163,8 +69,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 color: colors.textPrimary,
               },
             ]}
-            value={title}
-            onChangeText={setTitle}
+            value={form.title}
+            onChangeText={form.setTitle}
             placeholder="Titel eingeben"
             placeholderTextColor={colors.textTertiary}
             accessibilityLabel="Titel"
@@ -189,15 +95,15 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             {EVENT_TYPES.map((et) => (
               <Pressable
                 key={et.value}
-                onPress={() => setType(et.value)}
+                onPress={() => form.setType(et.value)}
                 accessibilityLabel={et.label}
                 accessibilityRole="button"
-                accessibilityState={{ selected: type === et.value }}
+                accessibilityState={{ selected: form.type === et.value }}
                 style={[
                   styles.typePill,
                   {
                     backgroundColor:
-                      type === et.value ? colors.chipActive : colors.backgroundSecondary,
+                      form.type === et.value ? colors.chipActive : colors.backgroundSecondary,
                     borderRadius: borderRadius.full,
                   },
                 ]}
@@ -206,7 +112,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                   style={[
                     typography.caption,
                     {
-                      color: type === et.value ? colors.textInverse : colors.textPrimary,
+                      color: form.type === et.value ? colors.textInverse : colors.textPrimary,
                       fontWeight: '600',
                     },
                   ]}
@@ -237,8 +143,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                 color: colors.textPrimary,
               },
             ]}
-            value={description}
-            onChangeText={setDescription}
+            value={form.description}
+            onChangeText={form.setDescription}
             placeholder="Beschreibung (optional)"
             placeholderTextColor={colors.textTertiary}
             multiline
@@ -258,11 +164,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             Start
           </Text>
           <Pressable
-            onPress={() => {
-              setStartPickerMode('date');
-              setShowStartPicker(true);
-            }}
-            accessibilityLabel={`Startdatum: ${formatDisplayDateTime(startDate)}`}
+            onPress={form.openStartPicker}
+            accessibilityLabel={`Startdatum: ${formatDisplayDateTime(form.startDate)}`}
             accessibilityRole="button"
             style={[
               styles.input,
@@ -281,10 +184,10 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               style={{ marginRight: spacing.sm }}
             />
             <Text style={[typography.body, { color: colors.textPrimary }]}>
-              {formatDisplayDateTime(startDate)}
+              {formatDisplayDateTime(form.startDate)}
             </Text>
           </Pressable>
-          {showStartPicker && (
+          {form.showStartPicker && (
             <View
               style={{
                 backgroundColor: colors.backgroundSecondary,
@@ -294,21 +197,21 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               }}
             >
               <DateTimePicker
-                value={startDate}
-                mode={Platform.OS === 'ios' ? 'datetime' : startPickerMode}
+                value={form.startDate}
+                mode={Platform.OS === 'ios' ? 'datetime' : form.startPickerMode}
                 display={Platform.OS === 'ios' ? 'inline' : 'default'}
                 locale="de-DE"
                 themeVariant={isDark ? 'dark' : 'light'}
                 accentColor={colors.accent}
-                onChange={handleStartDateChange}
+                onChange={form.handleStartDateChange}
               />
               {Platform.OS === 'ios' && (
                 <Pressable
-                  onPress={() => setShowStartPicker(false)}
+                  onPress={() => form.setShowStartPicker(false)}
                   accessibilityLabel="Startdatum bestätigen"
                   accessibilityRole="button"
                   style={[
-                    styles.doneBtn,
+                    styles.actionBtn,
                     {
                       backgroundColor: colors.accent,
                       borderRadius: borderRadius.md,
@@ -334,12 +237,11 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             Ende (optional)
           </Text>
           <Pressable
-            onPress={() => {
-              if (!endDate) setEndDate(new Date(startDate.getTime() + 90 * 60000));
-              setShowEndPicker(true);
-            }}
+            onPress={form.openEndPicker}
             accessibilityLabel={
-              endDate ? `Enddatum: ${formatDisplayDateTime(endDate)}` : 'Enddatum hinzufügen'
+              form.endDate
+                ? `Enddatum: ${formatDisplayDateTime(form.endDate)}`
+                : 'Enddatum hinzufügen'
             }
             accessibilityRole="button"
             style={[
@@ -355,23 +257,20 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             <Ionicons
               name="time-outline"
               size={18}
-              color={endDate ? colors.textPrimary : colors.textTertiary}
+              color={form.endDate ? colors.textPrimary : colors.textTertiary}
               style={{ marginRight: spacing.sm }}
             />
             <Text
               style={[
                 typography.body,
-                { color: endDate ? colors.textPrimary : colors.textTertiary, flex: 1 },
+                { color: form.endDate ? colors.textPrimary : colors.textTertiary, flex: 1 },
               ]}
             >
-              {endDate ? formatDisplayDateTime(endDate) : 'Enddatum hinzufuegen'}
+              {form.endDate ? formatDisplayDateTime(form.endDate) : 'Enddatum hinzufuegen'}
             </Text>
-            {endDate && (
+            {form.endDate && (
               <Pressable
-                onPress={() => {
-                  setEndDate(null);
-                  setShowEndPicker(false);
-                }}
+                onPress={form.clearEndDate}
                 hitSlop={12}
                 accessibilityLabel="Enddatum entfernen"
                 accessibilityRole="button"
@@ -380,7 +279,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               </Pressable>
             )}
           </Pressable>
-          {showEndPicker && endDate && (
+          {form.showEndPicker && form.endDate && (
             <View
               style={{
                 backgroundColor: colors.backgroundSecondary,
@@ -390,22 +289,22 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
               }}
             >
               <DateTimePicker
-                value={endDate}
+                value={form.endDate}
                 mode={Platform.OS === 'ios' ? 'datetime' : 'time'}
                 display={Platform.OS === 'ios' ? 'inline' : 'default'}
-                minimumDate={startDate}
+                minimumDate={form.startDate}
                 locale="de-DE"
                 themeVariant={isDark ? 'dark' : 'light'}
                 accentColor={colors.accent}
-                onChange={handleEndDateChange}
+                onChange={form.handleEndDateChange}
               />
               {Platform.OS === 'ios' && (
                 <Pressable
-                  onPress={() => setShowEndPicker(false)}
+                  onPress={() => form.setShowEndPicker(false)}
                   accessibilityLabel="Enddatum bestätigen"
                   accessibilityRole="button"
                   style={[
-                    styles.doneBtn,
+                    styles.actionBtn,
                     {
                       backgroundColor: colors.accent,
                       borderRadius: borderRadius.md,
@@ -442,8 +341,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                     color: colors.textPrimary,
                   },
                 ]}
-                value={location}
-                onChangeText={setLocation}
+                value={form.location}
+                onChangeText={form.setLocation}
                 placeholder="z.B. TC Much"
                 placeholderTextColor={colors.textTertiary}
                 accessibilityLabel="Ort"
@@ -469,8 +368,8 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
                     color: colors.textPrimary,
                   },
                 ]}
-                value={court}
-                onChangeText={setCourt}
+                value={form.court}
+                onChangeText={form.setCourt}
                 placeholder="z.B. 1"
                 placeholderTextColor={colors.textTertiary}
                 accessibilityLabel="Platznummer"
@@ -481,15 +380,15 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
 
           {/* Erstellen Button */}
           <Pressable
-            onPress={handleCreate}
-            disabled={!canSubmit}
+            onPress={form.handleCreate}
+            disabled={!form.canSubmit}
             accessibilityLabel="Event erstellen"
             accessibilityRole="button"
-            accessibilityState={{ disabled: !canSubmit, busy: createEvent.isPending }}
+            accessibilityState={{ disabled: !form.canSubmit, busy: form.isPending }}
             style={[
-              styles.doneBtn,
+              styles.actionBtn,
               {
-                backgroundColor: canSubmit ? colors.accent : colors.surface,
+                backgroundColor: form.canSubmit ? colors.accent : colors.surface,
                 borderRadius: borderRadius.md,
                 marginTop: spacing.xxl,
               },
@@ -498,7 +397,7 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
             <Text
               style={[
                 typography.buttonSmall,
-                { color: canSubmit ? colors.textInverse : colors.textTertiary },
+                { color: form.canSubmit ? colors.textInverse : colors.textTertiary },
               ]}
             >
               Event erstellen
@@ -512,8 +411,9 @@ export function CreateEventModal({ visible, onClose, preselectedDate }: CreateEv
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   input: { height: 48, paddingHorizontal: 16, fontSize: 15, justifyContent: 'center' },
   multiline: { height: 100, paddingTop: 12, paddingBottom: 12 },
   typePill: { paddingHorizontal: 14, paddingVertical: 8 },
-  doneBtn: { height: 48, alignItems: 'center', justifyContent: 'center' },
+  actionBtn: { height: 48, alignItems: 'center', justifyContent: 'center' },
 });

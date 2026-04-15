@@ -1,1 +1,4 @@
 npx lint-staged
+
+# Typecheck nach Formatting/Linting (faengt Type-Fehler vor dem Commit ab)
+npm run build:shared --silent && npm run typecheck --silent

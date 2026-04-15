@@ -1,5 +1,6 @@
 import { Response } from 'express';
 import type { ApiResponse, PaginatedResponse } from '@tennis-club/shared';
+import { safeTotalPages } from './pagination';
 
 export function success<T>(res: Response, data: T, statusCode = 200): void {
   const body: ApiResponse<T> = {
@@ -14,7 +15,7 @@ export function error(
   message: string,
   statusCode = 400,
   code = 'ERROR',
-  details?: unknown
+  details?: unknown,
 ): void {
   const body: ApiResponse = {
     success: false,
@@ -32,7 +33,7 @@ export function paginated<T>(
   data: T[],
   total: number,
   page: number,
-  limit: number
+  limit: number,
 ): void {
   const body: PaginatedResponse<T> = {
     success: true,
@@ -41,7 +42,7 @@ export function paginated<T>(
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages: safeTotalPages(total, limit),
     },
   };
   res.status(200).json(body);

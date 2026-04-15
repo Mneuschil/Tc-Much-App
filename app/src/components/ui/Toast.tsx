@@ -1,6 +1,13 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import { Text, StyleSheet, Platform } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Text, StyleSheet, Platform, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
 
@@ -26,6 +33,45 @@ export function useToast(): ToastContextValue {
   return ctx;
 }
 
+function ToastItem({
+  toast,
+  top,
+  colors,
+}: {
+  toast: ToastMessage;
+  top: number;
+  colors: ReturnType<typeof useTheme>['colors'];
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const isError = toast.variant === 'error';
+
+  useEffect(() => {
+    Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+    const timer = setTimeout(() => {
+      Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }).start();
+    }, 2800);
+    return () => clearTimeout(timer);
+  }, [opacity]);
+
+  return (
+    <Animated.View
+      accessibilityRole="alert"
+      accessibilityLiveRegion={isError ? 'assertive' : 'polite'}
+      accessibilityLabel={toast.text}
+      style={[
+        styles.toast,
+        {
+          top,
+          backgroundColor: isError ? colors.danger : colors.success,
+          opacity,
+        },
+      ]}
+    >
+      <Text style={styles.text}>{toast.text}</Text>
+    </Animated.View>
+  );
+}
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const insets = useSafeAreaInsets();
@@ -44,28 +90,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      {toasts.map((toast) => {
-        const isError = toast.variant === 'error';
-        return (
-          <Animated.View
-            key={toast.id}
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            accessibilityRole="alert"
-            accessibilityLiveRegion={isError ? 'assertive' : 'polite'}
-            accessibilityLabel={toast.text}
-            style={[
-              styles.toast,
-              {
-                top: insets.top + (Platform.OS === 'ios' ? 8 : 16),
-                backgroundColor: isError ? colors.danger : colors.success,
-              },
-            ]}
-          >
-            <Text style={styles.text}>{toast.text}</Text>
-          </Animated.View>
-        );
-      })}
+      {toasts.map((toast) => (
+        <ToastItem
+          key={toast.id}
+          toast={toast}
+          top={insets.top + (Platform.OS === 'ios' ? 8 : 16)}
+          colors={colors}
+        />
+      ))}
     </ToastContext.Provider>
   );
 }

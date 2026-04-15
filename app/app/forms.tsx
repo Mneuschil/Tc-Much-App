@@ -39,7 +39,10 @@ export default function FormsScreen() {
           <Pressable onPress={() => setActiveView('menu')} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>
+          <Text
+            accessibilityRole="header"
+            style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}
+          >
             Platzschaden melden
           </Text>
         </View>
@@ -60,7 +63,10 @@ export default function FormsScreen() {
           <Pressable onPress={() => setActiveView('menu')} hitSlop={12}>
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
-          <Text style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}>
+          <Text
+            accessibilityRole="header"
+            style={[typography.h2, { color: colors.textPrimary, marginLeft: spacing.md }]}
+          >
             Medien hochladen
           </Text>
         </View>
@@ -79,7 +85,10 @@ export default function FormsScreen() {
         onRefresh={refetch}
         ListHeaderComponent={
           <View style={{ paddingHorizontal: spacing.xl, paddingTop: spacing.lg }}>
-            <Text style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xl }]}>
+            <Text
+              accessibilityRole="header"
+              style={[typography.h1, { color: colors.textPrimary, marginBottom: spacing.xl }]}
+            >
               Formulare
             </Text>
 
@@ -137,7 +146,10 @@ export default function FormsScreen() {
             </View>
 
             {/* Section Title */}
-            <Text style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}>
+            <Text
+              accessibilityRole="header"
+              style={[typography.h3, { color: colors.textPrimary, marginBottom: spacing.md }]}
+            >
               Meine Meldungen
             </Text>
           </View>

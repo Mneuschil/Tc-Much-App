@@ -10,7 +10,7 @@ const httpServer = createServer(app);
 const io = initializeSocket(httpServer);
 app.set('io', io);
 
-httpServer.listen(env.PORT, () => {
+httpServer.listen(env.PORT, '0.0.0.0', () => {
   logger.info(`Server laeuft auf Port ${env.PORT}`, {
     env: env.NODE_ENV,
     port: env.PORT,

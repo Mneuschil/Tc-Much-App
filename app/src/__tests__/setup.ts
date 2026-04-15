@@ -36,5 +36,45 @@ jest.mock('socket.io-client', () => ({
   })),
 }));
 
+// Mock react-native-safe-area-context
+jest.mock('react-native-safe-area-context', () => {
+  const insets = { top: 0, right: 0, bottom: 0, left: 0 };
+  const frame = { x: 0, y: 0, width: 390, height: 844 };
+  return {
+    SafeAreaProvider: ({ children }: { children: React.ReactNode }) => children,
+    SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
+    useSafeAreaInsets: () => insets,
+    useSafeAreaFrame: () => frame,
+    initialWindowMetrics: { insets, frame },
+  };
+});
+
+// Mock API layer to prevent Axios/AppState issues in tests
+jest.mock('../lib/api', () => ({
+  __esModule: true,
+  default: {
+    get: jest.fn().mockResolvedValue({ data: { data: [] } }),
+    post: jest.fn().mockResolvedValue({ data: { data: {} } }),
+    put: jest.fn().mockResolvedValue({ data: { data: {} } }),
+    delete: jest.fn().mockResolvedValue({ data: { data: {} } }),
+    interceptors: {
+      request: { use: jest.fn() },
+      response: { use: jest.fn() },
+    },
+  },
+}));
+
+jest.mock('../lib/queryClient', () => {
+  const { QueryClient } = require('@tanstack/react-query');
+  return {
+    queryClient: new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: 0 },
+      },
+    }),
+  };
+});
+
 import React from 'react';
 export { React };

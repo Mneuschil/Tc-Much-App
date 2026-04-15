@@ -65,11 +65,12 @@ describe('LoginScreen', () => {
     expect(mockLogin).not.toHaveBeenCalled();
   });
 
-  it('calls login with trimmed email and password', async () => {
+  it('calls login with trimmed email, password and clubCode', async () => {
     mockLogin.mockResolvedValue(undefined);
 
     const { getByPlaceholderText, getAllByText } = render(<LoginScreen />);
 
+    fireEvent.changeText(getByPlaceholderText('z.B. TCM026'), 'tcm026');
     fireEvent.changeText(getByPlaceholderText('deine@email.de'), ' Test@Email.De ');
     fireEvent.changeText(getByPlaceholderText('Passwort'), 'password123');
 
@@ -80,6 +81,7 @@ describe('LoginScreen', () => {
       expect(mockLogin).toHaveBeenCalledWith({
         email: 'test@email.de',
         password: 'password123',
+        clubCode: 'TCM026',
       });
     });
   });
