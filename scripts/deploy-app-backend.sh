@@ -40,6 +40,12 @@ ssh "$SERVER" bash <<EOF
   echo "[server] build shared..."
   npm run build -w shared
 
+  echo "[server] prisma generate (vor Backend-Build, da TS-Types abhaengig)..."
+  cd backend
+  DATABASE_URL=\$(grep ^DATABASE_URL /opt/tc-much-app/.env | cut -d= -f2-) \\
+    npx prisma generate
+  cd ..
+
   echo "[server] build backend..."
   npm run build -w backend
 
@@ -47,8 +53,6 @@ ssh "$SERVER" bash <<EOF
   cd backend
   DATABASE_URL=\$(grep ^DATABASE_URL /opt/tc-much-app/.env | cut -d= -f2-) \\
     npx prisma migrate deploy
-  DATABASE_URL=\$(grep ^DATABASE_URL /opt/tc-much-app/.env | cut -d= -f2-) \\
-    npx prisma generate
 
   echo "[server] pm2 restart..."
   pm2 restart $PM2_NAME --update-env || pm2 start /opt/tc-much-app/ecosystem.config.cjs

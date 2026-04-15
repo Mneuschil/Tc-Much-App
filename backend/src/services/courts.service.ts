@@ -1,7 +1,15 @@
-import { EventType } from '@prisma/client';
 import { prisma } from '../config/database';
 
 export type CourtCategory = 'TRAINING' | 'MATCH' | 'RANKING' | 'OTHER';
+
+type EventTypeName =
+  | 'LEAGUE_MATCH'
+  | 'CUP_MATCH'
+  | 'CLUB_CHAMPIONSHIP'
+  | 'RANKING_MATCH'
+  | 'TRAINING'
+  | 'CLUB_EVENT'
+  | 'TOURNAMENT';
 
 export interface CourtSlot {
   id: string;
@@ -13,7 +21,7 @@ export interface CourtSlot {
   teamName: string | null;
 }
 
-const TYPE_TO_CATEGORY: Record<EventType, CourtCategory> = {
+const TYPE_TO_CATEGORY: Record<EventTypeName, CourtCategory> = {
   TRAINING: 'TRAINING',
   LEAGUE_MATCH: 'MATCH',
   CUP_MATCH: 'MATCH',
@@ -61,7 +69,7 @@ export async function getDayOccupancy(clubId: string, dateISO: string): Promise<
       court: courtNum,
       startTime: e.startDate.toISOString(),
       endTime: endTime.toISOString(),
-      category: TYPE_TO_CATEGORY[e.type],
+      category: TYPE_TO_CATEGORY[e.type as EventTypeName],
       title: e.title,
       teamName: e.team?.name ?? null,
     });
