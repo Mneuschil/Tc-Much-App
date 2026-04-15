@@ -28,7 +28,7 @@ function toIsoDay(date: Date) {
 }
 
 export default function CourtsScreen() {
-  const { colors, typography, spacing, borderRadius, shadows } = useTheme();
+  const { colors, typography, spacing } = useTheme();
   const tabBarHeight = useBottomTabBarHeight();
   const { canBookCourt } = usePermissions();
   const [date, setDate] = useState(() => new Date());
@@ -88,17 +88,13 @@ export default function CourtsScreen() {
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.fab,
-              shadows.lg,
               {
-                right: spacing.xl,
-                bottom: tabBarHeight + spacing.l,
-                backgroundColor: colors.buttonPrimary,
-                borderRadius: borderRadius.full,
+                backgroundColor: colors.accent,
                 opacity: pressed ? 0.9 : 1,
               },
             ]}
           >
-            <Ionicons name="add" size={28} color={colors.buttonPrimaryText} />
+            <Ionicons name="add" size={24} color={colors.buttonPrimaryText} />
           </Pressable>
         )}
       </GradientBackground>
@@ -129,9 +125,17 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    width: 56,
-    height: 56,
+    bottom: 24,
+    right: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });
