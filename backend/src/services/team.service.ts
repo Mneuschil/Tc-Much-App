@@ -1,6 +1,7 @@
 import { prisma } from '../config/database';
 import type { CreateTeamInput } from '@tennis-club/shared';
 import { AppError } from '../utils/AppError';
+import { recomputeClubShortCodes } from './teamShortCode';
 
 export async function getTeamsForClub(clubId: string, type?: string) {
   return prisma.team.findMany({
@@ -79,6 +80,8 @@ export async function createTeam(input: CreateTeamInput, clubId: string, created
     select: { id: true, name: true },
   });
 
+  await recomputeClubShortCodes(clubId);
+
   return {
     ...team,
     channels: [channel],
@@ -96,7 +99,7 @@ export async function updateTeam(
     throw AppError.notFound('Team nicht gefunden');
   }
 
-  return prisma.team.update({
+  const updated = await prisma.team.update({
     where: { id: teamId },
     data,
     include: {
@@ -104,6 +107,10 @@ export async function updateTeam(
       _count: { select: { members: true } },
     },
   });
+  if (data.name !== undefined) {
+    await recomputeClubShortCodes(clubId);
+  }
+  return updated;
 }
 
 export async function deleteTeam(teamId: string, clubId: string) {
@@ -114,7 +121,9 @@ export async function deleteTeam(teamId: string, clubId: string) {
 
   // Delete associated channel(s) first
   await prisma.channel.deleteMany({ where: { teamId } });
-  return prisma.team.delete({ where: { id: teamId } });
+  const deleted = await prisma.team.delete({ where: { id: teamId } });
+  await recomputeClubShortCodes(clubId);
+  return deleted;
 }
 
 export async function addTeamMember(
