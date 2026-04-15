@@ -136,4 +136,16 @@ export const ENDPOINTS = {
     mediaUpload: '/forms/media-upload',
     courtDamageStatus: (formId: string) => `/forms/court-damage/${formId}/status`,
   },
+
+  // News (synced from Website)
+  news: {
+    list: '/news',
+    detail: (id: string) => `/news/${id}`,
+  },
+
+  // Club Events (synced from Website)
+  clubEvents: {
+    list: '/club-events',
+    detail: (id: string) => `/club-events/${id}`,
+  },
 } as const;

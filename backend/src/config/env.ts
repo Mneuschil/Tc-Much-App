@@ -24,6 +24,9 @@ const envSchema = z.object({
   WEBHOOK_SECRET: z.string().min(32, 'WEBHOOK_SECRET must be at least 32 characters'),
 
   EXPO_ACCESS_TOKEN: z.string().optional(),
+
+  WEBSITE_SYNC_ENABLED: z.coerce.boolean().default(false),
+  WEBSITE_SYNC_INTERVAL_MS: z.coerce.number().min(60_000).default(300_000),
 });
 
 const parsed = envSchema.safeParse(process.env);

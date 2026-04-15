@@ -18,8 +18,7 @@ import { HeroHeader } from '../../src/components/home/HeroHeader';
 import { DayAgenda, type DayEvent } from '../../src/components/calendar/DayAgenda';
 import { RecentResults } from '../../src/components/home/RecentResults';
 import { NewsFeed } from '../../src/components/home/NewsFeed';
-// MOCK: Ersetzen durch echten API-Call (useChannelPosts Hook) wenn Backend-Endpoint bereit
-import { MOCK_NEWS } from '../../src/components/home/mockNews';
+import { useNews } from '../../src/features/news/hooks/useNews';
 import { useAuthStore } from '../../src/stores/authStore';
 import { usePermissions } from '../../src/hooks/usePermissions';
 import { useWeekEvents } from '../../src/features/calendar/hooks/useEvents';
@@ -47,6 +46,12 @@ export default function HomeScreen() {
   const { data: weekEvents, refetch } = useWeekEvents();
   const { data: todosData } = useTodos();
   const { data: notifications } = useNotifications(true);
+  const {
+    data: newsItems,
+    isLoading: newsLoading,
+    isError: newsError,
+    refetch: refetchNews,
+  } = useNews(5);
 
   const events = useMemo(() => (weekEvents ?? []) as DayEvent[], [weekEvents]);
 
@@ -90,7 +95,12 @@ export default function HomeScreen() {
         </View>
 
         <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>
-          <NewsFeed items={MOCK_NEWS} />
+          <NewsFeed
+            items={newsItems ?? []}
+            isLoading={newsLoading}
+            isError={newsError}
+            onRetry={() => void refetchNews()}
+          />
         </View>
 
         <View style={{ marginTop: spacing.xxl, paddingLeft: spacing.xl }}>

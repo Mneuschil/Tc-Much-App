@@ -28,8 +28,8 @@ jest.mock('../features/notifications/hooks/useNotifications', () => ({
   useNotifications: () => ({ data: [] }),
 }));
 
-jest.mock('../components/home/mockNews', () => ({
-  MOCK_NEWS: [],
+jest.mock('../features/news/hooks/useNews', () => ({
+  useNews: () => ({ data: [], isLoading: false, isError: false, refetch: jest.fn() }),
 }));
 
 jest.mock('../hooks/useRefreshOnFocus', () => ({

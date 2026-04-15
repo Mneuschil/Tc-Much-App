@@ -18,6 +18,9 @@ import notificationRoutes from './notification.routes';
 import uploadRoutes from './upload.routes';
 import pushRoutes from './push.routes';
 import webhookRoutes from './webhook.routes';
+import newsRoutes from './news.routes';
+import clubEventsRoutes from './clubEvents.routes';
+import syncRoutes from './sync.routes';
 
 const router = Router();
 
@@ -40,5 +43,8 @@ router.use('/notifications', notificationRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/push', pushRoutes);
 router.use('/webhooks', webhookRoutes);
+router.use('/news', newsRoutes);
+router.use('/club-events', clubEventsRoutes);
+router.use('/sync', syncRoutes);
 
 export default router;

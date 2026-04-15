@@ -128,6 +128,16 @@ enum Platform {
   ANDROID
 }
 
+enum SyncSourceKind {
+  WEBSITE
+}
+
+enum SyncedContentStatus {
+  DRAFT
+  PUBLISHED
+  DELETED
+}
+
 // ─── Club ───────────────────────────────────────────────────────────
 
 model Club {
@@ -155,6 +165,9 @@ model Club {
   fileFolders        FileFolder[]
   formSubmissions    FormSubmission[]
   notifications      Notification[]
+  syncSources        SyncSource[]
+  syncedArticles     SyncedArticle[]
+  syncedClubEvents   SyncedClubEvent[]
 
   @@map("clubs")
 }
@@ -797,4 +810,87 @@ model PushToken {
 
   @@index([userId])
   @@map("push_tokens")
+}
+
+// ─── Sync Sources (external content feeds) ─────────────────────────
+// Each row = one external feed the App-Backend pulls into a club.
+// `key` is the stable identifier used in URLs (e.g. "website-tcmuch").
+// `syncToken` is sent as X-Sync-Token header to the source.
+// `cursorSince` + `cursorId` form the resume-point of delta pagination.
+
+model SyncSource {
+  id           String         @id @default(uuid())
+  key          String         @unique
+  kind         SyncSourceKind
+  clubId       String
+  baseUrl      String
+  syncToken    String
+  enabled      Boolean        @default(true)
+  cursorSince  String?
+  cursorId     Int?
+  lastSyncedAt DateTime?
+  lastError    String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  club             Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  syncedArticles   SyncedArticle[]
+  syncedClubEvents SyncedClubEvent[]
+
+  @@index([clubId])
+  @@map("sync_sources")
+}
+
+model SyncedArticle {
+  id                  String              @id @default(uuid())
+  sourceId            String
+  externalId          Int
+  clubId              String
+  slug                String
+  title               String
+  date                String
+  tag                 String
+  author              String?
+  role                String?
+  description         String?
+  body                String
+  imageUrl            String?
+  status              SyncedContentStatus
+  publishedAt         DateTime?
+  externalCreatedAt   DateTime
+  externalUpdatedAt   DateTime
+  lastSyncedAt        DateTime            @default(now())
+
+  source SyncSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  club   Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, externalId])
+  @@index([clubId, status, publishedAt])
+  @@index([externalUpdatedAt])
+  @@map("synced_articles")
+}
+
+model SyncedClubEvent {
+  id                  String              @id @default(uuid())
+  sourceId            String
+  externalId          Int
+  clubId              String
+  title               String
+  date                String
+  time                String?
+  category            String
+  description         String?
+  registrationUrl     String?
+  status              SyncedContentStatus
+  externalCreatedAt   DateTime
+  externalUpdatedAt   DateTime
+  lastSyncedAt        DateTime            @default(now())
+
+  source SyncSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  club   Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceId, externalId])
+  @@index([clubId, status, date])
+  @@index([externalUpdatedAt])
+  @@map("synced_club_events")
 }
