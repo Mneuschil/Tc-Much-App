@@ -41,6 +41,7 @@ function slotBadge(slot: CourtSlot): string {
     return slot.title;
   }
   if (slot.category === 'MEDENSPIEL') {
+    if (slot.teamShortCode) return slot.teamShortCode;
     return slot.opponentName ? `vs ${slot.opponentName}` : slot.title;
   }
   if (slot.category === 'WETTSPIEL') {
