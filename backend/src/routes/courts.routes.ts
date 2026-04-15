@@ -24,8 +24,15 @@ const BOOKING_ROLES: UserRole[] = [
 router.get(
   '/occupancy',
   asyncHandler(async (req, res) => {
-    const date = (req.query.date as string | undefined) ?? new Date().toISOString().slice(0, 10);
+    const from = req.query.from as string | undefined;
+    const to = req.query.to as string | undefined;
     try {
+      if (from && to) {
+        const slots = await courtsService.getRangeOccupancy(req.user!.clubId, from, to);
+        success(res, slots);
+        return;
+      }
+      const date = (req.query.date as string | undefined) ?? new Date().toISOString().slice(0, 10);
       const slots = await courtsService.getDayOccupancy(req.user!.clubId, date);
       success(res, slots);
     } catch (e) {

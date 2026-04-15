@@ -49,6 +49,19 @@ function formatCourt(n: number): string {
   return `Platz ${n}`;
 }
 
+export async function getRangeOccupancy(
+  clubId: string,
+  fromISO: string,
+  toISO: string,
+): Promise<CourtSlot[]> {
+  const from = new Date(fromISO);
+  const to = new Date(toISO);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    throw new Error('INVALID_DATE');
+  }
+  return fetchSlots(clubId, from, to);
+}
+
 export async function getDayOccupancy(clubId: string, dateISO: string): Promise<CourtSlot[]> {
   const day = new Date(dateISO);
   if (Number.isNaN(day.getTime())) throw new Error('INVALID_DATE');
@@ -57,6 +70,10 @@ export async function getDayOccupancy(clubId: string, dateISO: string): Promise<
   const end = new Date(day);
   end.setHours(23, 59, 59, 999);
 
+  return fetchSlots(clubId, start, end);
+}
+
+async function fetchSlots(clubId: string, start: Date, end: Date): Promise<CourtSlot[]> {
   const events = await prisma.event.findMany({
     where: {
       clubId,

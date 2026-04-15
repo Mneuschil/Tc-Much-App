@@ -51,6 +51,9 @@ export const courtsService = {
   getOccupancy: (date: string): Promise<CourtSlot[]> =>
     api.get(ENDPOINTS.courts.occupancy, { params: { date } }).then((r) => r.data.data),
 
+  getOccupancyRange: (from: string, to: string): Promise<CourtSlot[]> =>
+    api.get(ENDPOINTS.courts.occupancy, { params: { from, to } }).then((r) => r.data.data),
+
   getSlotDetail: (eventId: string): Promise<CourtSlotDetail> =>
     api.get(ENDPOINTS.courts.slot(eventId)).then((r) => r.data.data),
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -11,13 +11,14 @@ import {
   GradientBackground,
 } from '../../src/components/ui';
 import { usePermissions } from '../../src/hooks/usePermissions';
-import { useCourtOccupancy } from '../../src/features/courts/hooks/useCourtOccupancy';
-import { DateNavigator } from '../../src/features/courts/components/DateNavigator';
+import { useCourtOccupancyRange } from '../../src/features/courts/hooks/useCourtOccupancy';
+import { CourtsWeekStrip } from '../../src/features/courts/components/CourtsWeekStrip';
 import { BookingComingSoonBanner } from '../../src/features/courts/components/BookingComingSoonBanner';
 import { CategoryLegend } from '../../src/features/courts/components/CategoryLegend';
 import { CourtsTimeline } from '../../src/features/courts/components/CourtsTimeline';
 import { SlotDetailModal } from '../../src/features/courts/components/SlotDetailModal';
 import { CreateBookingModal } from '../../src/features/courts/components/CreateBookingModal';
+import { getWeekDays, toDateKey } from '../../src/utils/calendarUtils';
 import type { CourtSlot } from '../../src/features/courts/services/courtsService';
 
 function toIsoDay(date: Date) {
@@ -34,10 +35,21 @@ export default function CourtsScreen() {
   const [date, setDate] = useState(() => new Date());
   const [selectedSlot, setSelectedSlot] = useState<CourtSlot | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const dateKey = toIsoDay(date);
-  const { data, isLoading, isError, refetch, isRefetching } = useCourtOccupancy(dateKey);
 
-  const slots = data ?? [];
+  const weekDays = useMemo(() => getWeekDays(date), [date]);
+  const weekFrom = toIsoDay(weekDays[0]!);
+  const weekTo = toIsoDay(weekDays[6]!);
+  const { data, isLoading, isError, refetch, isRefetching } = useCourtOccupancyRange(
+    weekFrom,
+    weekTo,
+  );
+
+  const weekSlots = useMemo(() => data ?? [], [data]);
+  const selectedKey = toDateKey(date);
+  const slots = useMemo(
+    () => weekSlots.filter((s) => toDateKey(new Date(s.startTime)) === selectedKey),
+    [weekSlots, selectedKey],
+  );
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
@@ -51,7 +63,7 @@ export default function CourtsScreen() {
 
         <View style={[styles.controls, { paddingHorizontal: spacing.xl, gap: spacing.m }]}>
           <BookingComingSoonBanner />
-          <DateNavigator date={date} onChange={setDate} />
+          <CourtsWeekStrip selectedDate={date} onDateSelect={setDate} weekSlots={weekSlots} />
           <CategoryLegend />
         </View>
 
