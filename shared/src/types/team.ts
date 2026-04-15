@@ -17,6 +17,7 @@ export enum AvailabilityStatus {
 export interface Team {
   id: string;
   name: string;
+  shortCode: string | null;
   type: TeamType;
   league: string | null;
   season: string | null;

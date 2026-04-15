@@ -128,7 +128,7 @@ describe('GET /api/v1/courts/occupancy', () => {
     const courts = res.body.data.map((s: { court: number }) => s.court).sort();
     expect(courts).toEqual([1, 3, 5]);
     const categories = res.body.data.map((s: { category: string }) => s.category).sort();
-    expect(categories).toEqual(['MATCH', 'RANKING', 'TRAINING']);
+    expect(categories).toEqual(['MEDENSPIEL', 'MEDENSPIEL', 'TRAINING']);
   });
 
   it('excludes events from other clubs (multi-tenant)', async () => {

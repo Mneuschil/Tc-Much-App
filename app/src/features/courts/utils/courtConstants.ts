@@ -1,4 +1,4 @@
-import type { CourtCategory } from '../services/courtsService';
+import type { CourtCategory, TrainingType } from '../services/courtsService';
 
 export const COURT_COUNT = 5;
 export const COURTS = [1, 2, 3, 4, 5] as const;
@@ -9,9 +9,16 @@ export const HOUR_HEIGHT = 56;
 
 export const CATEGORY_LABEL: Record<CourtCategory, string> = {
   TRAINING: 'Training',
-  MATCH: 'Match',
-  RANKING: 'Rangliste',
+  MEDENSPIEL: 'Medenspiel',
+  CLUB_EVENT: 'Vereinsevent',
   OTHER: 'Sonstiges',
+};
+
+export const TRAINING_TYPE_LABEL: Record<TrainingType, string> = {
+  MANNSCHAFTSTRAINING: 'Mannschaftstraining',
+  JUGENDTRAINING: 'Jugendtraining',
+  SCHNUPPERSTUNDE: 'Schnupperstunde',
+  PRIVATGRUPPE: 'Privatgruppe',
 };
 
 export interface CategoryStyle {
@@ -25,8 +32,6 @@ export function getCategoryStyle(
   colors: {
     accentSurface: string;
     accent: string;
-    successSurface: string;
-    success: string;
     warningSurface: string;
     warning: string;
     backgroundTertiary: string;
@@ -37,10 +42,9 @@ export function getCategoryStyle(
   switch (category) {
     case 'TRAINING':
       return { bg: colors.accentSurface, text: colors.accent, border: colors.accent };
-    case 'MATCH':
+    case 'MEDENSPIEL':
       return { bg: colors.warningSurface, text: colors.warning, border: colors.warning };
-    case 'RANKING':
-      return { bg: colors.successSurface, text: colors.success, border: colors.success };
+    case 'CLUB_EVENT':
     case 'OTHER':
     default:
       return {

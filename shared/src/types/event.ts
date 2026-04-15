@@ -16,15 +16,24 @@ export enum Platform {
   ANDROID = 'ANDROID',
 }
 
+export enum TrainingType {
+  MANNSCHAFTSTRAINING = 'MANNSCHAFTSTRAINING',
+  JUGENDTRAINING = 'JUGENDTRAINING',
+  SCHNUPPERSTUNDE = 'SCHNUPPERSTUNDE',
+  PRIVATGRUPPE = 'PRIVATGRUPPE',
+}
+
 // Spec section 7: Event Fields
 export interface Event {
   id: string;
   title: string;
   description: string | null;
   type: EventType;
+  trainingType: TrainingType | null;
   location: string | null;
-  court: string | null;         // Spec: "court (optional)"
-  isHomeGame: boolean | null;   // Spec: "home/away flag"
+  court: string | null;
+  opponentName: string | null;
+  isHomeGame: boolean | null;
   startDate: string;
   endDate: string | null;
   teamId: string | null;

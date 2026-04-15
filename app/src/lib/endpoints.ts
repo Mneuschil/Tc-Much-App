@@ -126,6 +126,8 @@ export const ENDPOINTS = {
   // Courts
   courts: {
     occupancy: '/courts/occupancy',
+    slot: (eventId: string) => `/courts/slots/${eventId}`,
+    bookings: '/courts/bookings',
   },
 
   // Forms

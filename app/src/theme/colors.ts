@@ -29,7 +29,8 @@ export const lightColors = {
   dangerSurface: '#FFEBEB',
   warning: '#A06000',
   warningSurface: '#FFF4E5',
-  info: '#007AFF',
+  info: '#0A4DA8',
+  infoSurface: '#E3EEFF',
 
   // Borders
   border: '#D1D1D6',
@@ -83,7 +84,8 @@ export const darkColors = {
   dangerSurface: '#3A1A1A',
   warning: '#FFD60A',
   warningSurface: '#3A2E0A',
-  info: '#0A84FF',
+  info: '#5AA9FF',
+  infoSurface: '#0F1F3A',
 
   // Borders
   border: '#38383A',

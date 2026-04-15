@@ -55,3 +55,13 @@ export function canCreateTodo(roles: UserRole[]): boolean {
 export function canCreateFolder(roles: UserRole[]): boolean {
   return isBoard(roles) || isAdmin(roles);
 }
+
+export function canBookCourt(roles: UserRole[]): boolean {
+  return hasAnyRole(roles, [
+    UserRole.CLUB_ADMIN,
+    UserRole.SYSTEM_ADMIN,
+    UserRole.BOARD_MEMBER,
+    UserRole.TRAINER,
+    UserRole.TEAM_CAPTAIN,
+  ]);
+}

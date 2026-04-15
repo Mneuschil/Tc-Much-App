@@ -4,6 +4,7 @@ export * from './user.schema';
 export * from './channel.schema';
 export * from './team.schema';
 export * from './event.schema';
+export * from './courtBooking.schema';
 export * from './match.schema';
 export * from './ranking.schema';
 export * from './training.schema';
