@@ -24,6 +24,7 @@
     "dev:sim": "npm run build:shared && npx concurrently -n shared,backend,app -c blue,green,magenta --kill-others-on-fail \"npm run dev -w shared\" \"npm run dev -w backend\" \"npm run ios:sim -w app\"",
     "dev:phone": "bash scripts/dev-phone.sh",
     "dev:online": "bash scripts/dev-online.sh",
+    "dev:prod": "bash scripts/dev-prod.sh",
     "dev:all": "npm run build:shared && npx concurrently -n shared,backend,app -c blue,green,magenta --kill-others-on-fail \"npm run dev -w shared\" \"npm run dev -w backend\" \"npm run start -w app\"",
     "format": "prettier --write \"**/*.{ts,tsx,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,json}\"",

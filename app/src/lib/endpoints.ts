@@ -123,6 +123,11 @@ export const ENDPOINTS = {
     week: '/calendar/week',
   },
 
+  // Courts
+  courts: {
+    occupancy: '/courts/occupancy',
+  },
+
   // Forms
   forms: {
     courtDamage: '/forms/court-damage',

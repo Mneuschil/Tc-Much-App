@@ -51,7 +51,7 @@ ssh "$SERVER" bash <<EOF
     npx prisma generate
 
   echo "[server] pm2 restart..."
-  pm2 restart $PM2_NAME || pm2 start dist/server.js --name $PM2_NAME --update-env
+  pm2 restart $PM2_NAME --update-env || pm2 start /opt/tc-much-app/ecosystem.config.cjs
   pm2 save
 EOF
 
